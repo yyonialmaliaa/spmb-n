@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  password    String
+  role        String   @default("user")
+  namaLengkap String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  pendaftaran Pendaftaran?
+}
+
+model Pendaftaran {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  namaLengkap          String
+  namaPanggilan        String?
+  tempatLahir          String?
+  tanggalLahir         String?
+  ttl                  String?
+  jenisKelamin         String
+  agama                String
+  anakKe               String?
+  alamat               String   @db.Text
+  rt                   String?
+  rw                   String?
+  kelurahan            String?
+  kecamatan            String?
+  kabupaten            String?
+  beratBadan           String?
+  tinggiBadan          String?
+  golonganDarah        String?
+  nisn                 String?
+  nik                  String?
+  noPribadi            String?
+  ukuranSeragam        String?
+  namaPemberiReferensi String?
+  noHpReferensi        String?
+
+  asalSD               String?
+  asalSMP              String?
+  asalSekolah          String?
+  jurusan              String
+
+  namaAyah             String?
+  ttlAyah              String?
+  pendidikanAyah       String?
+  pekerjaanAyah        String?
+  penghasilanAyah      String?
+  noHpAyah             String?
+  alamatAyah           String?  @db.Text
+
+  namaIbu              String?
+  ttlIbu               String?
+  pendidikanIbu        String?
+  pekerjaanIbu         String?
+  penghasilanIbu       String?
+  noHpIbu              String?
+  alamatIbu            String?  @db.Text
+
+  namaWali             String?
+  ttlWali              String?
+  pendidikanWali       String?
+  pekerjaanWali        String?
+  penghasilanWali      String?
+  noHpWali             String?
+  alamatWali           String?  @db.Text
+
+  namaOrtu             String?
+  noOrtu               String?
+
+  fileIjazah           String?
+  fileAkte             String?
+  fileKK               String?
+  fileKtpOrtu          String?
+  fileKip              String?
+  fileFoto             String?
+
+  // Status Alur:
+  // pending → verified → diterima_berkas → tes → lulus / tidak_lulus → daftar_ulang
+  // pending → ditolak → (revisi) → pending
+  status               String   @default("pending")
+
+  nilaiSeleksi         Float?
+  nilaiTes             Float?
+  catatan              String?  @db.Text
+  alasanPenolakan      String?  @db.Text
+
+  jadwalTes            String?
+  lokasiTes            String?
+  infoTes              String?  @db.Text
+
+  revisiCount          Int      @default(0)
+  lastRevisiAt         DateTime?
+
+  pesanPengumuman      String?  @db.Text
+
+  // Daftar Ulang
+  sudahDaftarUlang     Boolean  @default(false)
+  tanggalDaftarUlang   DateTime?
+  catatanDaftarUlang   String?
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}

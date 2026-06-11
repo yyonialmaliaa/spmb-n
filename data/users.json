@@ -1,0 +1,18 @@
+[
+  {
+    "email": "admin@smkcitranegara.sch.id",
+    "password": "$2b$10$SVqhLQEOaOfgg7IJG1knGed2ZATCgonom1fzZuORkQBuYxfzb66JS",
+    "role": "admin",
+    "namaLengkap": "Administrator",
+    "id": "13baa7e20b1aadc0920f858c",
+    "createdAt": "2026-05-15T13:22:49.919Z"
+  },
+  {
+    "email": "saya@gmail.com",
+    "password": "$2b$10$hPBDltKD3Qih76O8O3RNyuQ9YX7nc8Wxy2wHt7v76OHN85nObP4BW",
+    "role": "user",
+    "namaLengkap": "saya",
+    "id": "75ac098d614800956ed78073",
+    "createdAt": "2026-05-19T00:48:31.932Z"
+  }
+]

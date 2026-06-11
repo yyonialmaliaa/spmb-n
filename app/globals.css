@@ -1,0 +1,135 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+--primary-green: #123524;
+  --primary-green-dark: #0B2A1C;
+  --primary-green-light: #1E5A3D;
+  --gold: #C8973A;
+  --gold-light: #E8B84B;
+  --cream: #FAF7F0;
+  --cream-dark: #F0EBE0;
+  --white: #FFFFFF;
+  --gray: #6B7280;
+  --gray-light: #F3F4F6;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--cream);
+  color: var(--navy);
+  line-height: 1.6;
+}
+
+.font-display { font-family: 'Playfair Display', serif; }
+
+.hero-gradient {
+  background: linear-gradient(160deg, #052e16 50%, #15803d 50%);
+  position: relative;
+  overflow: hidden;
+}
+.hero-gradient::before {
+  content: '';
+  position: absolute;
+  top: -50%; right: -10%;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(200,151,58,0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-gradient::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #C8973A, #E8B84B, #C8973A);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #C8973A, #E8B84B);
+  color: #0A1628;
+  font-weight: 700;
+  padding: 12px 28px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(200,151,58,0.4);
+}
+
+.btn-outline {
+  background: transparent;
+  color: white;
+  font-weight: 600;
+  padding: 12px 28px;
+  border-radius: 8px;
+  border: 2px solid rgba(255,255,255,0.5);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn-outline:hover {
+  border-color: #C8973A;
+  color: #C8973A;
+  background: rgba(200,151,58,0.1);
+}
+
+.gold-line {
+  width: 60px; height: 3px;
+  background: linear-gradient(90deg, #C8973A, #E8B84B);
+  border-radius: 2px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #D1D5DB;
+  border-radius: 8px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: white;
+  color: #0A1628;
+}
+.form-input:focus {
+  outline: none;
+  border-color: #C8973A;
+  box-shadow: 0 0 0 3px rgba(200,151,58,0.15);
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: rgba(255,255,255,0.7);
+  text-decoration: none;
+  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: 500;
+}
+.sidebar-link:hover { background: rgba(200,151,58,0.2); color: #C8973A; }
+
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { background: #264723; color: white; padding: 12px 16px; text-align: left; font-size: 13px; font-weight: 600; }
+.data-table td { padding: 12px 16px; border-bottom: 1px solid #F3F4F6; font-size: 14px; }
+.data-table tr:hover td { background: #FAFBFC; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: #C8973A; border-radius: 3px; }
+
+@media print { .no-print { display: none !important; } }
