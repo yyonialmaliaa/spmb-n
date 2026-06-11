@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -32,7 +32,7 @@ model Pendaftaran {
   jenisKelamin         String
   agama                String
   anakKe               String?
-  alamat               String   @db.Text
+  alamat               String
   rt                   String?
   rw                   String?
   kelurahan            String?
@@ -59,7 +59,7 @@ model Pendaftaran {
   pekerjaanAyah        String?
   penghasilanAyah      String?
   noHpAyah             String?
-  alamatAyah           String?  @db.Text
+  alamatAyah           String?
 
   namaIbu              String?
   ttlIbu               String?
@@ -67,7 +67,7 @@ model Pendaftaran {
   pekerjaanIbu         String?
   penghasilanIbu       String?
   noHpIbu              String?
-  alamatIbu            String?  @db.Text
+  alamatIbu            String?
 
   namaWali             String?
   ttlWali              String?
@@ -75,7 +75,7 @@ model Pendaftaran {
   pekerjaanWali        String?
   penghasilanWali      String?
   noHpWali             String?
-  alamatWali           String?  @db.Text
+  alamatWali           String?
 
   namaOrtu             String?
   noOrtu               String?
@@ -87,26 +87,22 @@ model Pendaftaran {
   fileKip              String?
   fileFoto             String?
 
-  // Status Alur:
-  // pending → verified → diterima_berkas → tes → lulus / tidak_lulus → daftar_ulang
-  // pending → ditolak → (revisi) → pending
   status               String   @default("pending")
 
   nilaiSeleksi         Float?
   nilaiTes             Float?
-  catatan              String?  @db.Text
-  alasanPenolakan      String?  @db.Text
+  catatan              String?
+  alasanPenolakan      String?
 
   jadwalTes            String?
   lokasiTes            String?
-  infoTes              String?  @db.Text
+  infoTes              String?
 
   revisiCount          Int      @default(0)
   lastRevisiAt         DateTime?
 
-  pesanPengumuman      String?  @db.Text
+  pesanPengumuman      String?
 
-  // Daftar Ulang
   sudahDaftarUlang     Boolean  @default(false)
   tanggalDaftarUlang   DateTime?
   catatanDaftarUlang   String?
