@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import { existsSync } from 'fs'
-import path from 'path'
+import { v2 as cloudinary } from 'cloudinary'
 import { getSession } from '@/lib/auth'
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+})
 
 export async function POST(req: Request) {
   const session = await getSession()
@@ -17,37 +21,33 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'File tidak ditemukan' }, { status: 400 })
     }
 
-    // Validasi ukuran maks 2MB
     if (file.size > 2 * 1024 * 1024) {
       return NextResponse.json({ error: 'Ukuran file maksimal 2MB' }, { status: 400 })
     }
 
-    // Validasi tipe file
     const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf']
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json({ error: 'Format file harus JPG, PNG, atau PDF' }, { status: 400 })
     }
 
-    // Buat folder uploads kalau belum ada
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', session.userId)
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true })
-    }
-
-    // Generate nama file unik
-    const ext = file.name.split('.').pop()
-    const fileName = `${fieldName}-${Date.now()}.${ext}`
-    const filePath = path.join(uploadDir, fileName)
-
-    // Simpan file ke disk
+    // Convert file ke base64
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    await writeFile(filePath, buffer)
+    const base64 = `data:${file.type};base64,${buffer.toString('base64')}`
 
-    // Return path relatif untuk disimpan di database
-    const relativePath = `/uploads/${session.userId}/${fileName}`
+    // Upload ke Cloudinary
+    const result = await cloudinary.uploader.upload(base64, {
+      folder: `spmb/${session.userId}`,
+      public_id: `${fieldName}-${Date.now()}`,
+      resource_type: 'auto',
+    })
 
-    return NextResponse.json({ success: true, path: relativePath, fileName })
+    return NextResponse.json({ 
+      success: true, 
+      path: result.secure_url,
+      fileName: result.public_id 
+    })
+
   } catch (err) {
     console.error('Upload error:', err)
     return NextResponse.json({ error: 'Gagal mengupload file' }, { status: 500 })
