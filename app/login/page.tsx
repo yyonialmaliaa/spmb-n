@@ -43,7 +43,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#032511', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+    <div className="auth-shell" style={{ minHeight: '100vh', background: '#032511', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 440 }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
@@ -71,7 +71,7 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div style={{ background: 'white', borderRadius: 20, padding: 40, boxShadow: '0 25px 60px rgba(0,0,0,0.4)' }}>
+        <div className="auth-card" style={{ background: 'white', borderRadius: 20, padding: 40, boxShadow: '0 25px 60px rgba(0,0,0,0.4)' }}>
           <h1 className="font-display" style={{ fontSize: 28, color: '#0A1628', marginBottom: 6 }}>Selamat Datang</h1>
           <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 32 }}>Masuk ke akun SPMB Anda</p>
 

@@ -1,8 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind v4 memakai satu @import (bukan 3 directive @tailwind ala v3). */
+@import "tailwindcss";
+
+/* Tailwind's preflight memberi `img,video{height:auto}` ke semua <img> —
+   ini menimpa width/height yang sudah diatur lewat next/image (prop
+   width+height) dan bikin rasio logo/gambar jadi salah. next/image selalu
+   menandai elemennya dengan atribut data-nimg, jadi kembalikan sizing
+   bawaan browser khusus untuk elemen itu saja. */
+img[data-nimg] {
+  max-width: revert;
+  height: revert;
+}
 
 :root {
 --primary-green: #123524;
@@ -133,3 +142,138 @@ body {
 ::-webkit-scrollbar-thumb { background: #C8973A; border-radius: 3px; }
 
 @media print { .no-print { display: none !important; } }
+
+/* ===================================================================
+   RESPONSIVE — Admin layout: sidebar jadi drawer (hamburger menu)
+   di layar sempit. Dipakai di app/admin/pendaftar, app/admin/laporan,
+   app/admin/dashboard/[jenjang].
+   =================================================================== */
+.admin-mobile-topbar { display: none; }
+.admin-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 45;
+}
+.sidebar-close-btn { display: none; }
+
+@media (max-width: 900px) {
+  .admin-shell {
+    flex-direction: column !important;
+  }
+  .admin-mobile-topbar {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(180deg, #123524 0%, #0B2A1C 100%);
+    padding: 14px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+  .admin-sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 260px !important;
+    max-width: 80vw;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    overflow-y: auto;
+  }
+  .admin-sidebar.sidebar-open {
+    transform: translateX(0) !important;
+  }
+  .sidebar-close-btn {
+    display: flex !important;
+  }
+  .detail-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-shell main {
+    padding: 16px !important;
+  }
+  .admin-shell header {
+    padding: 14px 16px !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+}
+
+/* ===================================================================
+   RESPONSIVE — umum: cegah elemen lebar-tetap bikin horizontal
+   scroll di layar sempit, kecuali tabel (yang memang sengaja
+   overflow-x: auto).
+   =================================================================== */
+@media (max-width: 480px) {
+  h1, h2 { word-break: break-word; }
+}
+
+/* ===================================================================
+   RESPONSIVE — formulir pendaftaran & portal user (app/spmb/daftar,
+   app/spmb/revisi, app/dashboard/*). Dipakai bareng style inline yang
+   sudah ada; !important cuma untuk override nilai px tetap di layar
+   sempit, mengikuti pola yang sama dengan .admin-shell di atas.
+   =================================================================== */
+@media (max-width: 640px) {
+  .form-header-inner {
+    height: auto !important;
+    padding: 12px 0 !important;
+  }
+  .form-header-title {
+    font-size: 12.5px !important;
+    line-height: 1.4 !important;
+    white-space: normal !important;
+  }
+  .form-shell-main {
+    padding: 20px 14px !important;
+  }
+  .form-card {
+    padding: 20px 16px !important;
+    border-radius: 14px !important;
+  }
+  .form-terms-box {
+    padding: 16px !important;
+    max-height: 320px !important;
+  }
+  .file-upload-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .file-upload-row > button,
+  .file-upload-row > label:last-child {
+    width: 100%;
+    justify-content: center !important;
+  }
+  .form-nav-row {
+    flex-direction: column-reverse !important;
+    align-items: stretch !important;
+  }
+  .form-nav-row > div {
+    display: flex !important;
+    flex-direction: column-reverse !important;
+    width: 100%;
+  }
+  .form-nav-row button {
+    width: 100%;
+    justify-content: center !important;
+  }
+}
+
+@media (max-width: 400px) {
+  .auth-shell {
+    padding: 16px !important;
+  }
+  .auth-card {
+    padding: 26px 20px !important;
+  }
+}
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.animate-spin { animation: spin 1s linear infinite; }

@@ -1,8 +1,13 @@
 'use client';
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { CheckCircle, FileText, Calendar, AlertCircle, ChevronRight } from 'lucide-react';
+import { Fragment } from 'react';
+import { formatRupiah } from '@/lib/pembayaran-utils';
+
+type HargaRow = { id: string; jenjang: string; jurusan: string; kelas: string; nominal: number; urutan: number };
 
 const PERSYARATAN = [
   'Ijazah/SKHUN SMP/MTs (fotokopi)',
@@ -24,6 +29,37 @@ const ALUR = [
 ];
 
 export default function SPMBPage() {
+  const [gelombangAktif, setGelombangAktif] = useState<{ nama: string; diskonPersen: number } | null>(null);
+  const [harga, setHarga] = useState<HargaRow[]>([]);
+
+  useEffect(() => {
+    fetch('/api/gelombang').then(r => r.json()).then(d => {
+      const aktif = (d.data || []).find((g: any) => g.aktif);
+      if (aktif) setGelombangAktif({ nama: aktif.nama, diskonPersen: aktif.diskonPersen });
+    }).catch(() => {});
+    fetch('/api/harga').then(r => r.json()).then(d => setHarga(d.data || [])).catch(() => {});
+  }, []);
+
+  const hargaSMP = harga.filter(h => h.jenjang === 'smp');
+  const hargaSMA = harga.filter(h => h.jenjang === 'sma');
+  const smkByJurusan = harga.filter(h => h.jenjang === 'smk').reduce((acc, h) => {
+    (acc[h.jurusan] ||= []).push(h);
+    return acc;
+  }, {} as Record<string, HargaRow[]>);
+  const smkGroups = Object.entries(smkByJurusan).sort((a, b) => Math.min(...a[1].map(h => h.urutan)) - Math.min(...b[1].map(h => h.urutan)));
+
+  const diskon = gelombangAktif?.diskonPersen || 0;
+  const hargaSetelahDiskon = (harga: number) => Math.round(harga * (1 - diskon / 100));
+
+  const HargaTampil = ({ harga }: { harga: number }) => (
+    diskon > 0 ? (
+      <span>
+        <span style={{ textDecoration: 'line-through', color: '#9CA3AF', fontSize: 12, marginRight: 6 }}>{formatRupiah(harga)}</span>
+        <span>{formatRupiah(hargaSetelahDiskon(harga))}</span>
+      </span>
+    ) : <span>{formatRupiah(harga)}</span>
+  );
+
   return (
     <>
       <Navbar />
@@ -38,7 +74,7 @@ export default function SPMBPage() {
               Sistem Penerimaan<br />Peserta Didik Baru
             </h1>
             <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 17, lineHeight: 1.7, marginBottom: 36, maxWidth: 560, margin: '0 auto 36px' }}>
-              Pendaftaran online SMK Citra Negara tahun ajaran 2026/2027. 
+              Pendaftaran online SMK Citra Negara tahun ajaran 2026/2027.
               Proses mudah, transparan, dan dapat dipantau secara real-time.
             </p>
             <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -101,9 +137,81 @@ export default function SPMBPage() {
           </div>
         </section>
 
+        {/* Biaya Pendidikan */}
+        <section style={{ padding: '70px 24px', background: 'white' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 16 }}>
+              <div className="gold-line" style={{ margin: '0 auto 16px' }} />
+              <h2 className="font-display" style={{ fontSize: 36, color: '#0A1628' }}>Biaya Pendidikan Siswa Baru</h2>
+              <p style={{ fontSize: 13, color: '#6B7280', marginTop: 10 }}>Tahun Pelajaran 2026/2027. Belum termasuk biaya opsional (rincian lengkap muncul saat pembayaran).</p>
+              {gelombangAktif && diskon > 0 && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 20, padding: '6px 16px', marginTop: 14 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#92400E' }}>🎉 {gelombangAktif.nama} aktif — diskon {diskon}%</span>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20, marginTop: 32, marginBottom: 20 }}>
+              {/* SMP */}
+              <div style={{ background: '#FAF7F0', borderRadius: 16, padding: 24, border: '1px solid #F0EBE0' }}>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: '#C8973A', marginBottom: 14 }}>SMP</h3>
+                {hargaSMP.map(h => (
+                  <div key={h.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F0EBE0' }}>
+                    <span style={{ fontSize: 13, color: '#6B7280' }}>{h.kelas}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#0A1628' }}><HargaTampil harga={h.nominal} /></span>
+                  </div>
+                ))}
+              </div>
+
+              {/* SMA */}
+              <div style={{ background: '#FAF7F0', borderRadius: 16, padding: 24, border: '1px solid #F0EBE0' }}>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: '#C8973A', marginBottom: 14 }}>SMA</h3>
+                {hargaSMA.map(h => (
+                  <div key={h.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F0EBE0' }}>
+                    <span style={{ fontSize: 13, color: '#6B7280' }}>{h.kelas}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#0A1628' }}><HargaTampil harga={h.nominal} /></span>
+                  </div>
+                ))}
+              </div>
+
+              {/* SMK */}
+              <div style={{ background: '#FAF7F0', borderRadius: 16, padding: 24, border: '1px solid #F0EBE0', gridColumn: 'span 1' }}>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: '#C8973A', marginBottom: 14 }}>SMK — Semua Jurusan</h3>
+                <p style={{ fontSize: 12, color: '#9CA3AF' }}>Bervariasi per program keahlian. Lihat rincian lengkap di tabel bawah.</p>
+              </div>
+            </div>
+
+            {/* Tabel SMK */}
+            <div style={{ overflowX: 'auto', border: '1px solid #F0EBE0', borderRadius: 14 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 480 }}>
+                <thead>
+                  <tr style={{ background: '#FAF7F0' }}>
+                    <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 700, color: '#0A1628' }}>Program Keahlian</th>
+                    <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 700, color: '#0A1628' }}>Kelas</th>
+                    <th style={{ textAlign: 'right', padding: '10px 16px', fontWeight: 700, color: '#0A1628' }}>Biaya</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {smkGroups.map(([jurusan, rows]) => (
+                    <Fragment key={jurusan}>
+                      {rows.map((h, i) => (
+                        <tr key={h.id} style={{ borderTop: '1px solid #F0EBE0' }}>
+                          {i === 0 && <td rowSpan={rows.length} style={{ padding: '10px 16px', color: '#374151', verticalAlign: 'top' }}>{jurusan}</td>}
+                          <td style={{ padding: '10px 16px', color: '#6B7280' }}>{h.kelas}</td>
+                          <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700, color: '#0A1628' }}><HargaTampil harga={h.nominal} /></td>
+                        </tr>
+                      ))}
+                    </Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
         {/* Persyaratan */}
         <section style={{ padding: '70px 24px', background: 'white' }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 60, alignItems: 'center' }}>
             <div>
               <div className="gold-line" style={{ marginBottom: 16 }} />
               <h2 className="font-display" style={{ fontSize: 36, color: '#0A1628', marginBottom: 16 }}>Persyaratan Dokumen</h2>

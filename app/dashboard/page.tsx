@@ -1,382 +1,412 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
-  GraduationCap, FileText, Clock, CheckCircle, XCircle,
-  LogOut, User, AlertCircle, Calendar, RefreshCw,
-  Award, Bell, ChevronRight, Edit3
+  ClipboardList, CheckCircle, XCircle, AlertCircle,
+  ChevronRight, Edit3, Wallet, FolderOpen, PartyPopper,
 } from 'lucide-react';
-import Image from 'next/image';
+import PortalShell, { PortalContext } from '@/components/portal/PortalShell';
+import { STATUS_CONFIG, TAHAPAN, daftarBerkas, teksSelanjutnya } from '@/components/portal/statusConfig';
+import { formatRupiah } from '@/lib/pembayaran-utils';
 
-type Pendaftaran = {
-  id: string; namaLengkap: string; jurusan: string; asalSMP?: string; asalSekolah?: string;
-  status: string; nilaiSeleksi?: number; nilaiTes?: number;
-  catatan?: string; alasanPenolakan?: string;
-  jadwalTes?: string; lokasiTes?: string; infoTes?: string;
-  pesanPengumuman?: string; revisiCount?: number;
-  sudahDaftarUlang?: boolean; tanggalDaftarUlang?: string; catatanDaftarUlang?: string;
-  createdAt: string;
-  fileIjazah?: string; fileAkte?: string; fileKK?: string;
-  fileKtpOrtu?: string; fileKip?: string; fileFoto?: string;
-};
-
-type Session = { userId: string; email: string; role: string; namaLengkap?: string };
-
-const STATUS_CONFIG: Record<string, {
-  label: string; color: string; bg: string; border: string; icon: any; step: number; desc: string;
-}> = {
-  pending:         { label: 'Menunggu Verifikasi', color: '#92400E', bg: '#FEF3C7', border: '#FDE68A',  icon: Clock,       step: 1, desc: 'Formulir sudah dikirim, menunggu admin memverifikasi berkas Anda.' },
-  verified:        { label: 'Sedang Diverifikasi', color: '#1E40AF', bg: '#DBEAFE', border: '#BFDBFE',  icon: RefreshCw,   step: 2, desc: 'Admin sedang memeriksa berkas Anda. Harap tunggu.' },
-  ditolak:         { label: 'Berkas Ditolak',      color: '#991B1B', bg: '#FEE2E2', border: '#FECACA',  icon: XCircle,     step: 1, desc: 'Admin menolak berkas Anda. Silakan perbaiki dan kirim ulang.' },
-  diterima_berkas: { label: 'Berkas Diterima',     color: '#065F46', bg: '#D1FAE5', border: '#A7F3D0',  icon: CheckCircle, step: 3, desc: 'Berkas diterima! Silakan datang ke sekolah untuk mengikuti tes seleksi, Informasi lebih lanjut akan disampaikan melalui email.' },
-  tes:             { label: 'Jadwal Tes',           color: '#5B21B6', bg: '#EDE9FE', border: '#DDD6FE',  icon: Calendar,    step: 3, desc: 'Anda telah dijadwalkan untuk mengikuti tes seleksi di sekolah, Silakan lihat email untuk informasi lebih lanjut.' },
-  lulus:           { label: 'Diterima / Lulus',    color: '#065F46', bg: '#D1FAE5', border: '#A7F3D0',  icon: Award,       step: 4, desc: 'Selamat! Anda dinyatakan LULUS dan diterima di SMK Citra Negara!' },
-  tidak_lulus:     { label: 'Tidak Lulus',          color: '#991B1B', bg: '#FEE2E2', border: '#FECACA',  icon: XCircle,     step: 4, desc: 'Mohon maaf, Anda dinyatakan tidak lulus seleksi pada tahun ini. Terima kasih atas partisipasi Anda.' },
-  daftar_ulang:    { label: 'Daftar Ulang Selesai', color: '#065F46', bg: '#D1FAE5', border: '#A7F3D0',  icon: CheckCircle, step: 5, desc: 'Selamat! Daftar ulang Anda telah dikonfirmasi. Sampai jumpa di sekolah!' },
-};
-
-const TAHAPAN = [
-  { step: 1, label: 'Pendaftaran',  sub: 'Submit formulir' },
-  { step: 2, label: 'Verifikasi',   sub: 'Cek berkas admin' },
-  { step: 3, label: 'Tes Seleksi',  sub: 'Ke sekolah' },
-  { step: 4, label: 'Pengumuman',   sub: 'Hasil seleksi' },
-  { step: 5, label: 'Daftar Ulang', sub: 'Ke sekolah offline' },
-];
+// ---------------------------------------------------------------------
+// Dashboard = RINGKASAN saja (section 3 di brief UI/UX). Detail lengkap
+// pendaftaran/pembayaran/dokumen ada di halaman masing-masing — di sini
+// cukup status, hal yang perlu dilakukan, dan angka ringkas + tombol
+// "Lihat Detail"/"Lihat Pembayaran"/"Lihat Dokumen".
+// ---------------------------------------------------------------------
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const [session, setSession] = useState<Session | null>(null);
-  const [pendaftaran, setPendaftaran] = useState<Pendaftaran | null>(null);
-  const [loading, setLoading] = useState(true);
+  return (
+    <PortalShell active="dashboard">
+      {(ctx) => <DashboardContent {...ctx} />}
+    </PortalShell>
+  );
+}
 
-  useEffect(() => {
-    fetch('/api/auth/me').then(r => r.json()).then(d => {
-      if (!d.user) { router.push('/login'); return; }
-      if (d.user.role === 'admin') { router.push('/admin/dashboard'); return; }
-      setSession(d.user);
-    });
-    fetch('/api/pendaftaran').then(r => r.json()).then(d => {
-      setPendaftaran(d.data || null);
-      setLoading(false);
-    });
-  }, [router]);
+function DashboardContent({ session, pendaftaran, riwayat, dokumenSekolah, reload }: PortalContext) {
+  const [kirimLoading, setKirimLoading] = useState(false);
+  const [kirimError, setKirimError] = useState('');
 
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/');
+  const handleKirimFormulir = async () => {
+    setKirimLoading(true);
+    setKirimError('');
+    try {
+      const res = await fetch('/api/pendaftaran/kirim', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) { setKirimError(data.error || 'Gagal mengirim formulir'); setKirimLoading(false); return; }
+      reload();
+    } catch {
+      setKirimError('Terjadi kesalahan jaringan');
+    } finally {
+      setKirimLoading(false);
+    }
   };
 
-  if (loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FAF7F0' }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ width: 40, height: 40, border: '4px solid #E5E7EB', borderTopColor: '#C8973A', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
-        <p style={{ color: '#6B7280', fontSize: 14 }}>Memuat data...</p>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    </div>
-  );
+  const namaDepan = session?.namaLengkap?.split(' ')[0] || 'Siswa';
 
-  const statusCfg   = pendaftaran ? STATUS_CONFIG[pendaftaran.status] || STATUS_CONFIG['pending'] : null;
+  // ── Akun tanpa data pendaftaran sama sekali ────────────────────────
+  // Kasus langka: akun lama dari sebelum jenjang ditentukan saat
+  // registrasi. Jenjang TIDAK ditanya ulang di dashboard (section 6 brief
+  // alur registrasi) — arahkan ke admin untuk penanganan manual.
+  if (!pendaftaran) {
+    return (
+      <div style={{ maxWidth: 600, margin: '0 auto' }}>
+        <Greeting nama={namaDepan} />
+        <EmptyPromptCard
+          title="Belum Ada Pendaftaran"
+          desc="Akun Anda belum terhubung dengan data pendaftaran. Silakan hubungi admin sekolah untuk bantuan."
+        />
+      </div>
+    );
+  }
+
+  // ── Sudah punya akun (jenjang sudah ditentukan saat registrasi) tapi
+  // belum mulai mengisi formulir sama sekali ────────────────────────
+  if (pendaftaran.status === 'draft' && !pendaftaran.namaLengkap) {
+    return (
+      <div style={{ maxWidth: 600, margin: '0 auto' }}>
+        <Greeting nama={namaDepan} />
+        <EmptyPromptCard
+          title="Belum Ada Pendaftaran"
+          desc="Lengkapi formulir pendaftaran Anda untuk melanjutkan proses penerimaan murid baru."
+          ctaLabel="Mulai Pendaftaran"
+          ctaHref={`/spmb/daftar?jenjang=${pendaftaran.jenjang || 'smk'}`}
+        />
+      </div>
+    );
+  }
+
+  const isDraft = pendaftaran.status === 'draft';
+  const isDitolak = pendaftaran.status === 'ditolak';
+  const isDiterima = pendaftaran.status === 'diterima_berkas';
+  const isDaftarUlang = !!pendaftaran.sudahDaftarUlang;
+  const statusCfg = !isDraft ? (STATUS_CONFIG[pendaftaran.status] || STATUS_CONFIG['verified']) : null;
   const currentStep = statusCfg?.step || 0;
-  const isDitolak   = pendaftaran?.status === 'ditolak';
-  const isLulus     = pendaftaran?.status === 'lulus';
-  const isTidakLulus = pendaftaran?.status === 'tidak_lulus';
-  const hasTes      = pendaftaran?.status === 'tes';
-  const isDone      = isLulus || isTidakLulus || pendaftaran?.status === 'daftar_ulang';
-  const isDaftarUlang = pendaftaran?.status === 'daftar_ulang';
+  const selanjutnya = !isDraft ? teksSelanjutnya(pendaftaran.status, pendaftaran.sudahDaftarUlang) : '';
+
+  const totalTagihan = riwayat?.totalTagihan ?? 0;
+  const totalDibayar = riwayat?.totalDibayar ?? 0;
+  const kelebihanBayar = riwayat?.lebihBayar ?? 0;
+  const sisaBayar = riwayat?.sisaBayar ?? 0;
+  const totalDisetorkan = riwayat?.totalDisetorkan ?? 0;
+  const minimalPembayaranAwal = riwayat?.minimalPembayaranAwal || 200000;
+  const bolehKirim = totalDisetorkan >= minimalPembayaranAwal;
+  const statusLunas = totalTagihan > 0 && sisaBayar <= 0;
+
+  const berkas = daftarBerkas(pendaftaran);
+  const jumlahLengkap = berkas.filter(b => !!b.path).length;
+  const kurangWajib = berkas.filter(b => b.wajib && !b.path).length;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FAF7F0' }}>
-      <header style={{ background: 'linear-gradient(180deg, #123524 0%, #0B2A1C 100%)', borderBottom: '2px solid #C8973A', padding: '0 24px' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-           
-            <div
-                          style={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: 8,
-                            overflow: "hidden",
-                            position: "relative",
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          <Image
-                            src="/images/logo.png"
-                            alt="Logo SMK Citra Negara"
-                            width={35}
-                            height={35}
-                            style={{ objectFit: "cover" }}
-                          />
-                        </div>
-            
-            <span style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>SMK Citra Negara</span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18, maxWidth: 760, margin: '0 auto' }}>
+      {/* 1. Greeting */}
+      <Greeting nama={namaDepan} />
+
+      {/* 2. Status Pendaftaran */}
+      <Card>
+        <CardHeader
+          title="Status Pendaftaran"
+          badge={
+            isDraft
+              ? <Badge label="Draft — Belum Dikirim" color="#92400E" bg="#FEF3C7" border="#FDE68A" />
+              : statusCfg && <Badge label={statusCfg.label} color={statusCfg.color} bg={statusCfg.bg} border={statusCfg.border} Icon={statusCfg.icon} />
+          }
+        />
+        {isDraft ? (
+          <p style={{ fontSize: 13.5, color: '#6B7280', lineHeight: 1.7 }}>
+            Formulir Anda tersimpan sebagai draft dan <strong>belum masuk ke admin</strong>. Lengkapi data, berkas, dan pembayaran untuk dapat mengirim formulir.
+          </p>
+        ) : (
+          <>
+            <ProgressTahapan currentStep={currentStep} isDitolak={isDitolak} />
+            {selanjutnya && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', marginBottom: 4, letterSpacing: 0.3 }}>SELANJUTNYA</div>
+                <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.6, margin: 0 }}>{selanjutnya}</p>
+              </div>
+            )}
+          </>
+        )}
+        <div style={{ marginTop: 16 }}>
+          <Link href="/dashboard/pendaftaran" style={linkButtonStyle}>
+            Lihat Detail Pendaftaran <ChevronRight size={14} />
           </Link>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 32, height: 32, background: 'rgba(200,151,58,0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <User size={16} color="#C8973A" />
-              </div>
-              <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13 }}>{session?.namaLengkap}</span>
-            </div>
-            <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.6)', padding: '6px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontFamily: 'inherit' }}>
-              <LogOut size={14} /> Keluar
-            </button>
-          </div>
         </div>
-      </header>
+      </Card>
 
-      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '36px 24px' }}>
-        <div style={{ marginBottom: 32 }}>
-          <h1 className="font-display" style={{ fontSize: 30, color: '#0B2A1C)', marginBottom: 4 }}>Halo, {session?.namaLengkap?.split(' ')[0]}! 👋</h1>
-          <p style={{ color: '#6B7280', fontSize: 14 }}>Dashboard SPMB SMK Citra Negara</p>
+      {/* 3. Ringkasan Tindakan */}
+      <Card accent={isDitolak ? '#DC2626' : isDraft && !bolehKirim ? '#C8973A' : undefined}>
+        <h3 style={sectionTitleStyle}>Yang Perlu Dilakukan</h3>
+        {isDitolak ? (
+          <TindakanBlock
+            tone="error"
+            text={pendaftaran.alasanPenolakan || pendaftaran.catatan || 'Admin meminta Anda memperbaiki berkas pendaftaran.'}
+            actionLabel="Perbaiki & Kirim Ulang Berkas"
+            actionHref="/spmb/revisi"
+            icon={XCircle}
+          />
+        ) : isDraft ? (
+          <TindakanBlock
+            tone={bolehKirim ? 'success' : 'warning'}
+            text={
+              bolehKirim
+                ? 'Anda sudah membayar uang pendaftaran. Periksa kembali data & berkas Anda, lalu kirim formulir ke admin.'
+                : `Bayar uang pendaftaran minimal ${formatRupiah(minimalPembayaranAwal)} agar formulir dapat dikirim ke admin. Sudah disetor: ${formatRupiah(totalDisetorkan)}.`
+            }
+            icon={bolehKirim ? CheckCircle : AlertCircle}
+            customAction={
+              bolehKirim ? (
+                <div>
+                  {kirimError && <ErrorBox text={kirimError} />}
+                  <button onClick={handleKirimFormulir} disabled={kirimLoading} className="btn-primary" style={{ fontSize: 13.5, opacity: kirimLoading ? 0.6 : 1, marginTop: kirimError ? 8 : 0 }}>
+                    {kirimLoading ? 'Mengirim...' : 'Kirim Formulir ke Admin'}
+                  </button>
+                </div>
+              ) : (
+                <Link href="/dashboard/pembayaran" style={linkButtonStyle}>Lengkapi Pembayaran <ChevronRight size={14} /></Link>
+              )
+            }
+          />
+        ) : !isDraft && sisaBayar > 0 && !isDitolak ? (
+          <TindakanBlock
+            tone="warning"
+            text={`Anda masih memiliki sisa tagihan ${formatRupiah(sisaBayar)} yang perlu dilunasi.`}
+            actionLabel="Lanjutkan Pembayaran"
+            actionHref="/dashboard/pembayaran"
+            icon={Wallet}
+          />
+        ) : kurangWajib > 0 ? (
+          <TindakanBlock
+            tone="warning"
+            text={`${kurangWajib} dokumen wajib belum dilengkapi.`}
+            actionLabel="Lengkapi Dokumen"
+            actionHref="/dashboard/dokumen"
+            icon={FolderOpen}
+          />
+        ) : isDiterima && !pendaftaran.sudahDaftarUlang ? (
+          <TindakanBlock tone="success" text="Anda dinyatakan diterima. Lakukan daftar ulang sesuai informasi di bagian bawah halaman ini." icon={CheckCircle} />
+        ) : (
+          <TindakanBlock tone="success" text="Tidak ada tindakan yang perlu dilakukan saat ini. Mohon tunggu proses dari admin." icon={CheckCircle} />
+        )}
+      </Card>
+
+      {/* 4. Ringkasan Pembayaran */}
+      <Card>
+        <CardHeader title="Pembayaran" badge={statusLunas ? <Badge label="Lunas" color="#065F46" bg="#D1FAE5" border="#A7F3D0" /> : undefined} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: 16 }}>
+          <MiniStat label="Total Tagihan" value={formatRupiah(totalTagihan)} />
+          <MiniStat label="Total Dibayar" value={formatRupiah(totalDibayar)} tone="success" />
+          {kelebihanBayar > 0 ? (
+            <MiniStat label="Kelebihan" value={formatRupiah(kelebihanBayar)} tone="info" />
+          ) : (
+            <MiniStat label={sisaBayar > 0 ? 'Sisa Tagihan' : 'Status'} value={sisaBayar > 0 ? formatRupiah(sisaBayar) : 'Lunas'} tone={sisaBayar > 0 ? 'warning' : 'success'} />
+          )}
         </div>
+        <Link href="/dashboard/pembayaran" style={linkButtonStyle}>Lihat Pembayaran <ChevronRight size={14} /></Link>
+      </Card>
 
-        {!pendaftaran && (
-          <div style={{ background: 'white', borderRadius: 20, padding: 48, textAlign: 'center', border: '2px dashed #E5E7EB', maxWidth: 560, margin: '0 auto' }}>
-            <div style={{ width: 80, height: 80, background: 'rgba(200,151,58,0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-              <FileText size={36} color="#C8973A" />
-            </div>
-            <h2 className="font-display" style={{ fontSize: 24, color: '#0A1628', marginBottom: 12 }}>Belum Ada Pendaftaran</h2>
-            <p style={{ color: '#6B7280', fontSize: 14, lineHeight: 1.7, marginBottom: 32 }}>Anda belum mengisi formulir pendaftaran SPMB.</p>
-            <Link href="/spmb/daftar" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 15 }}>
-              Isi Formulir Pendaftaran →
-            </Link>
+      {/* 5. Ringkasan Dokumen */}
+      <Card>
+        <CardHeader title="Dokumen" />
+        <p style={{ fontSize: 13.5, color: '#374151', marginBottom: 10 }}>{jumlahLengkap} dari {berkas.length} berkas terupload</p>
+        <div style={{ height: 8, background: '#F3F4F6', borderRadius: 6, overflow: 'hidden', marginBottom: 12 }}>
+          <div style={{ height: '100%', width: `${(jumlahLengkap / berkas.length) * 100}%`, background: kurangWajib > 0 ? '#E8B84B' : '#059669', borderRadius: 6, transition: 'width 0.3s' }} />
+        </div>
+        {kurangWajib > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, padding: '9px 12px', marginBottom: 12 }}>
+            <AlertCircle size={14} color="#B45309" style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: 12.5, color: '#92400E' }}>{kurangWajib} dokumen perlu dilengkapi</span>
           </div>
         )}
+        <Link href="/dashboard/dokumen" style={linkButtonStyle}>Lihat Dokumen <ChevronRight size={14} /></Link>
+      </Card>
 
-        {pendaftaran && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24, alignItems: 'flex-start' }}>
-            {/* LEFT */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-              {/* Status Card */}
-              <div style={{ background: 'white', borderRadius: 16, padding: 28, border: '1px solid #F0EBE0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
-                  <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0B2A1C' }}>Status Pendaftaran</h3>
-                  {statusCfg && (
-                    <span style={{ background: statusCfg.bg, color: statusCfg.color, border: `1px solid ${statusCfg.border}`, padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <statusCfg.icon size={13} /> {statusCfg.label}
-                    </span>
-                  )}
-                </div>
-
-                {/* Progress */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 24, overflowX: 'auto' }}>
-                  {TAHAPAN.map((t, i) => {
-                    const done = currentStep > t.step;
-                    const active = currentStep === t.step;
-                    const isRejected = isDitolak && t.step === 1;
-                    return (
-                      <div key={t.step} style={{ display: 'flex', alignItems: 'flex-start', flex: 1 }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
-                          <div style={{ width: 36, height: 36, borderRadius: '50%', background: isRejected ? '#FEE2E2' : done || active ? 'linear-gradient(135deg,#C8973A,#E8B84B)' : '#F3F4F6', border: isRejected ? '2px solid #FECACA' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: isRejected ? '#DC2626' : done || active ? '#0A1628' : '#9CA3AF', marginBottom: 8, flexShrink: 0 }}>
-                            {isRejected ? '✗' : done ? '✓' : t.step}
-                          </div>
-                          <span style={{ fontSize: 11, fontWeight: active ? 700 : 500, color: isRejected ? '#DC2626' : active ? '#C8973A' : done ? '#0A1628' : '#9CA3AF', textAlign: 'center', whiteSpace: 'nowrap' }}>{t.label}</span>
-                          <span style={{ fontSize: 10, color: '#9CA3AF', textAlign: 'center', whiteSpace: 'nowrap' }}>{t.sub}</span>
-                        </div>
-                        {i < TAHAPAN.length - 1 && <div style={{ height: 2, flex: 0.4, background: done ? '#C8973A' : '#E5E7EB', margin: '17px 4px 0', flexShrink: 0 }} />}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {statusCfg && (
-                  <div style={{ background: statusCfg.bg, border: `1px solid ${statusCfg.border}`, borderRadius: 10, padding: 14, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                    <statusCfg.icon size={18} color={statusCfg.color} style={{ flexShrink: 0, marginTop: 1 }} />
-                    <p style={{ fontSize: 13, color: statusCfg.color, lineHeight: 1.6, margin: 0 }}>{statusCfg.desc}</p>
-                  </div>
-                )}
-
-                {/* Alasan Penolakan */}
-                {isDitolak && (pendaftaran.alasanPenolakan || pendaftaran.catatan) && (
-                  <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 10, padding: 16, marginTop: 14 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#C2410C', marginBottom: 6 }}>📋 CATATAN DARI ADMIN:</div>
-                    {pendaftaran.alasanPenolakan && <p style={{ fontSize: 13, color: '#C2410C', lineHeight: 1.6, margin: 0 }}>{pendaftaran.alasanPenolakan}</p>}
-                    {pendaftaran.catatan && <p style={{ fontSize: 13, color: '#EA580C', marginTop: pendaftaran.alasanPenolakan ? 8 : 0, lineHeight: 1.6, margin: 0 }}>{pendaftaran.catatan}</p>}
-                  </div>
-                )}
-
-                {isDitolak && (
-                  <div style={{ marginTop: 16 }}>
-                    <Link href="/spmb/revisi" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 14 }}>
-                      <Edit3 size={16} /> Perbaiki & Kirim Ulang Berkas
-                    </Link>
-                    {(pendaftaran.revisiCount || 0) > 0 && <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 8 }}>Sudah direvisi {pendaftaran.revisiCount}x — riwayat tersimpan</p>}
-                  </div>
-                )}
-              </div>
-
-              {/* Jadwal Tes */}
-              {hasTes && (
-                  <div style={{ background: '#1a4e35', borderRadius: 16, padding: 28, color: 'white', border: '2px solid #C8973A' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                    <div style={{ width: 40, height: 40, background: 'rgba(200,151,58,0.2)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Bell size={20} color="#C8973A" />
-                    </div>
-                    <div>
-                      <h3 style={{ fontSize: 16, fontWeight: 700, color: '#E8B84B', margin: 0 }}>📢 Informasi Jadwal Tes</h3>
-                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', margin: 0 }}>Dari SMK Citra Negara</p>
-                    </div>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: pendaftaran.infoTes ? 16 : 0 }}>
-                    <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 10, padding: '12px 16px' }}>
-                      <div style={{ fontSize: 10, color: '#C8973A', fontWeight: 700, marginBottom: 4 }}>📅 TANGGAL & WAKTU</div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: 'white' }}>{pendaftaran.jadwalTes || 'Akan diinformasikan'}</div>
-                    </div>
-                    <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 10, padding: '12px 16px' }}>
-                      <div style={{ fontSize: 10, color: '#C8973A', fontWeight: 700, marginBottom: 4 }}>📍 LOKASI</div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: 'white' }}>{pendaftaran.lokasiTes || 'SMK Citra Negara'}</div>
-                    </div>
-                  </div>
-                  {pendaftaran.infoTes && (
-                    <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: 14 }}>
-                      <div style={{ fontSize: 10, color: '#C8973A', fontWeight: 700, marginBottom: 6 }}>📝 INFORMASI TAMBAHAN</div>
-                      <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-line' }}>{pendaftaran.infoTes}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Pengumuman Hasil */}
-              {(isLulus || isTidakLulus || isDaftarUlang) && (
-                <div style={{ background: (isLulus || isDaftarUlang) ? 'linear-gradient(135deg,#1E3A8A,#3B82F6)' : 'linear-gradient(135deg,#991B1B,#B91C1C)', borderRadius: 16, padding: 32, color: 'white', textAlign: 'center' }}>
-                  <div style={{ fontSize: 48, marginBottom: 16 }}>{(isLulus || isDaftarUlang) ? '🎉' : '😔'}</div>
-                  <h2 className="font-display" style={{ fontSize: 26, color: 'white', marginBottom: 8 }}>
-                    {isDaftarUlang ? 'Daftar Ulang Selesai!' : isLulus ? 'Selamat! Anda Diterima!' : 'Mohon Maaf'}
-                  </h2>
-                  <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 1.7, marginBottom: 16 }}>
-                    {isDaftarUlang
-                      ? 'Daftar ulang Anda telah dikonfirmasi. Selamat bergabung sebagai peserta didik baru SMK Citra Negara!'
-                      : isLulus
-                      ? 'Anda dinyatakan LULUS seleksi dan diterima sebagai peserta didik baru SMK Citra Negara!'
-                      : 'Anda dinyatakan tidak lulus seleksi penerimaan peserta didik baru SMK Citra Negara.'}
-                  </p>
-
-                  {/* Nilai */}
-                  {(pendaftaran.nilaiTes != null || pendaftaran.nilaiSeleksi != null) && (
-                    <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
-                      {pendaftaran.nilaiTes != null && (
-                        <div style={{ background: 'rgba(255,255,255,0.12)', borderRadius: 10, padding: '12px 24px' }}>
-                          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginBottom: 4 }}>NILAI TES</div>
-                          <div className="font-display" style={{ fontSize: 32, fontWeight: 800, color: 'white' }}>{pendaftaran.nilaiTes}</div>
-                        </div>
-                      )}
-                      {pendaftaran.nilaiSeleksi != null && (
-                        <div style={{ background: 'rgba(255,255,255,0.12)', borderRadius: 10, padding: '12px 24px' }}>
-                          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginBottom: 4 }}>NILAI SELEKSI</div>
-                          <div className="font-display" style={{ fontSize: 32, fontWeight: 800, color: '#FEF3C7' }}>{pendaftaran.nilaiSeleksi}</div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {pendaftaran.pesanPengumuman && (
-                    <div style={{ background: 'rgba(255,255,255,0.12)', borderRadius: 10, padding: 16, marginBottom: 16 }}>
-                      <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-line' }}>{pendaftaran.pesanPengumuman}</p>
-                    </div>
-                  )}
-
-                  {/* Info Daftar Ulang */}
-                  {isLulus && !isDaftarUlang && (
-                    <div style={{ background: 'rgba(255,255,255,0.12)', borderRadius: 10, padding: 16 }}>
-                      <p style={{ fontSize: 13, fontWeight: 700, color: '#FEF3C7', marginBottom: 8 }}>📌 LANGKAH SELANJUTNYA — DAFTAR ULANG:</p>
-                      <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, margin: 0 }}>
-                        Harap datang ke sekolah untuk daftar ulang secara <strong>offline</strong> dengan membawa dokumen asli. Hubungi sekolah untuk informasi jadwal daftar ulang.
-                      </p>
-                      <div style={{ marginTop: 12, fontSize: 13, color: '#FEF3C7', fontWeight: 600 }}>
-                         0812-3456-7890 (WhatsApp)
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Konfirmasi Daftar Ulang */}
-                  {isDaftarUlang && pendaftaran.tanggalDaftarUlang && (
-                    <div style={{ background: 'rgba(255,255,255,0.12)', borderRadius: 10, padding: 14 }}>
-                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', margin: 0 }}>
-                        Dikonfirmasi pada: {new Date(pendaftaran.tanggalDaftarUlang).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                      </p>
-                      {pendaftaran.catatanDaftarUlang && <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 6, margin: 0 }}>{pendaftaran.catatanDaftarUlang}</p>}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Data Pendaftaran */}
-              <div style={{ background: 'white', borderRadius: 16, padding: 24, border: '1px solid #F0EBE0' }}>
-                <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0A1628', marginBottom: 18 }}>Data Pendaftaran</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                  {[
-                    { label: 'Nama Lengkap', val: pendaftaran.namaLengkap },
-                    { label: 'Jurusan Pilihan', val: pendaftaran.jurusan },
-                    { label: 'Asal Sekolah', val: pendaftaran.asalSMP || pendaftaran.asalSekolah || '-' },
-                    { label: 'Tanggal Daftar', val: new Date(pendaftaran.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) },
-                  ].map(({ label, val }) => (
-                    <div key={label} style={{ background: '#FAFAFA', borderRadius: 10, padding: '12px 14px' }}>
-                      <div style={{ fontSize: 11, color: '#9CA3AF', fontWeight: 600, marginBottom: 4 }}>{label}</div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: '#0A1628' }}>{val}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* RIGHT */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {/* Tahapan */}
-              <div style={{ background: ' #083d1e', borderRadius: 16, padding: 22, color: 'white' }}>
-                <h4 style={{ fontSize: 14, fontWeight: 700, color: '#E8B84B', marginBottom: 16 }}>Tahapan Selanjutnya</h4>
-                {[
-                  { step: 'Tunggu verifikasi dari admin', done: currentStep > 2 },
-                  { step: 'Ikuti proses seleksi di sekolah', done: currentStep > 3 },
-                  { step: 'Cek pengumuman hasil seleksi', done: isDone },
-                  { step: 'Daftar ulang ke sekolah (offline)', done: isDaftarUlang },
-                ].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 12, alignItems: 'flex-start' }}>
-                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: item.done ? '#C8973A' : 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 11, fontWeight: 700, color: item.done ? '#0A1628' : 'rgba(255,255,255,0.3)' }}>
-                      {item.done ? '✓' : i + 1}
-                    </div>
-                    <span style={{ fontSize: 13, color: item.done ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.5)', lineHeight: 1.4 }}>{item.step}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Berkas */}
-              <div style={{ background: 'white', borderRadius: 16, padding: 20, border: '1px solid #F0EBE0' }}>
-                <h4 style={{ fontSize: 14, fontWeight: 700, color: '#0A1628', marginBottom: 14 }}>Berkas yang Diupload</h4>
-                {[
-                  { label: 'Ijazah', path: pendaftaran.fileIjazah },
-                  { label: 'Akte', path: pendaftaran.fileAkte },
-                  { label: 'Kartu Keluarga', path: pendaftaran.fileKK },
-                  { label: 'KTP Ortu', path: pendaftaran.fileKtpOrtu },
-                  { label: 'Kartu KIP', path: pendaftaran.fileKip },
-                  { label: 'Pas Foto', path: pendaftaran.fileFoto },
-                ].map((f, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: i < 5 ? '1px solid #F3F4F6' : 'none' }}>
-                    <span style={{ fontSize: 13, color: '#374151' }}>{f.label}</span>
-                    {f.path
-                      ? <a href={f.path} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: '#C8973A', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>Lihat <ChevronRight size={12} /></a>
-                      : <span style={{ fontSize: 11, color: '#D1D5DB' }}>—</span>}
-                  </div>
-                ))}
-              </div>
-
-              {/* Bantuan */}
-              <div style={{ background: 'white', borderRadius: 16, padding: 20, border: '1px solid #F0EBE0' }}>
-                <h4 style={{ fontSize: 14, fontWeight: 700, color: '#0A1628', marginBottom: 10 }}>Butuh Bantuan?</h4>
-                <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6, marginBottom: 12 }}>Hubungi kami jika ada pertanyaan seputar SPMB.</p>
-                <div style={{ fontSize: 13, color: '#C8973A', fontWeight: 600 }}>📞 (021) 7720-1052</div>
-                <div style={{ fontSize: 13, color: '#C8973A', fontWeight: 600, marginTop: 6}}>💬 0812-3456-7890 (WhatsApp)</div>
-                <div style={{ fontSize: 13, color: '#C8973A', fontWeight: 600, marginTop: 6 }}>📧 info@citranegara.sch.id</div>
-              </div>
-            </div>
+      {/* 6. Informasi/Pengumuman penting */}
+      {isDiterima && (
+        <div style={{ background: 'linear-gradient(135deg,#123524,#0B2A1C)', borderRadius: 16, padding: 26, color: 'white', border: '1px solid #C8973A' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <PartyPopper size={26} color="#E8B84B" />
+            <h2 className="font-display" style={{ fontSize: 19, color: 'white', margin: 0 }}>
+              {isDaftarUlang ? 'Daftar Ulang Selesai!' : 'Selamat! Anda Diterima!'}
+            </h2>
           </div>
-        )}
-      </main>
+          <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, lineHeight: 1.7, marginBottom: pendaftaran.pesanPengumuman || (!isDaftarUlang && dokumenSekolah.some(d => d.url)) ? 14 : 0 }}>
+            {isDaftarUlang
+              ? 'Daftar ulang Anda telah dikonfirmasi. Selamat bergabung sebagai peserta didik baru!'
+              : 'Anda dinyatakan diterima sebagai peserta didik baru. Segera lakukan daftar ulang sesuai informasi di bawah.'}
+          </p>
+
+          {pendaftaran.pesanPengumuman && (
+            <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 10, padding: 14, marginBottom: 14 }}>
+              <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.9)', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-line' }}>{pendaftaran.pesanPengumuman}</p>
+            </div>
+          )}
+
+          {!isDaftarUlang && dokumenSekolah.some(d => d.url) && (
+            <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 10, padding: 14, marginBottom: 14 }}>
+              <p style={{ fontSize: 12.5, fontWeight: 700, color: '#FEF3C7', marginBottom: 8 }}>Download & Lengkapi Dokumen Daftar Ulang</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {dokumenSekolah.filter(d => d.url).map(d => (
+                  <a key={d.jenis} href={d.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.08)', borderRadius: 8, padding: '9px 12px', color: 'white', textDecoration: 'none', fontSize: 12.5 }}>
+                    {d.nama} <span style={{ fontSize: 11, color: '#FEF3C7' }}>Download ↓</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!isDaftarUlang ? (
+            <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, margin: 0 }}>
+              Segera datang ke sekolah dengan membawa dokumen di atas yang sudah diisi/ditandatangani. Informasi lebih lanjut akan disampaikan melalui WhatsApp.
+            </p>
+          ) : pendaftaran.tanggalDaftarUlang && (
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', margin: 0 }}>
+              Dikonfirmasi pada {new Date(pendaftaran.tanggalDaftarUlang).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
+
+// =====================================================================
+// Sub-komponen tampilan kecil — dipakai berulang di halaman ini.
+// =====================================================================
+
+function Greeting({ nama }: { nama: string }) {
+  return (
+    <div>
+      <h1 className="font-display" style={{ fontSize: 24, color: '#0B2A1C', marginBottom: 2 }}>Halo, {nama} 👋</h1>
+      <p style={{ color: '#6B7280', fontSize: 13.5 }}>Berikut ringkasan pendaftaran SPMB Anda.</p>
+    </div>
+  );
+}
+
+function EmptyPromptCard({ title, desc, ctaLabel, ctaHref }: { title: string; desc: string; ctaLabel?: string; ctaHref?: string }) {
+  return (
+    <div style={{ background: 'white', borderRadius: 14, padding: 24, border: '1px solid #EDE7DA', boxShadow: '0 1px 2px rgba(10,22,40,0.04)' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: ctaLabel ? 20 : 0 }}>
+        <div style={{ width: 38, height: 38, background: '#FAF3E3', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <ClipboardList size={18} color="#92681A" />
+        </div>
+        <div>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0A1628', margin: 0, marginBottom: 4 }}>{title}</h2>
+          <p style={{ color: '#6B7280', fontSize: 13, lineHeight: 1.55, margin: 0 }}>{desc}</p>
+        </div>
+      </div>
+      {ctaLabel && ctaHref && (
+        <Link href={ctaHref} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 13.5 }}>
+          {ctaLabel} <ChevronRight size={15} />
+        </Link>
+      )}
+    </div>
+  );
+}
+
+function Card({ children, accent }: { children: React.ReactNode; accent?: string }) {
+  return (
+    <div style={{ background: 'white', borderRadius: 14, padding: 22, border: accent ? `1.5px solid ${accent}` : '1px solid #F0EBE0' }}>
+      {children}
+    </div>
+  );
+}
+
+function CardHeader({ title, badge }: { title: string; badge?: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+      <h3 style={sectionTitleStyle}>{title}</h3>
+      {badge}
+    </div>
+  );
+}
+
+function Badge({ label, color, bg, border, Icon }: { label: string; color: string; bg: string; border: string; Icon?: any }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: bg, color, border: `1px solid ${border}`, padding: '4px 12px', borderRadius: 20, fontSize: 11.5, fontWeight: 700 }}>
+      {Icon && <Icon size={12} />} {label}
+    </span>
+  );
+}
+
+function MiniStat({ label, value, tone }: { label: string; value: string; tone?: 'success' | 'warning' | 'info' }) {
+  const map = {
+    success: { bg: '#F0FDF4', color: '#065F46' },
+    warning: { bg: '#FFFBEB', color: '#92400E' },
+    info: { bg: '#EFF6FF', color: '#1E40AF' },
+  };
+  const c = tone ? map[tone] : { bg: '#FAFAFA', color: '#0B2A1C' };
+  return (
+    <div style={{ background: c.bg, borderRadius: 10, padding: '11px 13px' }}>
+      <div style={{ fontSize: 10, color: c.color, fontWeight: 700, opacity: 0.8, marginBottom: 2 }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 14.5, fontWeight: 700, color: c.color }}>{value}</div>
+    </div>
+  );
+}
+
+function ProgressTahapan({ currentStep, isDitolak }: { currentStep: number; isDitolak: boolean }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+      {TAHAPAN.map((t, i) => {
+        const done = currentStep > t.step;
+        const activeStep = currentStep === t.step;
+        const isRejected = isDitolak && t.step === 1;
+        return (
+          <div key={t.step} style={{ display: 'flex', alignItems: 'flex-start', flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, minWidth: 0 }}>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: isRejected ? '#FEE2E2' : done || activeStep ? 'linear-gradient(135deg,#C8973A,#E8B84B)' : '#F3F4F6', border: isRejected ? '2px solid #FECACA' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 13, color: isRejected ? '#DC2626' : done || activeStep ? '#0A1628' : '#9CA3AF', marginBottom: 6, flexShrink: 0 }}>
+                {isRejected ? '✗' : done ? '✓' : t.step}
+              </div>
+              <span style={{ fontSize: 10.5, fontWeight: activeStep ? 700 : 500, color: isRejected ? '#DC2626' : activeStep ? '#C8973A' : done ? '#0A1628' : '#9CA3AF', textAlign: 'center' }}>{t.label}</span>
+            </div>
+            {i < TAHAPAN.length - 1 && <div style={{ height: 2, flex: 0.5, background: done ? '#C8973A' : '#E5E7EB', margin: '15px 2px 0', flexShrink: 0 }} />}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function TindakanBlock({
+  tone, text, icon: Icon, actionLabel, actionHref, customAction,
+}: {
+  tone: 'success' | 'warning' | 'error';
+  text: string;
+  icon: any;
+  actionLabel?: string;
+  actionHref?: string;
+  customAction?: React.ReactNode;
+}) {
+  const map = {
+    success: { bg: '#F0FDF4', border: '#A7F3D0', color: '#065F46' },
+    warning: { bg: '#FFFBEB', border: '#FDE68A', color: '#92400E' },
+    error: { bg: '#FEF2F2', border: '#FECACA', color: '#991B1B' },
+  };
+  const c = map[tone];
+  return (
+    <div style={{ background: c.bg, border: `1px solid ${c.border}`, borderRadius: 10, padding: 14 }}>
+      <div style={{ display: 'flex', gap: 9, alignItems: 'flex-start', marginBottom: actionLabel || customAction ? 12 : 0 }}>
+        <Icon size={17} color={c.color} style={{ flexShrink: 0, marginTop: 1 }} />
+        <p style={{ fontSize: 13, color: c.color, lineHeight: 1.6, margin: 0 }}>{text}</p>
+      </div>
+      {customAction}
+      {actionLabel && actionHref && (
+        <Link href={actionHref} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 13 }}>
+          <Edit3 size={14} /> {actionLabel}
+        </Link>
+      )}
+    </div>
+  );
+}
+
+function ErrorBox({ text }: { text: string }) {
+  return <div style={{ background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 8, padding: 9, fontSize: 12, color: '#991B1B' }}>{text}</div>;
+}
+
+const sectionTitleStyle: React.CSSProperties = { fontSize: 15, fontWeight: 700, color: '#0B2A1C', margin: 0 };
+
+const linkButtonStyle: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700,
+  color: '#0B3D2E', textDecoration: 'none', background: '#F3EFE3', padding: '9px 16px', borderRadius: 8,
+};

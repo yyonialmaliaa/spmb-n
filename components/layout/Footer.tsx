@@ -152,9 +152,6 @@ export default function Footer() {
           <div>
             <h4 style={{ fontWeight: 700, marginBottom: 16, fontSize: 14, color: '#C8973A' }}>Menu Utama</h4>
             {[
-              { href: '/', label: 'Beranda' },
-              { href: '/tentang', label: 'Tentang Kami' },
-              { href: '/jurusan', label: 'Program Keahlian' },
               { href: '/spmb', label: 'SPMB Online' },
               { href: '/login', label: 'Login Siswa' },
             ].map(link => (
@@ -166,23 +163,6 @@ export default function Footer() {
               onMouseEnter={e => (e.currentTarget.style.color = '#C8973A')}
               onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
               >→ {link.label}</Link>
-            ))}
-          </div>
-
-          {/* Jurusan */}
-          <div>
-            <h4 style={{ fontWeight: 700, marginBottom: 16, fontSize: 14, color: '#C8973A' }}>Program Keahlian</h4>
-            {[
-              'Teknik Jaringan Komputer dan Telekomunikasi (TJKT)',
-              'Pengembangan Perangkat Lunak dan Gim (PPLG)',
-              'Manajemen Perkantoran dan Layanan Bisnis (MPLB)',
-              'Desain Komunikasi Visual (DKV)',
-              'Pemasaran (PM)',
-              'Perhotelan (PH)',
-            ].map(j => (
-              <div key={j} style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, padding: '5px 0' }}>
-                 {j}
-              </div>
             ))}
           </div>
 

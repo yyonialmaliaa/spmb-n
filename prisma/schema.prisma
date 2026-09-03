@@ -8,105 +8,242 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  email       String   @unique
+  id          String       @id @default(cuid())
+  email       String       @unique
   password    String
-  role        String   @default("user")
+  role        String       @default("user")
   namaLengkap String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   pendaftaran Pendaftaran?
 }
 
+model TahunAjaran {
+  id              String               @id @default(cuid())
+  nama            String               @unique
+  aktif           Boolean              @default(false)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  diskonList      Diskon[]
+  dokumenList     DokumenPersyaratan[]
+  gelombangList   Gelombang[]
+  hargaList       Harga[]
+  pendaftaranList Pendaftaran[]
+  pengaturan      PengaturanKeuangan?
+}
+
+model Harga {
+  id              String        @id @default(cuid())
+  tahunAjaranId   String
+  jenjang         String
+  jurusan         String
+  kelas           String
+  nominal         Int
+  aktif           Boolean       @default(true)
+  urutan          Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  tahunAjaran     TahunAjaran   @relation(fields: [tahunAjaranId], references: [id], onDelete: Cascade)
+  pendaftaranList Pendaftaran[]
+
+  @@unique([tahunAjaranId, jenjang, jurusan, kelas])
+  @@index([tahunAjaranId, jenjang])
+}
+
+model Diskon {
+  id              String        @id @default(cuid())
+  tahunAjaranId   String
+  jenis           String
+  tipeNominal     String        @default("rupiah")
+  nominal         Int
+  aktif           Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  tahunAjaran     TahunAjaran   @relation(fields: [tahunAjaranId], references: [id], onDelete: Cascade)
+  pendaftaranList Pendaftaran[]
+
+  @@index([tahunAjaranId])
+}
+
+model PengaturanKeuangan {
+  id                    String      @id @default(cuid())
+  tahunAjaranId         String      @unique
+  minimalPembayaranAwal Int         @default(200000)
+  minimalCicilan        Int         @default(100000)
+  updatedAt             DateTime    @updatedAt
+  tahunAjaran           TahunAjaran @relation(fields: [tahunAjaranId], references: [id], onDelete: Cascade)
+}
+
+model Gelombang {
+  id              String        @id @default(cuid())
+  tahunAjaranId   String
+  jenjang         String
+  untukAlumni     Boolean       @default(false)
+  nama            String
+  urutan          Int           @default(1)
+  tanggalMulai    DateTime?
+  tanggalSelesai  DateTime?
+  diskonPersen    Float         @default(0)
+  aktif           Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  tahunAjaran     TahunAjaran   @relation(fields: [tahunAjaranId], references: [id], onDelete: Cascade)
+  pendaftaranList Pendaftaran[]
+
+  @@index([tahunAjaranId, jenjang, untukAlumni])
+}
+
 model Pendaftaran {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                     String       @id @default(cuid())
+  userId                 String?      @unique
+  tahunAjaranId          String
+  namaLengkap            String?
+  namaPanggilan          String?
+  tempatLahir            String?
+  tanggalLahir           String?
+  ttl                    String?
+  jenisKelamin           String?
+  agama                  String?
+  anakKe                 String?
+  alamat                 String?
+  rt                     String?
+  rw                     String?
+  kelurahan              String?
+  kecamatan              String?
+  kabupaten              String?
+  beratBadan             String?
+  tinggiBadan            String?
+  golonganDarah          String?
+  nisn                   String?
+  nik                    String?
+  noPribadi              String?
+  ukuranSeragam          String?
+  namaPemberiReferensi   String?
+  noHpReferensi          String?
+  asalSD                 String?
+  asalSMP                String?
+  asalSekolah            String?
+  jurusan                String?
+  jenjang                String       @default("smk")
+  kelas                  String?
+  tipePendaftaran        String       @default("baru")
+  kelasMasuk             String?
+  sumberDaftar           String       @default("online")
+  alumniSmpCitraNegara   Boolean?
+  namaAyah               String?
+  ttlAyah                String?
+  pendidikanAyah         String?
+  pekerjaanAyah          String?
+  penghasilanAyah        String?
+  noHpAyah               String?
+  alamatAyah             String?
+  namaIbu                String?
+  ttlIbu                 String?
+  pendidikanIbu          String?
+  pekerjaanIbu           String?
+  penghasilanIbu         String?
+  noHpIbu                String?
+  alamatIbu              String?
+  namaWali               String?
+  ttlWali                String?
+  pendidikanWali         String?
+  pekerjaanWali          String?
+  penghasilanWali        String?
+  noHpWali               String?
+  alamatWali             String?
+  namaOrtu               String?
+  noOrtu                 String?
+  jenisIjazah            String?
+  fileIjazah             String?
+  fileAkte               String?
+  fileKK                 String?
+  fileKtpOrtu            String?
+  fileKip                String?
+  fileFoto               String?
+  status                 String       @default("draft")
+  nilaiSeleksi           Float?
+  catatan                String?
+  alasanPenolakan        String?
+  waVerified             Boolean      @default(false)
+  hargaId                String?
+  hargaPokok             Int?
+  gelombangId            String?
+  gelombang              String?
+  gelombangDiskonNominal Int          @default(0)
+  diskonId               String?
+  diskonNominal          Int          @default(0)
+  totalTagihan           Int?
+  totalTagihanLocked     Boolean      @default(false)
+  metodePembayaran       String?
+  buktiPembayaran        String?
+  statusPembayaran       String       @default("belum_bayar")
+  catatanPembayaran      String?
+  tanggalBayar           DateTime?
+  revisiCount            Int          @default(0)
+  lastRevisiAt           DateTime?
+  pesanPengumuman        String?
+  sudahDaftarUlang       Boolean      @default(false)
+  tanggalDaftarUlang     DateTime?
+  catatanDaftarUlang     String?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+  diskonNama             String?
+  lastStep               Int?
+  notifikasiList         Notifikasi[]
+  pembayaranList         Pembayaran[]
+  diskon                 Diskon?      @relation(fields: [diskonId], references: [id])
+  gelombangRelasi        Gelombang?   @relation(fields: [gelombangId], references: [id])
+  harga                  Harga?       @relation(fields: [hargaId], references: [id])
+  tahunAjaran            TahunAjaran  @relation(fields: [tahunAjaranId], references: [id])
+  user                   User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  namaLengkap          String
-  namaPanggilan        String?
-  tempatLahir          String?
-  tanggalLahir         String?
-  ttl                  String?
-  jenisKelamin         String
-  agama                String
-  anakKe               String?
-  alamat               String
-  rt                   String?
-  rw                   String?
-  kelurahan            String?
-  kecamatan            String?
-  kabupaten            String?
-  beratBadan           String?
-  tinggiBadan          String?
-  golonganDarah        String?
-  nisn                 String?
-  nik                  String?
-  noPribadi            String?
-  ukuranSeragam        String?
-  namaPemberiReferensi String?
-  noHpReferensi        String?
+  @@index([tahunAjaranId, jenjang])
+}
 
-  asalSD               String?
-  asalSMP              String?
-  asalSekolah          String?
-  jurusan              String
+model Pembayaran {
+  id                String      @id @default(cuid())
+  pendaftaranId     String
+  jenis             String      @default("bayar")
+  angsuranKe        Int
+  nominal           Int
+  metodePembayaran  String
+  buktiPembayaran   String?
+  bankPengirim      String?
+  namaPengirim      String?
+  alasanRefund      String?
+  status            String      @default("menunggu_verifikasi")
+  catatanAdmin      String?
+  tanggalBayar      DateTime    @default(now())
+  tanggalVerifikasi DateTime?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  kategoriAlokasi   String?
+  pendaftaran       Pendaftaran @relation(fields: [pendaftaranId], references: [id], onDelete: Cascade)
+}
 
-  namaAyah             String?
-  ttlAyah              String?
-  pendidikanAyah       String?
-  pekerjaanAyah        String?
-  penghasilanAyah      String?
-  noHpAyah             String?
-  alamatAyah           String?
+model Notifikasi {
+  id            String      @id @default(cuid())
+  pendaftaranId String
+  pesan         String
+  dibaca        Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  pendaftaran   Pendaftaran @relation(fields: [pendaftaranId], references: [id], onDelete: Cascade)
 
-  namaIbu              String?
-  ttlIbu               String?
-  pendidikanIbu        String?
-  pekerjaanIbu         String?
-  penghasilanIbu       String?
-  noHpIbu              String?
-  alamatIbu            String?
+  @@index([pendaftaranId, createdAt])
+}
 
-  namaWali             String?
-  ttlWali              String?
-  pendidikanWali       String?
-  pekerjaanWali        String?
-  penghasilanWali      String?
-  noHpWali             String?
-  alamatWali           String?
+model DokumenPersyaratan {
+  id            String      @id @default(cuid())
+  jenjang       String
+  jenis         String
+  nama          String
+  url           String?
+  namaFile      String?
+  urutan        Int         @default(0)
+  updatedAt     DateTime    @updatedAt
+  createdAt     DateTime    @default(now())
+  tahunAjaranId String
+  tahunAjaran   TahunAjaran @relation(fields: [tahunAjaranId], references: [id], onDelete: Cascade)
 
-  namaOrtu             String?
-  noOrtu               String?
-
-  fileIjazah           String?
-  fileAkte             String?
-  fileKK               String?
-  fileKtpOrtu          String?
-  fileKip              String?
-  fileFoto             String?
-
-  status               String   @default("pending")
-
-  nilaiSeleksi         Float?
-  nilaiTes             Float?
-  catatan              String?
-  alasanPenolakan      String?
-
-  jadwalTes            String?
-  lokasiTes            String?
-  infoTes              String?
-
-  revisiCount          Int      @default(0)
-  lastRevisiAt         DateTime?
-
-  pesanPengumuman      String?
-
-  sudahDaftarUlang     Boolean  @default(false)
-  tanggalDaftarUlang   DateTime?
-  catatanDaftarUlang   String?
-
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  @@unique([tahunAjaranId, jenjang, jenis])
 }

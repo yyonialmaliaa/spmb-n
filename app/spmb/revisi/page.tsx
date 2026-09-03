@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { GraduationCap, AlertCircle, CheckCircle, Upload, X, Loader, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
+import FormAlertModal, { AlertModalState } from '@/components/spmb/FormAlertModal';
 
 type Pendaftaran = {
   namaLengkap: string; jurusan: string; alasanPenolakan?: string; catatan?: string;
@@ -17,7 +18,7 @@ type FilesState = { ijazah: FileItem; akte: FileItem; kk: FileItem; ktpOrtu: Fil
 const emptyFile = (path = ''): FileItem => ({ file: null, path, uploading: false, error: '' });
 
 const FILE_FIELDS = [
-  { key: 'ijazah' as keyof FilesState, label: 'Fotocopy Ijazah yang telah dilegalisir', required: true },
+  { key: 'ijazah' as keyof FilesState, label: 'Fotocopy Ijazah atau Surat Keterangan Lulus (SKL)', required: true },
   { key: 'akte' as keyof FilesState, label: 'Fotocopy Akte Kelahiran', required: true },
   { key: 'kk' as keyof FilesState, label: 'Fotocopy Kartu Keluarga', required: true },
   { key: 'ktpOrtu' as keyof FilesState, label: 'Fotocopy KTP Ayah dan Ibu', required: true },
@@ -38,7 +39,7 @@ export default function RevisiPage() {
     ktpOrtu: emptyFile(), kip: emptyFile(), foto: emptyFile(),
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [alertModal, setAlertModal] = useState<AlertModalState>(null);
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
@@ -86,14 +87,13 @@ export default function RevisiPage() {
   };
 
   const handleSubmit = async () => {
-    setError('');
     const missing = FILE_FIELDS.filter(f => f.required && !files[f.key].path);
     if (missing.length > 0) {
-      setError(`File wajib belum diupload: ${missing.map(m => m.label.split(' ').slice(0, 2).join(' ')).join(', ')}`);
+      setAlertModal({ kind: 'error', title: 'Berkas Belum Lengkap', message: `Masih ada berkas wajib yang belum diupload: ${missing.map(m => m.label.split(' ').slice(0, 2).join(' ')).join(', ')}.`, focusId: `file-${missing[0].key}` });
       return;
     }
     if (FILE_FIELDS.some(f => files[f.key].uploading)) {
-      setError('Tunggu proses upload selesai');
+      setAlertModal({ kind: 'info', title: 'Mohon Tunggu', message: 'Proses upload berkas masih berlangsung, silakan tunggu sebentar.' });
       return;
     }
     setLoading(true);
@@ -111,12 +111,24 @@ export default function RevisiPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error); setLoading(false); return; }
+      if (!res.ok) { setAlertModal({ kind: 'error', title: 'Gagal Menyimpan', message: data.error || 'Data gagal disimpan, silakan coba lagi.' }); setLoading(false); return; }
       setSuccess(true);
       setTimeout(() => router.push('/dashboard'), 2000);
     } catch {
-      setError('Terjadi kesalahan jaringan');
+      setAlertModal({ kind: 'error', title: 'Gagal Menyimpan', message: 'Terjadi kesalahan jaringan, silakan coba lagi.' });
       setLoading(false);
+    }
+  };
+
+  const closeAlert = () => {
+    const focusId = alertModal?.focusId;
+    setAlertModal(null);
+    if (focusId) {
+      requestAnimationFrame(() => {
+        const el = document.getElementById(focusId);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el?.focus();
+      });
     }
   };
 
@@ -134,39 +146,21 @@ export default function RevisiPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#FAF7F0' }}>
       <header style={{ background: 'linear-gradient(180deg, #123524 0%, #0B2A1C 100%)', borderBottom: '2px solid #C8973A', padding: '0 24px' }}>
-        <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', alignItems: 'center', height: 64, gap: 16 }}>
-          <Link href="/dashboard" style={{ color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none', fontSize: 13 }}>
+        <div className="form-header-inner" style={{ maxWidth: 800, margin: '0 auto', display: 'flex', alignItems: 'center', height: 64, gap: 16, flexWrap: 'wrap' }}>
+          <Link href="/dashboard" style={{ color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none', fontSize: 13, flexShrink: 0 }}>
             <ArrowLeft size={16} /> Kembali
           </Link>
-          <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.2)' }} />
+          <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div
-                                      style={{
-                                        width: 36,
-                                        height: 36,
-                                        borderRadius: 8,
-                                        overflow: "hidden",
-                                        position: "relative",
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                      }}
-                                    >
-                                      <Image
-                                        src="/images/logo.png"
-                                        alt="Logo SMK Citra Negara"
-                                        width={35}
-                                        height={35}
-                                        style={{ objectFit: "cover" }}
-                                      />
-                                    </div>
-            
-            <span style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>Revisi Berkas SPMB</span>
+            <div style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Image src="/images/logo.png" alt="Logo SMK Citra Negara" width={35} height={35} style={{ objectFit: 'cover' }} />
+            </div>
+            <span className="form-header-title" style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>Revisi Berkas SPMB</span>
           </div>
         </div>
       </header>
 
-      <main style={{ maxWidth: 800, margin: '0 auto', padding: '32px 24px' }}>
+      <main className="form-shell-main" style={{ maxWidth: 800, margin: '0 auto', padding: '32px 24px' }}>
         {/* Alasan Penolakan */}
         {pendaftaran?.alasanPenolakan && (
           <div style={{ background: '#FFF7ED', border: '1.5px solid #FED7AA', borderRadius: 14, padding: 20, marginBottom: 24 }}>
@@ -183,20 +177,13 @@ export default function RevisiPage() {
           </div>
         )}
 
-        <div style={{ background: 'white', borderRadius: 20, padding: '32px 36px', boxShadow: '0 4px 30px rgba(10,22,40,0.08)', border: '1px solid #F0EBE0' }}>
+        <div className="form-card" style={{ background: 'white', borderRadius: 20, padding: '32px 36px', boxShadow: '0 4px 30px rgba(10,22,40,0.08)', border: '1px solid #F0EBE0' }}>
           <h2 className="font-display" style={{ fontSize: 22, color: '#0A1628', marginBottom: 6 }}>Upload Ulang Berkas</h2>
           <p style={{ color: '#6B7280', fontSize: 13, marginBottom: 8 }}>
             Perbaiki berkas yang diminta admin. File lama tetap tersimpan, upload baru untuk mengganti.
           </p>
           {(pendaftaran?.revisiCount || 0) > 0 && (
             <p style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 24 }}>Revisi ke-{(pendaftaran?.revisiCount || 0) + 1}</p>
-          )}
-
-          {error && (
-            <div style={{ background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 8, padding: '12px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <AlertCircle size={16} color="#DC2626" />
-              <span style={{ fontSize: 13, color: '#DC2626' }}>{error}</span>
-            </div>
           )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 28 }}>
@@ -208,7 +195,7 @@ export default function RevisiPage() {
               const isUploading = f.uploading;
 
               return (
-                <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: isUploaded ? '#F0FDF4' : hasExisting ? '#EFF6FF' : '#FAFAFA', borderRadius: 12, border: `1.5px solid ${isUploaded ? '#86EFAC' : hasExisting ? '#BFDBFE' : '#E5E7EB'}` }}>
+                <div key={item.key} id={`file-${item.key}`} className="file-upload-row" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: isUploaded ? '#F0FDF4' : hasExisting ? '#EFF6FF' : '#FAFAFA', borderRadius: 12, border: `1.5px solid ${isUploaded ? '#86EFAC' : hasExisting ? '#BFDBFE' : '#E5E7EB'}` }}>
                   <div style={{ width: 36, height: 36, borderRadius: '50%', background: isUploaded ? '#DCFCE7' : hasExisting ? '#DBEAFE' : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {isUploading ? <Loader size={16} color="#3B82F6" /> :
                      isUploaded ? <CheckCircle size={16} color="#16A34A" /> :
@@ -252,6 +239,7 @@ export default function RevisiPage() {
           </button>
         </div>
       </main>
+      <FormAlertModal state={alertModal} onClose={closeAlert} />
     </div>
   );
 }

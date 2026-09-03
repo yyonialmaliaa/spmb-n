@@ -10,7 +10,9 @@ cloudinary.config({
 
 export async function POST(req: Request) {
   const session = await getSession()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   try {
     const formData = await req.formData()
@@ -18,16 +20,34 @@ export async function POST(req: Request) {
     const fieldName = formData.get('fieldName') as string
 
     if (!file) {
-      return NextResponse.json({ error: 'File tidak ditemukan' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'File tidak ditemukan' },
+        { status: 400 }
+      )
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      return NextResponse.json({ error: 'Ukuran file maksimal 2MB' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Ukuran file maksimal 2MB' },
+        { status: 400 }
+      )
     }
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf']
+    // Bisa JPG, PNG, PDF, DOC, dan DOCX
+    const allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/jpg',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ]
+
     if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ error: 'Format file harus JPG, PNG, atau PDF' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Format file harus JPG, PNG, PDF, DOC, atau DOCX' },
+        { status: 400 }
+      )
     }
 
     // Convert file ke base64
@@ -42,14 +62,17 @@ export async function POST(req: Request) {
       resource_type: 'auto',
     })
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       path: result.secure_url,
-      fileName: result.public_id 
+      fileName: result.public_id,
     })
-
   } catch (err) {
     console.error('Upload error:', err)
-    return NextResponse.json({ error: 'Gagal mengupload file' }, { status: 500 })
+
+    return NextResponse.json(
+      { error: 'Gagal mengupload file' },
+      { status: 500 }
+    )
   }
 }

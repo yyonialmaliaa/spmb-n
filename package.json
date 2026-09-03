@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:seed": "tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
@@ -18,7 +22,7 @@
     "dotenv": "^17.4.2",
     "jose": "^6.2.3",
     "jsonwebtoken": "^9.0.3",
-    "lucide-react": "^1.17.0",
+    "lucide-react": "^1.39.0",
     "mysql2": "^3.22.3",
     "next": "16.2.6",
     "next-auth": "^4.24.14",
@@ -35,6 +39,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
+    "tsx": "^4.23.13",
     "typescript": "^5"
   }
 }

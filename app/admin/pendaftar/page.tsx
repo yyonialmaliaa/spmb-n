@@ -1,74 +1,112 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   GraduationCap, Users, LayoutDashboard, BarChart2,
   LogOut, Search, X, Save, User, AlertCircle,
   CheckCircle, XCircle, Download, ChevronLeft, ChevronRight,
-  Filter, Calendar, Award, RefreshCw, ClipboardCheck
+  Filter, Calendar, Award, RefreshCw, ClipboardCheck, Menu,
+  DollarSign, Tag
 } from 'lucide-react';
 import Image from 'next/image';
+import { hitungRingkasan } from '@/lib/pembayaran-utils';
 
 type Pendaftaran = {
-  id: string; namaLengkap: string; namaPanggilan?: string;
+  id: string; namaLengkap: string | null; namaPanggilan?: string;
   tempatLahir?: string; tanggalLahir?: string; ttl?: string;
-  jenisKelamin: string; agama: string; anakKe?: string;
-  alamat: string; rt?: string; rw?: string;
+  jenisKelamin: string | null; agama: string | null; anakKe?: string;
+  alamat: string | null; rt?: string; rw?: string;
   kelurahan?: string; kecamatan?: string; kabupaten?: string;
+  beratBadan?: string; tinggiBadan?: string; golonganDarah?: string; ukuranSeragam?: string;
+  namaPemberiReferensi?: string; noHpReferensi?: string;
   nisn?: string; nik?: string; noPribadi?: string;
   asalSD?: string; asalSMP?: string; asalSekolah?: string;
-  jurusan: string;
-  namaAyah?: string; pekerjaanAyah?: string; noHpAyah?: string;
-  namaIbu?: string; pekerjaanIbu?: string; noHpIbu?: string;
-  namaWali?: string; noHpWali?: string;
+  jurusan: string | null; jenjang?: string; sumberDaftar?: string; kelas?: string;
+  tipePendaftaran?: string; kelasMasuk?: string;
+  namaAyah?: string; ttlAyah?: string; pendidikanAyah?: string; pekerjaanAyah?: string; penghasilanAyah?: string; noHpAyah?: string; alamatAyah?: string;
+  namaIbu?: string; ttlIbu?: string; pendidikanIbu?: string; pekerjaanIbu?: string; penghasilanIbu?: string; noHpIbu?: string; alamatIbu?: string;
+  namaWali?: string; ttlWali?: string; pendidikanWali?: string; pekerjaanWali?: string; penghasilanWali?: string; noHpWali?: string; alamatWali?: string;
   namaOrtu?: string; noOrtu?: string;
-  status: string; nilaiSeleksi?: number; nilaiTes?: number; catatan?: string;
-  alasanPenolakan?: string; jadwalTes?: string; lokasiTes?: string;
-  infoTes?: string; pesanPengumuman?: string; revisiCount?: number;
+  status: string; catatan?: string;
+  alasanPenolakan?: string; pesanPengumuman?: string; revisiCount?: number;
+  waVerified?: boolean;
+  metodePembayaran?: string; buktiPembayaran?: string;
+  statusPembayaran?: string; catatanPembayaran?: string; totalTagihan?: number; gelombang?: string;
   sudahDaftarUlang?: boolean; tanggalDaftarUlang?: string; catatanDaftarUlang?: string;
   fileIjazah?: string | null; fileAkte?: string | null;
   fileKK?: string | null; fileKtpOrtu?: string | null;
   fileKip?: string | null; fileFoto?: string | null;
-  createdAt: string; userEmail?: string;
+  createdAt: string; userEmail?: string; userId?: string;
+  pembayaranList?: { id: string; jenis?: string; nominal: number; status: string }[];
 };
 
 type Stats = {
-  total: number; pending: number; verified: number;
-  diterima: number; ditolak: number; lulus: number;
-  tidak_lulus: number; daftar_ulang: number;
+  total: number; verified: number;
+  diterima: number; ditolak: number;
+  daftar_ulang: number; menungguPembayaran?: number;
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  pending:         { label: 'Menunggu',         color: '#92400E', bg: '#FEF3C7' },
-  verified:        { label: 'Diverifikasi',     color: '#1E40AF', bg: '#DBEAFE' },
-  diterima_berkas: { label: 'Berkas Diterima',  color: '#065F46', bg: '#D1FAE5' },
-  ditolak:         { label: 'Ditolak',          color: '#991B1B', bg: '#FEE2E2' },
-  tes:             { label: 'Jadwal Tes',       color: '#5B21B6', bg: '#EDE9FE' },
-  lulus:           { label: 'Lulus',            color: '#065F46', bg: '#D1FAE5' },
-  tidak_lulus:     { label: 'Tidak Lulus',      color: '#991B1B', bg: '#FEE2E2' },
-  daftar_ulang:    { label: 'Daftar Ulang ✓',  color: '#065F46', bg: '#D1FAE5' },
+  draft:           { label: 'Draft — Belum Dikirim', color: '#6B7280', bg: '#F3F4F6' },
+  verified:        { label: 'Sedang Diverifikasi', color: '#1E40AF', bg: '#DBEAFE' },
+  diterima_berkas: { label: 'Terima Berkas',        color: '#065F46', bg: '#D1FAE5' },
+  ditolak:         { label: 'Tolak Berkas',         color: '#991B1B', bg: '#FEE2E2' },
+};
+
+const STATUS_BAYAR_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  belum_bayar:         { label: 'Belum Bayar',              color: '#92400E', bg: '#FEF3C7' },
+  cicilan_berjalan:    { label: 'Cicilan Berjalan',         color: '#5B21B6', bg: '#F5F3FF' },
+  menunggu_verifikasi: { label: 'Menunggu Verifikasi',       color: '#1E40AF', bg: '#DBEAFE' },
+  lunas:               { label: 'Lunas',                     color: '#065F46', bg: '#D1FAE5' },
+  ditolak:             { label: 'Ditolak',                   color: '#991B1B', bg: '#FEE2E2' },
 };
 
 const JURUSAN_LIST = [
   { kode: 'PPLG', color: '#1D4ED8' }, { kode: 'TJKT', color: '#4fcbeb' },
   { kode: 'DKV',  color: '#D97706' }, { kode: 'MPLB', color: '#EAB308' },
-  { kode: 'PM',   color: '#e2c9ad' }, { kode: 'PH',   color: '#16A34A' },
+  { kode: 'BDR',  color: '#e2c9ad' }, { kode: 'PH',   color: '#16A34A' },
 ];
 
-function getInitials(name: string) { return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase(); }
+function getInitials(name?: string | null) { const n = name || '?'; return n.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase(); }
 function getRegNo(id: string, date: string) { const d = new Date(date); return `REG-${d.getFullYear()}-${id.slice(0, 5).toUpperCase()}`; }
-function getJurusanKode(j: string) { for (const jj of JURUSAN_LIST) { if (j.toUpperCase().includes(jj.kode)) return jj.kode; } return j.slice(0, 4).toUpperCase(); }
-function getJurusanColor(j: string) { for (const jj of JURUSAN_LIST) { if (j.toUpperCase().includes(jj.kode)) return jj.color; } return '#6B7280'; }
+function getJurusanKode(j?: string | null) { const v = j || ''; for (const jj of JURUSAN_LIST) { if (v.toUpperCase().includes(jj.kode)) return jj.kode; } return v ? v.slice(0, 4).toUpperCase() : '-'; }
+function getJurusanColor(j?: string | null) { const v = j || ''; for (const jj of JURUSAN_LIST) { if (v.toUpperCase().includes(jj.kode)) return jj.color; } return '#6B7280'; }
 
 const ITEMS_PER_PAGE = 10;
 
 export default function AdminPendaftar() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF' }}>Memuat...</div>}>
+      <AdminPendaftarInner />
+    </Suspense>
+  );
+}
+
+function AdminPendaftarInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const jenjangParam = (searchParams.get('jenjang') || '').toLowerCase();
+  const jenjang: 'smp' | 'sma' | 'smk' | '' = (['smp', 'sma', 'smk'].includes(jenjangParam) ? jenjangParam : '') as any;
+  const sumberParam = (searchParams.get('sumber') || '').toLowerCase();
+  const sumber: 'online' | 'offline' | '' = (['online', 'offline'].includes(sumberParam) ? sumberParam : '') as any;
+  const tahunAjaranId = searchParams.get('tahunAjaranId') || '';
+  const qs = tahunAjaranId ? `&tahunAjaranId=${tahunAjaranId}` : '';
+  const qsOnly = tahunAjaranId ? `?tahunAjaranId=${tahunAjaranId}` : '';
   const [session, setSession] = useState<{ namaLengkap?: string } | null>(null);
+  const [tahunAjaran, setTahunAjaran] = useState<{ id: string; nama: string; aktif: boolean } | null>(null);
   const [data, setData] = useState<Pendaftaran[]>([]);
-  const [stats, setStats] = useState<Stats>({ total: 0, pending: 0, verified: 0, diterima: 0, ditolak: 0, lulus: 0, tidak_lulus: 0, daftar_ulang: 0 });
+  const dataInJenjang = data.filter(p => (!jenjang || (p.jenjang || 'smk') === jenjang) && (!sumber || (p.sumberDaftar || 'online') === sumber));
+  const stats: Stats = {
+    total: dataInJenjang.length,
+    verified: dataInJenjang.filter(p => p.status === 'verified').length,
+    diterima: dataInJenjang.filter(p => p.status === 'diterima_berkas').length,
+    ditolak: dataInJenjang.filter(p => p.status === 'ditolak').length,
+    daftar_ulang: dataInJenjang.filter(p => p.sudahDaftarUlang).length,
+    menungguPembayaran: dataInJenjang.filter(p => p.statusPembayaran === 'menunggu_verifikasi').length,
+  };
   const [loading, setLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [filterJurusan, setFilterJurusan] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -76,8 +114,9 @@ export default function AdminPendaftar() {
   const [selected, setSelected] = useState<Pendaftaran | null>(null);
   const [editModal, setEditModal] = useState(false);
   const [editForm, setEditForm] = useState({
-    status: '', nilaiSeleksi: '', nilaiTes: '', catatan: '',
-    alasanPenolakan: '', jadwalTes: '', lokasiTes: '', infoTes: '',
+    status: '', catatan: '',
+    alasanPenolakan: '', waVerified: false,
+    statusPembayaran: '', catatanPembayaran: '',
     pesanPengumuman: '', catatanDaftarUlang: '',
   });
   const [saving, setSaving] = useState(false);
@@ -89,13 +128,13 @@ export default function AdminPendaftar() {
       setSession(d.user);
     });
     loadData();
-  }, [router]);
+  }, [router, tahunAjaranId]);
 
   const loadData = () => {
     setLoading(true);
-    fetch('/api/admin/pendaftar').then(r => r.json()).then(d => {
+    fetch(`/api/admin/pendaftar${qsOnly}`).then(r => r.json()).then(d => {
       setData(d.data || []);
-      setStats(d.stats || { total: 0, pending: 0, verified: 0, diterima: 0, ditolak: 0, lulus: 0, tidak_lulus: 0, daftar_ulang: 0 });
+      setTahunAjaran(d.tahunAjaran || null);
       setLoading(false);
     });
   };
@@ -106,13 +145,11 @@ export default function AdminPendaftar() {
     setSelected(p);
     setEditForm({
       status: defaultStatus || p.status,
-      nilaiSeleksi: p.nilaiSeleksi?.toString() || '',
-      nilaiTes: p.nilaiTes?.toString() || '',
       catatan: p.catatan || '',
       alasanPenolakan: p.alasanPenolakan || '',
-      jadwalTes: p.jadwalTes || '',
-      lokasiTes: p.lokasiTes || 'SMK Citra Negara',
-      infoTes: p.infoTes || '',
+      waVerified: p.waVerified || false,
+      statusPembayaran: p.statusPembayaran || 'belum_bayar',
+      catatanPembayaran: p.catatanPembayaran || '',
       pesanPengumuman: p.pesanPengumuman || '',
       catatanDaftarUlang: p.catatanDaftarUlang || '',
     });
@@ -127,13 +164,11 @@ export default function AdminPendaftar() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         status: editForm.status,
-        nilaiSeleksi: editForm.nilaiSeleksi || undefined,
-        nilaiTes: editForm.nilaiTes || undefined,
         catatan: editForm.catatan,
         alasanPenolakan: editForm.alasanPenolakan,
-        jadwalTes: editForm.jadwalTes,
-        lokasiTes: editForm.lokasiTes,
-        infoTes: editForm.infoTes,
+        waVerified: editForm.waVerified,
+        statusPembayaran: editForm.statusPembayaran || undefined,
+        catatanPembayaran: editForm.catatanPembayaran,
         pesanPengumuman: editForm.pesanPengumuman,
         catatanDaftarUlang: editForm.catatanDaftarUlang,
       }),
@@ -153,6 +188,116 @@ export default function AdminPendaftar() {
     if (res.ok) { loadData(); setSelected(null); showToast('✅ Daftar ulang dikonfirmasi'); }
   };
 
+  // Toggle verifikasi WhatsApp (cek manual admin)
+  const handleToggleWa = async (p: Pendaftaran) => {
+    const res = await fetch(`/api/admin/pendaftar/${p.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ waVerified: !p.waVerified }),
+    });
+    if (res.ok) {
+      const d = await res.json();
+      setSelected(d.data);
+      loadData();
+      showToast(d.data.waVerified ? '✅ No. WhatsApp ditandai terverifikasi' : 'No. WhatsApp dibatalkan verifikasinya');
+    }
+  };
+
+  // Reset password akun siswa (untuk yang lupa email/password)
+  const handleResetPassword = async (p: Pendaftaran) => {
+    if (!p.userId) { showToast('❌ Data akun tidak ditemukan'); return; }
+    const pwBaru = prompt(`Masukkan password baru untuk ${p.namaLengkap} (${p.userEmail || '-'}), minimal 8 karakter:`);
+    if (!pwBaru) return;
+    if (pwBaru.length < 8) { showToast('❌ Password minimal 8 karakter'); return; }
+    if (!confirm(`Reset password akun ${p.userEmail} menjadi password baru ini?`)) return;
+
+    const res = await fetch('/api/admin/reset-password', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: p.userId, passwordBaru: pwBaru }),
+    });
+    const d = await res.json();
+    if (res.ok) {
+      alert(`✅ Password berhasil direset!\n\nEmail: ${d.email}\nPassword baru: ${pwBaru}\n\nSampaikan info ini ke siswa melalui WhatsApp.`);
+    } else {
+      showToast(`❌ ${d.error || 'Gagal reset password'}`);
+    }
+  };
+  const handleExportExcel = () => {
+    const headers = [
+      'No', 'Sumber Daftar', 'Status Verifikasi', 'Status Pembayaran', 'Email Akun',
+      'Nama Lengkap', 'Nama Panggilan', 'Tempat Lahir', 'Tanggal Lahir', 'Jenis Kelamin', 'Agama', 'Anak Ke',
+      'Berat Badan', 'Tinggi Badan', 'Golongan Darah', 'Ukuran Seragam',
+      'NIK', 'NISN', 'No. WhatsApp', 'WA Terverifikasi',
+      'Alamat', 'RT', 'RW', 'Kelurahan', 'Kecamatan', 'Kab/Kota',
+      'Nama Pemberi Referensi', 'No. HP Referensi',
+      'Jenjang', 'Jurusan', 'Kelas', 'Tipe Pendaftaran', 'Kelas Masuk (Pindahan)',
+      'Asal SD', 'Asal SMP',
+      'Nama Ayah', 'TTL Ayah', 'Pendidikan Ayah', 'Pekerjaan Ayah', 'Penghasilan Ayah', 'No. HP Ayah', 'Alamat Ayah',
+      'Nama Ibu', 'TTL Ibu', 'Pendidikan Ibu', 'Pekerjaan Ibu', 'Penghasilan Ibu', 'No. HP Ibu', 'Alamat Ibu',
+      'Nama Wali', 'TTL Wali', 'Pendidikan Wali', 'Pekerjaan Wali', 'Penghasilan Wali', 'No. HP Wali', 'Alamat Wali',
+      'Gelombang', 'Total Tagihan',
+      'Sudah Daftar Ulang', 'Tanggal Daftar Ulang', 'Catatan Daftar Ulang',
+      'Catatan Admin', 'Alasan Penolakan', 'Pesan Pengumuman',
+      'File Ijazah', 'File Akte', 'File KK', 'File KTP Ortu', 'File KIP', 'File Foto',
+      'Tanggal Daftar',
+    ];
+    const rows = filtered.map((p, i) => [
+      i + 1, (p.sumberDaftar || 'online') === 'online' ? 'Online' : 'Offline',
+      STATUS_CONFIG[p.status]?.label || p.status, STATUS_BAYAR_CONFIG[p.statusPembayaran || 'belum_bayar']?.label || p.statusPembayaran || '-',
+      p.userEmail || '-',
+      p.namaLengkap || '-', p.namaPanggilan || '-', p.tempatLahir || '-', p.tanggalLahir || '-', p.jenisKelamin || '-', p.agama || '-', p.anakKe || '-',
+      p.beratBadan || '-', p.tinggiBadan || '-', p.golonganDarah || '-', p.ukuranSeragam || '-',
+      p.nik || '-', p.nisn || '-', p.noPribadi || '-', p.waVerified ? 'Ya' : 'Belum',
+      p.alamat || '-', p.rt || '-', p.rw || '-', p.kelurahan || '-', p.kecamatan || '-', p.kabupaten || '-',
+      p.namaPemberiReferensi || '-', p.noHpReferensi || '-',
+      (p.jenjang || 'smk').toUpperCase(), p.jurusan || '-', p.kelas || '-', p.tipePendaftaran === 'pindahan' ? 'Pindahan' : 'Baru', p.kelasMasuk || '-',
+      p.asalSD || '-', p.asalSMP || p.asalSekolah || '-',
+      p.namaAyah || '-', p.ttlAyah || '-', p.pendidikanAyah || '-', p.pekerjaanAyah || '-', p.penghasilanAyah || '-', p.noHpAyah || '-', p.alamatAyah || '-',
+      p.namaIbu || '-', p.ttlIbu || '-', p.pendidikanIbu || '-', p.pekerjaanIbu || '-', p.penghasilanIbu || '-', p.noHpIbu || '-', p.alamatIbu || '-',
+      p.namaWali || '-', p.ttlWali || '-', p.pendidikanWali || '-', p.pekerjaanWali || '-', p.penghasilanWali || '-', p.noHpWali || '-', p.alamatWali || '-',
+      p.gelombang || '-', p.totalTagihan ?? 0,
+      p.sudahDaftarUlang ? 'Ya' : 'Belum', p.tanggalDaftarUlang ? new Date(p.tanggalDaftarUlang).toLocaleDateString('id-ID') : '-', p.catatanDaftarUlang || '-',
+      p.catatan || '-', p.alasanPenolakan || '-', p.pesanPengumuman || '-',
+      p.fileIjazah || '-', p.fileAkte || '-', p.fileKK || '-', p.fileKtpOrtu || '-', p.fileKip || '-', p.fileFoto || '-',
+      new Date(p.createdAt).toLocaleDateString('id-ID'),
+    ]);
+    const csv = '\uFEFF' + [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    a.download = `data-pendaftar-${jenjang || 'semua'}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+  };
+
+  const handleExportKeuangan = () => {
+    const headers = [
+      'No', 'Nama Lengkap', 'Email Akun', 'Jenjang', 'Jurusan', 'Kelas', 'Sumber Daftar',
+      'Gelombang', 'Total Tagihan', 'Total Dibayar (Bersih)', 'Tunggakan (Kurang Bayar)',
+      'Kelebihan Bayar', 'Sudah Dikembalikan (Refund)', 'Status Pembayaran',
+      'Jumlah Cicilan Terverifikasi', 'Jumlah Cicilan Menunggu Verifikasi', 'Jumlah Refund',
+    ];
+    const rows = filtered.map((p, i) => {
+      const list = p.pembayaranList || [];
+      const totalTagihan = p.totalTagihan || 0;
+      const { totalDibayar, sisaBayar, kelebihanBayar, totalRefund } = hitungRingkasan(list, totalTagihan);
+      const jmlCicilanLunas = list.filter(x => (x.jenis || 'bayar') === 'bayar' && x.status === 'lunas').length;
+      const jmlMenunggu = list.filter(x => x.status === 'menunggu_verifikasi').length;
+      const jmlRefund = list.filter(x => x.jenis === 'refund' && x.status === 'lunas').length;
+      return [
+        i + 1, p.namaLengkap || '-', p.userEmail || '-', (p.jenjang || 'smk').toUpperCase(), p.jurusan || '-', p.kelas || '-',
+        (p.sumberDaftar || 'online') === 'online' ? 'Online' : 'Offline',
+        p.gelombang || '-', totalTagihan, totalDibayar, sisaBayar, kelebihanBayar, totalRefund,
+        STATUS_BAYAR_CONFIG[p.statusPembayaran || 'belum_bayar']?.label || p.statusPembayaran || '-',
+        jmlCicilanLunas, jmlMenunggu, jmlRefund,
+      ];
+    });
+    const csv = '\uFEFF' + [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    a.download = `keuangan-pendaftar-${jenjang || 'semua'}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm('Yakin ingin menghapus data ini?')) return;
     const res = await fetch(`/api/admin/pendaftar/${id}`, { method: 'DELETE' });
@@ -164,30 +309,43 @@ export default function AdminPendaftar() {
  
 
   const filtered = data.filter(p =>
-    (!search || p.namaLengkap.toLowerCase().includes(search.toLowerCase()) || (p.userEmail || '').toLowerCase().includes(search.toLowerCase()))
-    && (!filterJurusan || p.jurusan.toUpperCase().includes(filterJurusan))
-    && (!filterStatus || p.status === filterStatus)
+    (!jenjang || (p.jenjang || 'smk') === jenjang)
+    && (!sumber || (p.sumberDaftar || 'online') === sumber)
+    && (!search || (p.namaLengkap || '').toLowerCase().includes(search.toLowerCase()) || (p.userEmail || '').toLowerCase().includes(search.toLowerCase()) || (p.nik || '').includes(search))
+    && (!filterJurusan || (p.jurusan || '').toUpperCase().includes(filterJurusan))
+    && (!filterStatus || (filterStatus === '_daftar_ulang' ? p.sudahDaftarUlang : p.status === filterStatus))
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
   const jurusanStats = JURUSAN_LIST.map(j => ({
     ...j,
-    count: data.filter(p => p.jurusan.toUpperCase().includes(j.kode)).length,
-    pct: data.length > 0 ? Math.round((data.filter(p => p.jurusan.toUpperCase().includes(j.kode)).length / data.length) * 100) : 0,
+    count: data.filter(p => (p.jurusan || '').toUpperCase().includes(j.kode)).length,
+    pct: data.length > 0 ? Math.round((data.filter(p => (p.jurusan || '').toUpperCase().includes(j.kode)).length / data.length) * 100) : 0,
   })).sort((a, b) => b.count - a.count);
 
   const inp: React.CSSProperties = { width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: 'white', outline: 'none' };
   const showAlasan      = editForm.status === 'ditolak';
-  const showTesFields   = ['diterima_berkas', 'tes'].includes(editForm.status);
-  const showPengumuman  = ['lulus', 'tidak_lulus'].includes(editForm.status);
-  const showDaftarUlang = editForm.status === 'daftar_ulang';
+  const showPengumuman  = editForm.status === 'diterima_berkas';
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F8F9FA', display: 'flex' }}>
+    <div className="admin-shell" style={{ minHeight: '100vh', background: '#F8F9FA', display: 'flex' }}>
       {toast && <div style={{ position: 'fixed', top: 24, right: 24, background: '#0A1628', color: 'white', padding: '12px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, zIndex: 9999, boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}>{toast}</div>}
 
+      {/* Mobile topbar */}
+      <div className="admin-mobile-topbar">
+        <button onClick={() => setMobileMenuOpen(true)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+          <Menu size={22} />
+        </button>
+        <span style={{ color: 'white', fontWeight: 700, fontSize: 13 }}>SMK Citra Negara</span>
+        <div style={{ width: 22 }} />
+      </div>
+      {mobileMenuOpen && <div className="admin-overlay" onClick={() => setMobileMenuOpen(false)} />}
+
       {/* Sidebar */}
-      <aside style={{ width: 240, background: 'linear-gradient(180deg, #123524 0%, #0B2A1C 100%)', flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+      <aside className={`admin-sidebar${mobileMenuOpen ? ' sidebar-open' : ''}`} style={{ width: 240, background: 'linear-gradient(180deg, #123524 0%, #0B2A1C 100%)', flexShrink: 0, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+        <button onClick={() => setMobileMenuOpen(false)} className="sidebar-close-btn" style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 8, color: 'white', width: 28, height: 28, alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <X size={16} />
+        </button>
         <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
             <div
@@ -215,9 +373,11 @@ export default function AdminPendaftar() {
         </div>
         <nav style={{ padding: '16px 12px', flex: 1 }}>
           {[
-            { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-            { href: '/admin/pendaftar', icon: Users, label: 'Data Pendaftar', active: true },
-            { href: '/admin/laporan', icon: BarChart2, label: 'Laporan' },
+            { href: (jenjang ? `/admin/dashboard/${jenjang}` : '/admin/dashboard') + qsOnly, icon: LayoutDashboard, label: 'Dashboard' },
+            { href: (jenjang ? `/admin/pendaftar?jenjang=${jenjang}` : '/admin/pendaftar') + (jenjang ? qs : qsOnly), icon: Users, label: 'Data Pendaftar', active: true },
+            { href: (jenjang ? `/admin/harga?jenjang=${jenjang}` : '/admin/harga') + (jenjang ? qs : qsOnly), icon: DollarSign, label: 'Harga' },
+            { href: (jenjang ? `/admin/diskon?jenjang=${jenjang}` : '/admin/diskon') + (jenjang ? qs : qsOnly), icon: Tag, label: 'Diskon' },
+            { href: (jenjang ? `/admin/laporan?jenjang=${jenjang}` : '/admin/laporan') + (jenjang ? qs : qsOnly), icon: BarChart2, label: 'Laporan' },
           ].map(item => (
             <Link key={item.href} href={item.href} className="sidebar-link" style={{ marginBottom: 4, background: item.active ? 'rgba(200,151,58,0.15)' : undefined, color: item.active ? '#C8973A' : undefined }}>
               <item.icon size={17} />{item.label}
@@ -242,24 +402,47 @@ export default function AdminPendaftar() {
       <div style={{ flex: 1, overflow: 'auto' }}>
         <header style={{ background: 'white', borderBottom: '1px solid #E5E7EB', padding: '16px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <h1 style={{ fontSize: 18, fontWeight: 700, color: '#0B3B2E', marginBottom: 2 }}>Data Pendaftar Siswa Baru</h1>
-            <p style={{ fontSize: 12, color: '#6B7280' }}>Kelola pendaftaran siswa — TA 2026/2027</p>
+            <h1 style={{ fontSize: 18, fontWeight: 700, color: '#0B3B2E', marginBottom: 2 }}>
+              Data Pendaftar {jenjang ? jenjang.toUpperCase() : 'Semua Jenjang'}
+              {sumber && <span style={{ fontSize: 13, fontWeight: 600, color: sumber === 'online' ? '#1E40AF' : '#C2410C', marginLeft: 8 }}>· {sumber === 'online' ? 'Online' : 'Offline'}</span>}
+            </h1>
+            <p style={{ fontSize: 12, color: '#6B7280' }}>Kelola pendaftaran siswa{tahunAjaran ? ` — TA ${tahunAjaran.nama}` : ''}</p>
           </div>
-          
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <button onClick={handleExportExcel} style={{ fontSize: 12, color: '#065F46', background: '#F0FDF4', border: '1px solid #A7F3D0', padding: '8px 14px', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              📊 Export Biodata
+            </button>
+            <button onClick={handleExportKeuangan} style={{ fontSize: 12, color: '#5B21B6', background: '#F5F3FF', border: '1px solid #DDD6FE', padding: '8px 14px', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              💰 Export Keuangan
+            </button>
+            {jenjang && (
+              <Link href={`/admin/pendaftar/tambah?jenjang=${jenjang}${qs}`} style={{ fontSize: 12, color: 'white', background: '#0A1628', padding: '8px 14px', borderRadius: 8, fontWeight: 600, textDecoration: 'none' }}>
+                + Tambah Offline
+              </Link>
+            )}
+            {jenjang && (
+              <Link href={`/admin/dashboard/${jenjang}${qsOnly}`} style={{ fontSize: 12, color: '#C8973A', fontWeight: 600, textDecoration: 'none' }}>
+                ← Dashboard {jenjang.toUpperCase()}
+              </Link>
+            )}
+          </div>
         </header>
+        {tahunAjaran && !tahunAjaran.aktif && (
+          <div style={{ background: '#FFFBEB', borderBottom: '1px solid #FDE68A', padding: '8px 28px', fontSize: 12, color: '#92400E', fontWeight: 600 }}>
+            📅 Sedang melihat data historis tahun ajaran <strong>{tahunAjaran.nama}</strong> (tidak aktif).
+          </div>
+        )}
 
         <main style={{ padding: '24px 28px' }}>
-          {/* Stats - 8 kartu */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+          {/* Stats */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 14, marginBottom: 24 }}>
             {[
-              { label: 'Total',         val: stats.total,        color: '#0A1628' },
-              { label: 'Menunggu',      val: stats.pending,      color: '#D97706' },
-              { label: 'Lulus',         val: stats.lulus,        color: '#059669' },
-              { label: 'Tidak Lulus',   val: stats.tidak_lulus,  color: '#DC2626' },
-              { label: 'Berkas Diterima', val: stats.diterima,   color: '#0891B2' },
-              { label: 'Ditolak',       val: stats.ditolak,      color: '#991B1B' },
-              { label: 'Daftar Ulang ✓', val: stats.daftar_ulang, color: '#065F46' },
-              { label: 'Diverifikasi',  val: stats.verified,     color: '#1E40AF' },
+              { label: 'Total',            val: stats.total,        color: '#0A1628' },
+              { label: 'Sedang Diverifikasi', val: stats.verified,  color: '#1E40AF' },
+              { label: 'Terima Berkas',    val: stats.diterima,     color: '#059669' },
+              { label: 'Tolak Berkas',     val: stats.ditolak,      color: '#DC2626' },
+              { label: 'Daftar Ulang ✓',   val: stats.daftar_ulang, color: '#065F46' },
+              { label: 'Menunggu Bayar',   val: stats.menungguPembayaran || 0, color: '#D97706' },
             ].map(c => (
               <div key={c.label} style={{ background: 'white', borderRadius: 12, padding: '16px 18px', border: '1px solid #F3F4F6' }}>
                 <div className="font-display" style={{ fontSize: 28, fontWeight: 700, color: c.color, lineHeight: 1 }}>{c.val}</div>
@@ -268,29 +451,28 @@ export default function AdminPendaftar() {
             ))}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: 20 }}>
+          <div className="detail-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: 20 }}>
             <div>
               {/* Filter */}
               <div style={{ background: 'white', borderRadius: 12, padding: '12px 16px', marginBottom: 14, display: 'flex', gap: 10, alignItems: 'center', border: '1px solid #F3F4F6', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 160 }}>
                   <Search size={14} color="#9CA3AF" />
-                  <input placeholder="Cari nama, email..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} style={{ flex: 1, border: 'none', outline: 'none', fontSize: 13, fontFamily: 'inherit', background: 'transparent' }} />
+                  <input placeholder="Cari nama, email, atau NIK..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} style={{ flex: 1, border: 'none', outline: 'none', fontSize: 13, fontFamily: 'inherit', background: 'transparent' }} />
                   {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}><X size={14} /></button>}
                 </div>
-                <select value={filterJurusan} onChange={e => { setFilterJurusan(e.target.value); setPage(1); }} style={{ border: '1px solid #E5E7EB', borderRadius: 7, padding: '6px 10px', fontSize: 12, fontFamily: 'inherit', outline: 'none' }}>
-                  <option value="">Semua Jurusan</option>
-                  {JURUSAN_LIST.map(j => <option key={j.kode} value={j.kode}>{j.kode}</option>)}
-                </select>
+                {(!jenjang || jenjang === 'smk') && (
+                  <select value={filterJurusan} onChange={e => { setFilterJurusan(e.target.value); setPage(1); }} style={{ border: '1px solid #E5E7EB', borderRadius: 7, padding: '6px 10px', fontSize: 12, fontFamily: 'inherit', outline: 'none' }}>
+                    <option value="">Semua Jurusan</option>
+                    {JURUSAN_LIST.map(j => <option key={j.kode} value={j.kode}>{j.kode}</option>)}
+                  </select>
+                )}
                 <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }} style={{ border: '1px solid #E5E7EB', borderRadius: 7, padding: '6px 10px', fontSize: 12, fontFamily: 'inherit', outline: 'none' }}>
                   <option value="">Semua Status</option>
-                  <option value="pending">Menunggu</option>
-                  <option value="verified">Diverifikasi</option>
-                  <option value="diterima_berkas">Berkas Diterima</option>
-                  <option value="ditolak">Ditolak</option>
-                  <option value="tes">Jadwal Tes</option>
-                  <option value="lulus">Lulus</option>
-                  <option value="tidak_lulus">Tidak Lulus</option>
-                  <option value="daftar_ulang">Daftar Ulang</option>
+                  <option value="draft">Draft — Belum Dikirim</option>
+                  <option value="verified">Sedang Diverifikasi</option>
+                  <option value="diterima_berkas">Terima Berkas</option>
+                  <option value="ditolak">Tolak Berkas</option>
+                  <option value="_daftar_ulang">Sudah Daftar Ulang</option>
                 </select>
                 {(filterJurusan || filterStatus) && <button onClick={() => { setFilterJurusan(''); setFilterStatus(''); }} style={{ fontSize: 11, color: '#C8973A', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Reset</button>}
               </div>
@@ -313,7 +495,7 @@ export default function AdminPendaftar() {
                       </thead>
                       <tbody>
                         {paginated.map(p => {
-                          const sc = STATUS_CONFIG[p.status] || STATUS_CONFIG['pending'];
+                          const sc = STATUS_CONFIG[p.status] || STATUS_CONFIG['verified'];
                           const jc = getJurusanColor(p.jurusan);
                           return (
                             <tr key={p.id} style={{ borderBottom: '1px solid #F3F4F6' }}
@@ -330,7 +512,9 @@ export default function AdminPendaftar() {
                                 </div>
                               </td>
                               <td style={{ padding: '11px 14px' }}>
-                                <span style={{ background: `${jc}15`, color: jc, padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700 }}>{getJurusanKode(p.jurusan)}</span>
+                                <span style={{ background: `${jc}15`, color: jc, padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700 }}>
+                                  {(p.jenjang || 'smk') === 'smk' ? getJurusanKode(p.jurusan) : (p.jenjang || 'smk').toUpperCase()}
+                                </span>
                               </td>
                               <td style={{ padding: '11px 14px', fontSize: 12, color: '#6B7280' }}>{new Date(p.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
                               <td style={{ padding: '11px 14px', fontSize: 12, color: '#6B7280', maxWidth: 120 }}>
@@ -339,7 +523,7 @@ export default function AdminPendaftar() {
                               <td style={{ padding: '11px 14px' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                                   <span style={{ background: sc.bg, color: sc.color, padding: '3px 9px', borderRadius: 12, fontSize: 11, fontWeight: 700, width: 'fit-content' }}>{sc.label}</span>
-                                  {p.nilaiTes != null && <span style={{ fontSize: 10, color: '#6B7280' }}>Nilai Tes: <strong>{p.nilaiTes}</strong></span>}
+                                  {p.statusPembayaran && p.statusPembayaran !== 'lunas' && <span style={{ fontSize: 10, color: '#B45309' }}>Bayar: {STATUS_BAYAR_CONFIG[p.statusPembayaran]?.label || p.statusPembayaran}</span>}
                                 </div>
                               </td>
                               <td style={{ padding: '11px 14px' }}>
@@ -401,7 +585,7 @@ export default function AdminPendaftar() {
               <button onClick={() => setSelected(null)} style={{ background: '#F3F4F6', border: 'none', borderRadius: 8, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><X size={15} /></button>
             </div>
 
-            <div style={{ padding: 18, display: 'grid', gridTemplateColumns: '1fr 240px', gap: 16 }}>
+            <div className="detail-grid" style={{ padding: 18, display: 'grid', gridTemplateColumns: '1fr 240px', gap: 16 }}>
               {/* LEFT */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {/* Profil */}
@@ -417,37 +601,19 @@ export default function AdminPendaftar() {
                         </div>
                       )}
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        {(() => { const sc = STATUS_CONFIG[selected.status] || STATUS_CONFIG['pending']; return <span style={{ background: sc.bg, color: sc.color, padding: '2px 10px', borderRadius: 10, fontSize: 11, fontWeight: 700 }}>{sc.label}</span>; })()}
+                        {(() => { const sc = STATUS_CONFIG[selected.status] || STATUS_CONFIG['verified']; return <span style={{ background: sc.bg, color: sc.color, padding: '2px 10px', borderRadius: 10, fontSize: 11, fontWeight: 700 }}>{sc.label}</span>; })()}
                         {(selected.revisiCount || 0) > 0 && <span style={{ fontSize: 11, color: '#EA580C', background: '#FFF7ED', padding: '2px 8px', borderRadius: 10, fontWeight: 600 }}>Revisi {selected.revisiCount}x</span>}
                         {selected.sudahDaftarUlang && <span style={{ fontSize: 11, color: '#065F46', background: '#D1FAE5', padding: '2px 8px', borderRadius: 10, fontWeight: 600 }}>Daftar Ulang ✓</span>}
                       </div>
                     </div>
                   </div>
 
-                  {/* Nilai */}
-                  {(selected.nilaiTes != null || selected.nilaiSeleksi != null) && (
-                    <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-                      {selected.nilaiTes != null && (
-                        <div style={{ flex: 1, background: '#F0FDF4', borderRadius: 10, padding: '10px 14px', textAlign: 'center' }}>
-                          <div style={{ fontSize: 10, color: '#6B7280', fontWeight: 600, marginBottom: 3 }}>NILAI TES</div>
-                          <div className="font-display" style={{ fontSize: 28, fontWeight: 800, color: '#059669' }}>{selected.nilaiTes}</div>
-                        </div>
-                      )}
-                      {selected.nilaiSeleksi != null && (
-                        <div style={{ flex: 1, background: '#FFFBEB', borderRadius: 10, padding: '10px 14px', textAlign: 'center' }}>
-                          <div style={{ fontSize: 10, color: '#6B7280', fontWeight: 600, marginBottom: 3 }}>NILAI SELEKSI</div>
-                          <div className="font-display" style={{ fontSize: 28, fontWeight: 800, color: '#C8973A' }}>{selected.nilaiSeleksi}</div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                     {[
                       ['TTL', selected.ttl || `${selected.tempatLahir || '-'}, ${selected.tanggalLahir || '-'}`],
                       ['Jenis Kelamin', selected.jenisKelamin], ['Agama', selected.agama],
                       ['NIK', selected.nik || '-'], ['NISN', selected.nisn || '-'],
-                      ['No. HP', selected.noPribadi || '-'],
+                      ['No. WhatsApp', `${selected.noPribadi || '-'}${selected.noPribadi ? (selected.waVerified ? '  ✓ Terverifikasi' : '  ⏳ Belum diverifikasi') : ''}`],
                       ['Alamat', `${selected.alamat}${selected.rt ? `, RT ${selected.rt}/RW ${selected.rw}` : ''}`],
                       ['Kec/Kab', `${selected.kecamatan || '-'}, ${selected.kabupaten || '-'}`],
                     ].map(([l, v]) => (
@@ -463,7 +629,7 @@ export default function AdminPendaftar() {
                 <div style={{ background: 'white', borderRadius: 14, padding: 16, border: '1px solid #E5E7EB' }}>
                   <h4 style={{ fontSize: 13, fontWeight: 700, color: '#0A1628', marginBottom: 10 }}>📚 Data Akademik</h4>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                    {[['Jurusan', selected.jurusan], ['Asal SMP', selected.asalSMP || selected.asalSekolah || '-'], ['Asal SD', selected.asalSD || '-'], ['NISN', selected.nisn || '-']].map(([l, v]) => (
+                    {[['Jenjang', (selected.jenjang || 'smk').toUpperCase()], ['Sumber Daftar', (selected.sumberDaftar || 'online') === 'online' ? 'Online' : 'Offline'], ['Jurusan', selected.jurusan], ['Asal SMP', selected.asalSMP || selected.asalSekolah || '-'], ['Asal SD', selected.asalSD || '-'], ['NISN', selected.nisn || '-']].map(([l, v]) => (
                       <div key={l} style={{ background: '#FAFAFA', borderRadius: 8, padding: '7px 10px' }}>
                         <div style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, marginBottom: 2 }}>{l}</div>
                         <div style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{v}</div>
@@ -510,23 +676,17 @@ export default function AdminPendaftar() {
                   </div>
                 </div>
 
-                {/* Jadwal Tes */}
-                {selected.jadwalTes && (
-                  <div style={{ background: '#0A1628', borderRadius: 14, padding: 16, color: 'white' }}>
-                    <h4 style={{ fontSize: 13, fontWeight: 700, color: '#E8B84B', marginBottom: 10 }}>📅 Jadwal Tes Terkirim</h4>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-                      <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: '9px 12px' }}>
-                        <div style={{ fontSize: 10, color: '#C8973A', fontWeight: 700, marginBottom: 3 }}>JADWAL</div>
-                        <div style={{ fontSize: 12, fontWeight: 600 }}>{selected.jadwalTes}</div>
-                      </div>
-                      <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: '9px 12px' }}>
-                        <div style={{ fontSize: 10, color: '#C8973A', fontWeight: 700, marginBottom: 3 }}>LOKASI</div>
-                        <div style={{ fontSize: 12, fontWeight: 600 }}>{selected.lokasiTes}</div>
-                      </div>
-                    </div>
-                    {selected.infoTes && <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', margin: 0, whiteSpace: 'pre-line' }}>{selected.infoTes}</p>}
+                {/* Ringkasan Pembayaran */}
+                <div style={{ background: '#0A1628', borderRadius: 14, padding: 16, color: 'white' }}>
+                  <h4 style={{ fontSize: 13, fontWeight: 700, color: '#E8B84B', marginBottom: 10 }}>💳 Status Pembayaran</h4>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>{STATUS_BAYAR_CONFIG[selected.statusPembayaran || 'belum_bayar']?.label}</span>
+                    {selected.totalTagihan != null && <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>Tagihan: Rp{selected.totalTagihan.toLocaleString('id-ID')}</span>}
                   </div>
-                )}
+                  <Link href={`/admin/pendaftar/${selected.id}`} style={{ display: 'block', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#0A1628', background: '#E8B84B', borderRadius: 8, padding: '8px', textDecoration: 'none' }}>
+                    Lihat Riwayat Cicilan & Kwitansi →
+                  </Link>
+                </div>
 
                 {/* Daftar Ulang Info */}
                 {selected.sudahDaftarUlang && (
@@ -543,12 +703,41 @@ export default function AdminPendaftar() {
                 <div style={{ background: 'white', borderRadius: 14, padding: 16, border: '1px solid #E5E7EB' }}>
                   <h4 style={{ fontSize: 13, fontWeight: 700, color: '#0A1628', marginBottom: 12 }}>Panel Verifikasi</h4>
 
-                  {(() => { const sc = STATUS_CONFIG[selected.status] || STATUS_CONFIG['pending']; return (
+                  {(() => { const sc = STATUS_CONFIG[selected.status] || STATUS_CONFIG['verified']; return (
                     <div style={{ background: sc.bg, borderRadius: 8, padding: '9px 12px', marginBottom: 14 }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: sc.color, marginBottom: 2 }}>STATUS SAAT INI</div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: sc.color }}>{sc.label}</div>
                     </div>
                   ); })()}
+
+                  {/* Verifikasi WhatsApp (manual, bukan email) */}
+                  <div style={{ background: selected.waVerified ? '#F0FDF4' : '#FFFBEB', border: `1px solid ${selected.waVerified ? '#A7F3D0' : '#FDE68A'}`, borderRadius: 8, padding: 10, marginBottom: 12 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: selected.waVerified ? '#065F46' : '#92400E', marginBottom: 4 }}>📱 No. WhatsApp: {selected.noPribadi || '-'}</div>
+                    <p style={{ fontSize: 11, color: '#6B7280', marginBottom: 8 }}>Hubungi nomor ini via WhatsApp untuk memastikan aktif & benar milik pendaftar.</p>
+                    <button onClick={() => handleToggleWa(selected)} style={{ width: '100%', padding: '7px 10px', background: selected.waVerified ? '#D1FAE5' : '#0A1628', border: 'none', borderRadius: 8, color: selected.waVerified ? '#065F46' : 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      {selected.waVerified ? '✓ WhatsApp Terverifikasi (klik batalkan)' : 'Tandai WhatsApp Terverifikasi'}
+                    </button>
+                  </div>
+
+                  {/* Reset Password Akun (untuk siswa yang lupa email/password) */}
+                  <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 8, padding: 10, marginBottom: 12 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#5B21B6', marginBottom: 4 }}>🔑 Akun Login: {selected.userEmail || '-'}</div>
+                    <p style={{ fontSize: 11, color: '#6B7280', marginBottom: 8 }}>Kalau siswa lupa email/password, reset di sini lalu sampaikan info barunya via WhatsApp.</p>
+                    <button onClick={() => handleResetPassword(selected)} style={{ width: '100%', padding: '7px 10px', background: '#5B21B6', border: 'none', borderRadius: 8, color: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      Reset Password Akun
+                    </button>
+                  </div>
+
+                  {/* Link ke Detail Lengkap (Biodata & Keuangan/Cicilan) — tombol
+                      edit formulir/biodata sekarang ada di dalam sana (tab
+                      Biodata), berlaku untuk semua pendaftar (online & offline),
+                      bukan cuma draft offline. */}
+                  <Link href={`/admin/pendaftar/${selected.id}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', padding: '9px 10px', background: '#0A1628', borderRadius: 8, color: 'white', fontSize: 12, fontWeight: 700, textDecoration: 'none', marginBottom: 12 }}>
+                    📄 Lihat Detail Lengkap & Keuangan
+                  </Link>
+                  {selected.statusPembayaran === 'menunggu_verifikasi' && (
+                    <p style={{ fontSize: 11, color: '#D97706', marginBottom: 12, textAlign: 'center' }}>⏳ Ada cicilan menunggu verifikasi</p>
+                  )}
 
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#374151', marginBottom: 8 }}>UBAH STATUS</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
@@ -556,17 +745,14 @@ export default function AdminPendaftar() {
                       { s: 'verified',        label: ' Sedang Diverifikasi', color: '#1E40AF', bg: '#EFF6FF', border: '#BFDBFE' },
                       { s: 'diterima_berkas', label: ' Terima Berkas',       color: '#065F46', bg: '#F0FDF4', border: '#A7F3D0' },
                       { s: 'ditolak',         label: ' Tolak Berkas',        color: '#DC2626', bg: '#FFF1F2', border: '#FECDD3' },
-                      { s: 'tes',             label: ' Set Jadwal Tes',      color: '#5B21B6', bg: '#F5F3FF', border: '#DDD6FE' },
-                      { s: 'lulus',           label: ' Lulus',               color: '#065F46', bg: '#F0FDF4', border: '#A7F3D0' },
-                      { s: 'tidak_lulus',     label: ' Tidak Lulus',         color: '#991B1B', bg: '#FEF2F2', border: '#FECACA' },
                     ].map(btn => (
                       <button key={btn.s} onClick={() => openEdit(selected, btn.s)} style={{ width: '100%', padding: '8px 10px', background: btn.bg, border: `1px solid ${btn.border}`, borderRadius: 8, color: btn.color, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
                         {btn.label}
                       </button>
                     ))}
 
-                    {/* Tombol Konfirmasi Daftar Ulang - hanya jika lulus */}
-                    {(selected.status === 'lulus' || selected.status === 'daftar_ulang') && (
+                    {/* Tombol Konfirmasi Daftar Ulang - hanya jika berkas diterima */}
+                    {selected.status === 'diterima_berkas' && (
                       <button
                         onClick={() => selected.sudahDaftarUlang ? null : handleKonfirmasiDaftarUlang(selected.id)}
                         disabled={selected.sudahDaftarUlang}
@@ -575,14 +761,6 @@ export default function AdminPendaftar() {
                       </button>
                     )}
                   </div>
-
-                  {/* Input Nilai Tes Cepat */}
-                  {(selected.status === 'tes' || selected.status === 'lulus' || selected.status === 'tidak_lulus') && (
-                    <div style={{ background: '#FFFBEB', borderRadius: 8, padding: 10, border: '1px solid #FDE68A', marginBottom: 12 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#92400E', marginBottom: 6 }}>📊 INPUT NILAI TES</div>
-                      <p style={{ fontSize: 11, color: '#92400E', marginBottom: 8 }}>Gunakan tombol Lulus/Tidak Lulus untuk input nilai tes dan pengumuman.</p>
-                    </div>
-                  )}
 
                   <button onClick={() => handleDelete(selected.id)} style={{ width: '100%', background: '#FFF1F2', color: '#DC2626', border: '1px solid #FECDD3', borderRadius: 8, padding: '8px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                     🗑 Hapus Data
@@ -608,14 +786,9 @@ export default function AdminPendaftar() {
               <div style={{ marginBottom: 14 }}>
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 5 }}>Status *</label>
                 <select style={inp} value={editForm.status} onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))}>
-                  <option value="pending">Menunggu Verifikasi</option>
                   <option value="verified">Sedang Diverifikasi</option>
-                  <option value="diterima_berkas">Berkas Diterima</option>
-                  <option value="ditolak">Ditolak</option>
-                  <option value="tes">Jadwal Tes</option>
-                  <option value="lulus">Lulus</option>
-                  <option value="tidak_lulus">Tidak Lulus</option>
-                  <option value="daftar_ulang">Daftar Ulang Selesai</option>
+                  <option value="diterima_berkas">Terima Berkas</option>
+                  <option value="ditolak">Tolak Berkas</option>
                 </select>
               </div>
 
@@ -628,65 +801,21 @@ export default function AdminPendaftar() {
                 </div>
               )}
 
-              {/* JADWAL TES */}
-              {showTesFields && (
-                <div style={{ marginBottom: 14, background: '#F5F3FF', borderRadius: 10, padding: 14, border: '1px solid #DDD6FE' }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#5B21B6', marginBottom: 10 }}>📅 Jadwal Tes</div>
-                  <div style={{ marginBottom: 8 }}>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Tanggal & Waktu *</label>
-                    <input style={inp} value={editForm.jadwalTes} onChange={e => setEditForm(f => ({ ...f, jadwalTes: e.target.value }))} placeholder="Senin, 28 Juli 2026 pukul 08.00 WIB" />
-                  </div>
-                  <div style={{ marginBottom: 8 }}>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Lokasi</label>
-                    <input style={inp} value={editForm.lokasiTes} onChange={e => setEditForm(f => ({ ...f, lokasiTes: e.target.value }))} placeholder="SMK Citra Negara — Aula Utama" />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Info Tambahan</label>
-                    <textarea style={{ ...inp, minHeight: 70, resize: 'vertical' }} value={editForm.infoTes} onChange={e => setEditForm(f => ({ ...f, infoTes: e.target.value }))} placeholder="Harap datang 15 menit sebelum tes. Bawa kartu identitas..." />
-                  </div>
-                </div>
-              )}
-
-              {/* PENGUMUMAN LULUS / TIDAK LULUS */}
+              {/* TERIMA BERKAS — pesan untuk siswa */}
               {showPengumuman && (
-                <div style={{ marginBottom: 14, background: editForm.status === 'lulus' ? '#F0FDF4' : '#FEF2F2', borderRadius: 10, padding: 14, border: `1px solid ${editForm.status === 'lulus' ? '#A7F3D0' : '#FECACA'}` }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: editForm.status === 'lulus' ? '#065F46' : '#991B1B', marginBottom: 10 }}>
-                    {editForm.status === 'lulus' ? '🏆 Pengumuman Kelulusan' : '😔 Pengumuman Tidak Lulus'}
-                  </div>
-
-                  {/* Nilai Tes */}
-                  <div style={{ marginBottom: 8 }}>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Nilai Tes</label>
-                    <input type="number" min="0" max="100" step="0.1" style={inp} value={editForm.nilaiTes} onChange={e => setEditForm(f => ({ ...f, nilaiTes: e.target.value }))} placeholder="Contoh: 85.5" />
-                  </div>
-
-                  {/* Nilai Seleksi */}
-                  <div style={{ marginBottom: 8 }}>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Nilai Seleksi Akhir</label>
-                    <input type="number" min="0" max="100" step="0.1" style={inp} value={editForm.nilaiSeleksi} onChange={e => setEditForm(f => ({ ...f, nilaiSeleksi: e.target.value }))} placeholder="Contoh: 82.0" />
-                  </div>
+                <div style={{ marginBottom: 14, background: '#F0FDF4', borderRadius: 10, padding: 14, border: '1px solid #A7F3D0' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#065F46', marginBottom: 10 }}>🏆 Berkas Diterima</div>
 
                   {/* Pesan */}
                   <div>
                     <label style={{ fontSize: 11, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Pesan untuk Siswa <span style={{ fontWeight: 400 }}>(tampil di dashboard)</span></label>
-                    <textarea style={{ ...inp, minHeight: 80, resize: 'vertical' }} value={editForm.pesanPengumuman} onChange={e => setEditForm(f => ({ ...f, pesanPengumuman: e.target.value }))} placeholder={editForm.status === 'lulus' ? 'Selamat! Silakan datang untuk daftar ulang pada tanggal...' : 'Terima kasih atas partisipasi Anda. Kami berharap...'} />
-                  </div>
-                </div>
-              )}
-
-              {/* DAFTAR ULANG */}
-              {showDaftarUlang && (
-                <div style={{ marginBottom: 14, background: '#F0FDF4', borderRadius: 10, padding: 14, border: '1px solid #A7F3D0' }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#065F46', marginBottom: 8 }}>📋 Konfirmasi Daftar Ulang</div>
-                  <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Catatan (opsional)</label>
-                    <textarea style={{ ...inp, minHeight: 60, resize: 'vertical' }} value={editForm.catatanDaftarUlang} onChange={e => setEditForm(f => ({ ...f, catatanDaftarUlang: e.target.value }))} placeholder="Catatan daftar ulang..." />
+                    <textarea style={{ ...inp, minHeight: 80, resize: 'vertical' }} value={editForm.pesanPengumuman} onChange={e => setEditForm(f => ({ ...f, pesanPengumuman: e.target.value }))} placeholder="Selamat! Berkas Anda diterima. Silakan tunggu informasi daftar ulang..." />
                   </div>
                 </div>
               )}
 
               {/* Catatan Umum */}
-              {!showAlasan && !showPengumuman && !showTesFields && !showDaftarUlang && (
+              {!showAlasan && !showPengumuman && (
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 5 }}>Catatan (opsional)</label>
                   <textarea style={{ ...inp, minHeight: 70, resize: 'vertical' }} value={editForm.catatan} onChange={e => setEditForm(f => ({ ...f, catatan: e.target.value }))} placeholder="Catatan untuk siswa..." />
