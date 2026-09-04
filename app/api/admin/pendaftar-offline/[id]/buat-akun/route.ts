@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
+import { requirePermission } from '@/lib/adminSession'
 import bcrypt from 'bcryptjs'
-import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 // POST - buat akun login & kaitkan ke pendaftaran offline yang sudah ada
@@ -8,10 +8,8 @@ import { prisma } from '@/lib/db'
 // Begitu akun dibuat, pendaftar bisa login dari rumah dan melanjutkan
 // formulirnya sendiri — data yang sama, bukan pendaftar baru.
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSession()
-  if (!session || session.role !== 'admin') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const gate = await requirePermission('pendaftar', 'update')
+  if (!gate.ok) return gate.res
 
   try {
     const { id } = await params

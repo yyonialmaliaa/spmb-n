@@ -133,21 +133,21 @@ export default function RevisiPage() {
   };
 
   if (success) return (
-    <div style={{ minHeight: '100vh', background: '#FAF7F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ textAlign: 'center', background: 'white', borderRadius: 20, padding: 48, maxWidth: 440 }}>
+    <div style={{ minHeight: '100vh', background: 'var(--adm-surface-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ textAlign: 'center', background: 'var(--adm-surface)', borderRadius: 20, padding: 48, maxWidth: 440 }}>
         <div style={{ fontSize: 64, marginBottom: 20 }}>✅</div>
-        <h2 className="font-display" style={{ fontSize: 24, color: '#0A1628', marginBottom: 10 }}>Revisi Berhasil Dikirim!</h2>
-        <p style={{ color: '#6B7280', fontSize: 14 }}>Berkas Anda sudah dikirim ulang. Menunggu verifikasi admin...</p>
-        <p style={{ color: '#9CA3AF', fontSize: 12, marginTop: 8 }}>Mengalihkan ke dashboard...</p>
+        <h2 className="font-display" style={{ fontSize: 24, color: 'var(--adm-text)', marginBottom: 10 }}>Revisi Berhasil Dikirim!</h2>
+        <p style={{ color: 'var(--adm-text-muted)', fontSize: 14 }}>Berkas Anda sudah dikirim ulang. Menunggu verifikasi admin...</p>
+        <p style={{ color: 'var(--adm-text-faint)', fontSize: 12, marginTop: 8 }}>Mengalihkan ke dashboard...</p>
       </div>
     </div>
   );
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FAF7F0' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--adm-surface-alt)' }}>
       <header style={{ background: 'linear-gradient(180deg, #123524 0%, #0B2A1C 100%)', borderBottom: '2px solid #C8973A', padding: '0 24px' }}>
         <div className="form-header-inner" style={{ maxWidth: 800, margin: '0 auto', display: 'flex', alignItems: 'center', height: 64, gap: 16, flexWrap: 'wrap' }}>
-          <Link href="/dashboard" style={{ color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none', fontSize: 13, flexShrink: 0 }}>
+          <Link href="/dashboard" style={{ color: 'var(--adm-text-muted)', display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none', fontSize: 13, flexShrink: 0 }}>
             <ArrowLeft size={16} /> Kembali
           </Link>
           <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.2)', flexShrink: 0 }} />
@@ -155,7 +155,10 @@ export default function RevisiPage() {
             <div style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Image src="/images/logo.png" alt="Logo SMK Citra Negara" width={35} height={35} style={{ objectFit: 'cover' }} />
             </div>
-            <span className="form-header-title" style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>Revisi Berkas SPMB</span>
+            {/* Header ini SENGAJA selalu hijau tua (identitas Citra Negara,
+                tidak ikut tema gelap/terang) — jadi teksnya harus putih tetap,
+                bukan token, supaya tidak pernah jadi gelap-di-atas-gelap. */}
+            <span className="form-header-title" style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 14 }}>Revisi Berkas SPMB</span>
           </div>
         </div>
       </header>
@@ -163,27 +166,27 @@ export default function RevisiPage() {
       <main className="form-shell-main" style={{ maxWidth: 800, margin: '0 auto', padding: '32px 24px' }}>
         {/* Alasan Penolakan */}
         {pendaftaran?.alasanPenolakan && (
-          <div style={{ background: '#FFF7ED', border: '1.5px solid #FED7AA', borderRadius: 14, padding: 20, marginBottom: 24 }}>
+          <div style={{ background: 'var(--adm-warning-weak)', border: '1.5px solid var(--adm-warning-border)', borderRadius: 14, padding: 20, marginBottom: 24 }}>
             <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-              <AlertCircle size={20} color="#C2410C" style={{ flexShrink: 0, marginTop: 1 }} />
+              <AlertCircle size={20} color="var(--adm-warning)" style={{ flexShrink: 0, marginTop: 1 }} />
               <div>
-                <h3 style={{ fontSize: 15, fontWeight: 700, color: '#C2410C', marginBottom: 6 }}>Alasan Penolakan dari Admin</h3>
-                <p style={{ fontSize: 14, color: '#C2410C', lineHeight: 1.6, margin: 0 }}>{pendaftaran.alasanPenolakan}</p>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--adm-warning)', marginBottom: 6 }}>Alasan Penolakan dari Admin</h3>
+                <p style={{ fontSize: 14, color: 'var(--adm-warning)', lineHeight: 1.6, margin: 0 }}>{pendaftaran.alasanPenolakan}</p>
                 {pendaftaran.catatan && (
-                  <p style={{ fontSize: 13, color: '#EA580C', marginTop: 8, fontStyle: 'italic' }}>Catatan tambahan: {pendaftaran.catatan}</p>
+                  <p style={{ fontSize: 13, color: 'var(--adm-warning)', marginTop: 8, fontStyle: 'italic' }}>Catatan tambahan: {pendaftaran.catatan}</p>
                 )}
               </div>
             </div>
           </div>
         )}
 
-        <div className="form-card" style={{ background: 'white', borderRadius: 20, padding: '32px 36px', boxShadow: '0 4px 30px rgba(10,22,40,0.08)', border: '1px solid #F0EBE0' }}>
-          <h2 className="font-display" style={{ fontSize: 22, color: '#0A1628', marginBottom: 6 }}>Upload Ulang Berkas</h2>
-          <p style={{ color: '#6B7280', fontSize: 13, marginBottom: 8 }}>
+        <div className="form-card" style={{ background: 'var(--adm-surface)', borderRadius: 20, padding: '32px 36px', boxShadow: 'var(--adm-shadow-md)', border: '1px solid var(--adm-border)' }}>
+          <h2 className="font-display" style={{ fontSize: 22, color: 'var(--adm-text)', marginBottom: 6 }}>Upload Ulang Berkas</h2>
+          <p style={{ color: 'var(--adm-text-muted)', fontSize: 13, marginBottom: 8 }}>
             Perbaiki berkas yang diminta admin. File lama tetap tersimpan, upload baru untuk mengganti.
           </p>
           {(pendaftaran?.revisiCount || 0) > 0 && (
-            <p style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 24 }}>Revisi ke-{(pendaftaran?.revisiCount || 0) + 1}</p>
+            <p style={{ fontSize: 12, color: 'var(--adm-text-faint)', marginBottom: 24 }}>Revisi ke-{(pendaftaran?.revisiCount || 0) + 1}</p>
           )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 28 }}>
@@ -195,31 +198,31 @@ export default function RevisiPage() {
               const isUploading = f.uploading;
 
               return (
-                <div key={item.key} id={`file-${item.key}`} className="file-upload-row" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: isUploaded ? '#F0FDF4' : hasExisting ? '#EFF6FF' : '#FAFAFA', borderRadius: 12, border: `1.5px solid ${isUploaded ? '#86EFAC' : hasExisting ? '#BFDBFE' : '#E5E7EB'}` }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: isUploaded ? '#DCFCE7' : hasExisting ? '#DBEAFE' : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div key={item.key} id={`file-${item.key}`} className="file-upload-row" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: isUploaded ? 'var(--adm-success-weak)' : hasExisting ? 'var(--adm-info-weak)' : 'var(--adm-surface-alt)', borderRadius: 12, border: `1.5px solid ${isUploaded ? 'var(--adm-success-border)' : hasExisting ? 'var(--adm-info-border)' : 'var(--adm-border)'}` }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: isUploaded ? 'var(--adm-success-weak)' : hasExisting ? 'var(--adm-info-weak)' : 'var(--adm-neutral-weak)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {isUploading ? <Loader size={16} color="#3B82F6" /> :
                      isUploaded ? <CheckCircle size={16} color="#16A34A" /> :
                      hasExisting ? <CheckCircle size={16} color="#3B82F6" /> :
                      <Upload size={16} color="#9CA3AF" />}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>
-                      {item.label}{item.required && <span style={{ color: '#EF4444', marginLeft: 4 }}>*</span>}
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--adm-text)' }}>
+                      {item.label}{item.required && <span style={{ color: 'var(--adm-danger)', marginLeft: 4 }}>*</span>}
                     </div>
-                    {isUploaded && <div style={{ fontSize: 11, color: '#16A34A', marginTop: 2 }}>✓ File baru berhasil diupload</div>}
-                    {isUploading && <div style={{ fontSize: 11, color: '#3B82F6', marginTop: 2 }}>Mengupload...</div>}
-                    {f.error && <div style={{ fontSize: 11, color: '#DC2626', marginTop: 2 }}>✗ {f.error}</div>}
+                    {isUploaded && <div style={{ fontSize: 11, color: 'var(--adm-success)', marginTop: 2 }}>✓ File baru berhasil diupload</div>}
+                    {isUploading && <div style={{ fontSize: 11, color: 'var(--adm-info)', marginTop: 2 }}>Mengupload...</div>}
+                    {f.error && <div style={{ fontSize: 11, color: 'var(--adm-danger)', marginTop: 2 }}>✗ {f.error}</div>}
                     {hasExisting && !isUploading && !f.error && (
-                      <div style={{ fontSize: 11, color: '#3B82F6', marginTop: 2 }}>
+                      <div style={{ fontSize: 11, color: 'var(--adm-info)', marginTop: 2 }}>
                         File lama tersimpan — upload baru untuk mengganti
-                        <a href={existingPath} target="_blank" rel="noreferrer" style={{ marginLeft: 8, color: '#1D4ED8', fontWeight: 600 }}>Lihat</a>
+                        <a href={existingPath} target="_blank" rel="noreferrer" style={{ marginLeft: 8, color: 'var(--adm-info)', fontWeight: 600 }}>Lihat</a>
                       </div>
                     )}
                     {!hasExisting && !isUploaded && !isUploading && !f.error && (
-                      <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>JPG, PNG, atau PDF — maks. 2MB</div>
+                      <div style={{ fontSize: 11, color: 'var(--adm-text-faint)', marginTop: 2 }}>JPG, PNG, atau PDF — maks. 2MB</div>
                     )}
                   </div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#0A1628', color: 'white', padding: '7px 14px', borderRadius: 8, cursor: isUploading ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 600, flexShrink: 0, opacity: isUploading ? 0.6 : 1 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--cn-hijau)', color: '#FFFFFF', padding: '7px 14px', borderRadius: 8, cursor: isUploading ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 600, flexShrink: 0, opacity: isUploading ? 0.6 : 1 }}>
                     <Upload size={13} /> {hasExisting || isUploaded ? 'Ganti' : 'Upload'}
                     <input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={e => handleFileChange(item.key, e)} disabled={isUploading} style={{ display: 'none' }} />
                   </label>
@@ -228,8 +231,8 @@ export default function RevisiPage() {
             })}
           </div>
 
-          <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: 14, marginBottom: 24 }}>
-            <p style={{ fontSize: 12, color: '#92400E', lineHeight: 1.6, margin: 0 }}>
+          <div style={{ background: 'var(--adm-warning-weak)', border: '1px solid var(--adm-warning-border)', borderRadius: 10, padding: 14, marginBottom: 24 }}>
+            <p style={{ fontSize: 12, color: 'var(--adm-warning)', lineHeight: 1.6, margin: 0 }}>
               ✓ File yang tidak diganti akan tetap menggunakan file lama. Setelah dikirim, status akan kembali ke <strong>Menunggu Verifikasi</strong>.
             </p>
           </div>

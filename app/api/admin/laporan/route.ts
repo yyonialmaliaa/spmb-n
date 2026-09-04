@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { requirePermission } from '@/lib/adminSession'
 import { getLaporanData, type JenjangLaporan } from '@/lib/laporanSpmb'
 
 const JENJANG_VALID = ['smp', 'sma', 'smk']
@@ -11,10 +11,8 @@ const JENJANG_VALID = ['smp', 'sma', 'smk']
 // lib/laporanSpmb.ts) — bukan cuma difilter di frontend — dan hanya
 // mengambil kolom agregat, tidak pernah nama/NIK/kontak pendaftar.
 export async function GET(req: Request) {
-  const session = await getSession()
-  if (!session || session.role !== 'admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const gate = await requirePermission('laporan_pendaftaran', 'read')
+  if (!gate.ok) return gate.res
 
   const url = new URL(req.url)
   const jenjang = (url.searchParams.get('jenjang') || '').toLowerCase()

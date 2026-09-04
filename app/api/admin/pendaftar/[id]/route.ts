@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { getAdminSession, forbidden, unauthorized, requirePermission } from '@/lib/adminSession'
+import { can, type Resource } from '@/lib/permissions'
 import { prisma } from '@/lib/db'
 import { hitungUlangTagihan, previewTagihan, recalculatePembayaran, HargaTidakDitemukanError } from '@/lib/keuangan'
 import { kirimNotifikasi } from '@/lib/notifikasi'
@@ -10,15 +11,40 @@ const LABEL_STATUS: Record<string, string> = {
   ditolak: 'Berkas Ditolak',
 }
 
+// Route ini menyentuh TIGA area kewenangan yang berbeda dalam satu PUT, jadi
+// satu gerbang permission saja tidak cukup — setiap field harus dipetakan ke
+// area yang benar. Di sinilah aturan "Admin Keuangan TIDAK BOLEH verifikasi
+// dokumen atau mengubah kelulusan" benar-benar ditegakkan, dan sebaliknya
+// "Front Office TIDAK BOLEH mengubah tagihan".
+const FIELD_RESOURCE: Record<string, Resource> = {
+  // Hasil pemeriksaan berkas
+  status: 'verifikasi',
+  alasanPenolakan: 'verifikasi',
+  catatan: 'verifikasi',
+  waVerified: 'verifikasi',
+  // Kelulusan, pengumuman, dan daftar ulang
+  nilaiSeleksi: 'status',
+  pesanPengumuman: 'status',
+  sudahDaftarUlang: 'status',
+  catatanDaftarUlang: 'status',
+  // Nilai tagihan pendaftar
+  diskonId: 'tagihan',
+  hitungUlang: 'tagihan',
+}
+
+const LABEL_RESOURCE: Record<string, string> = {
+  verifikasi: 'memverifikasi berkas',
+  status: 'mengubah status kelulusan',
+  tagihan: 'mengubah tagihan',
+}
+
 // GET - detail lengkap satu pendaftar, termasuk riwayat cicilan pembayaran
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getSession()
-  if (!session || session.role !== 'admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const gate = await requirePermission('pendaftar', 'read')
+  if (!gate.ok) return gate.res
   try {
     const { id } = await params
     const data = await prisma.pendaftaran.findUnique({
@@ -41,14 +67,27 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getSession()
-  if (!session || session.role !== 'admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const session = await getAdminSession()
+  if (!session) return unauthorized()
 
   try {
     const { id } = await params
     const body = await req.json()
+
+    // Tentukan area kewenangan mana saja yang disentuh permintaan ini, lalu
+    // TOLAK SELURUH permintaan kalau ada satu saja yang tidak diizinkan.
+    // Menolak seluruhnya (bukan diam-diam membuang field terlarang) supaya
+    // admin tidak pernah mengira perubahannya tersimpan padahal tidak.
+    const disentuh = new Set<Resource>()
+    for (const field of Object.keys(body)) {
+      const resource = FIELD_RESOURCE[field]
+      if (resource) disentuh.add(resource)
+    }
+    for (const resource of disentuh) {
+      if (!can(session.role, resource, 'update')) {
+        return forbidden(`Anda tidak memiliki akses untuk ${LABEL_RESOURCE[resource] ?? resource}.`)
+      }
+    }
 
     const allowed = ['verified', 'diterima_berkas', 'ditolak']
     if (body.status && !allowed.includes(body.status)) {
@@ -157,10 +196,8 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getSession()
-  if (!session || session.role !== 'admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const gate = await requirePermission('pendaftar', 'delete')
+  if (!gate.ok) return gate.res
   try {
     const { id } = await params
     await prisma.pendaftaran.delete({ where: { id } })

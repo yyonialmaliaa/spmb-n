@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
+import { isAdminRole, normalizeRole } from '@/lib/permissions';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -56,8 +57,10 @@ export default function Navbar() {
       <style>{CSS}</style>
 
       <nav style={{
-        background: scrolled ? '#145A45' : '#0B3D2E',
-        borderBottom: '2px solid #C8973A',
+        background: scrolled ? 'var(--adm-kaca-pekat)' : 'var(--adm-surface)',
+        backdropFilter: 'var(--adm-blur)',
+        WebkitBackdropFilter: 'var(--adm-blur)',
+        borderBottom: '1px solid var(--adm-border)',
         position: 'sticky', top: 0, zIndex: 100,
         transition: 'background 0.3s',
       }}>
@@ -70,8 +73,8 @@ export default function Navbar() {
                 <Image src="/images/logo.png" alt="Logo SMK Citra Negara" width={44} height={44} style={{ objectFit: 'cover' }} />
               </div>
               <div>
-                <div style={{ color: 'white', fontWeight: 800, fontSize: 16, lineHeight: 1.2 }}>SMK Citra Negara</div>
-                <div style={{ color: '#C8973A', fontSize: 11, fontWeight: 500 }}>Pilihan Tepat di Sekolah yang MANTAP</div>
+                <div style={{ color: 'var(--adm-text)', fontWeight: 800, fontSize: 16, lineHeight: 1.2 }}>SMK Citra Negara</div>
+                <div style={{ color: 'var(--cn-emas)', fontSize: 11, fontWeight: 500 }}>Pilihan Tepat di Sekolah yang MANTAP</div>
               </div>
             </Link>
 
@@ -80,14 +83,14 @@ export default function Navbar() {
               {session ? (
                 <>
                   <Link
-                    href={session.role === 'admin' ? '/admin/dashboard' : '/dashboard'}
-                    style={{ color: '#C8973A', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}
+                    href={isAdminRole(normalizeRole(session.role)) ? '/admin/dashboard' : '/dashboard'}
+                    style={{ color: 'var(--cn-hijau)', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}
                   >
                     {session.namaLengkap || 'Dashboard'}
                   </Link>
                   <button onClick={handleLogout} style={{
-                    background: 'transparent', border: '1px solid rgba(255,255,255,0.3)',
-                    color: 'rgba(255,255,255,0.7)', padding: '7px 16px',
+                    background: 'transparent', border: '1px solid var(--adm-border-strong)',
+                    color: 'var(--adm-text-muted)', padding: '7px 16px',
                     borderRadius: 6, cursor: 'pointer', fontSize: 13,
                   }}>
                     Keluar
@@ -96,7 +99,7 @@ export default function Navbar() {
               ) : (
                 <>
                   <Link href="/login" style={{
-                    color: 'rgba(255,255,255,0.8)', textDecoration: 'none',
+                    color: 'var(--adm-text-muted)', textDecoration: 'none',
                     fontSize: 14, fontWeight: 500, padding: '8px 16px',
                   }}>
                     Masuk
@@ -112,7 +115,7 @@ export default function Navbar() {
             <button
               onClick={() => setMobileOpen(v => !v)}
               className="mobile-toggle-btn"
-              style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', alignItems: 'center' }}
+              style={{ background: 'none', border: 'none', color: 'var(--adm-text)', cursor: 'pointer', alignItems: 'center' }}
             >
               {mobileOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -121,14 +124,14 @@ export default function Navbar() {
 
         {/* ── Mobile Menu ── */}
         {mobileOpen && (
-          <div style={{ background: '#0d2b1f', padding: '8px 24px 24px', borderTop: '1px solid rgba(200,151,58,0.2)' }}>
+          <div style={{ background: 'var(--adm-surface)', padding: '8px 24px 24px', borderTop: '1px solid var(--adm-border)' }}>
             {/* Auth (Mobile) */}
             <div style={{ marginTop: 16, display: 'flex', gap: 10 }}>
               {session ? (
                 <Link
-                  href={session.role === 'admin' ? '/admin/dashboard' : '/dashboard'}
+                  href={isAdminRole(normalizeRole(session.role)) ? '/admin/dashboard' : '/dashboard'}
                   onClick={closeMobile}
-                  style={{ color: '#C8973A', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}
+                  style={{ color: 'var(--cn-hijau)', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}
                 >
                   Dashboard
                 </Link>
@@ -136,8 +139,8 @@ export default function Navbar() {
                 <>
                   <Link href="/login" onClick={closeMobile} style={{
                     flex: 1, textAlign: 'center', padding: '10px',
-                    border: '1px solid rgba(255,255,255,0.3)',
-                    borderRadius: 8, color: 'white', textDecoration: 'none', fontSize: 14,
+                    border: '1px solid var(--adm-border-strong)',
+                    borderRadius: 8, color: 'var(--adm-text)', textDecoration: 'none', fontSize: 14,
                   }}>
                     Masuk
                   </Link>

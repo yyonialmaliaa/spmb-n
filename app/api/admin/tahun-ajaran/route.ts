@@ -1,16 +1,11 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { requirePermission } from '@/lib/adminSession'
 import { prisma } from '@/lib/db'
-
-async function requireAdmin() {
-  const session = await getSession()
-  return session && session.role === 'admin' ? session : null
-}
 
 // GET - daftar semua tahun ajaran (terbaru dulu)
 export async function GET() {
-  const session = await requireAdmin()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const gate = await requirePermission('tahun_ajaran', 'read')
+  if (!gate.ok) return gate.res
 
   try {
     const list = await prisma.tahunAjaran.findMany({ orderBy: { createdAt: 'desc' } })
@@ -25,8 +20,8 @@ export async function GET() {
 // dulu — admin mengaktifkannya secara eksplisit lewat PUT begitu siap,
 // supaya membuat tahun baru tidak diam-diam memindahkan seluruh sistem.
 export async function POST(req: Request) {
-  const session = await requireAdmin()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const gate = await requirePermission('tahun_ajaran', 'create')
+  if (!gate.ok) return gate.res
 
   try {
     const body = await req.json()

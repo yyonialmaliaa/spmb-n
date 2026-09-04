@@ -1,19 +1,14 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { requirePermission } from '@/lib/adminSession'
 import { prisma } from '@/lib/db'
 import { resolveTahunAjaran } from '@/lib/tahunAjaran'
-
-async function requireAdmin() {
-  const session = await getSession()
-  return session && session.role === 'admin' ? session : null
-}
 
 // GET ?tahunAjaranId= - semua jenis diskon milik satu tahun ajaran (default:
 // tahun ajaran aktif). Diskon TIDAK lintas tahun ajaran — 2026/2027 dan
 // 2027/2028 masing-masing punya daftar diskonnya sendiri.
 export async function GET(req: Request) {
-  const session = await requireAdmin()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const gate = await requirePermission('diskon', 'read')
+  if (!gate.ok) return gate.res
 
   try {
     const url = new URL(req.url)
@@ -30,8 +25,8 @@ export async function GET(req: Request) {
 
 // POST - tambah jenis diskon baru (mis. "Anak Guru/Yayasan", "Prestasi")
 export async function POST(req: Request) {
-  const session = await requireAdmin()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const gate = await requirePermission('diskon', 'create')
+  if (!gate.ok) return gate.res
 
   try {
     const body = await req.json()

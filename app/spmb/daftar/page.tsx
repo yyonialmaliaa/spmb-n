@@ -81,7 +81,7 @@ const FILE_FIELDS = [
 
 export default function DaftarPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF' }}>Memuat...</div>}>
+    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--adm-text-faint)' }}>Memuat...</div>}>
       <DaftarPageInner />
     </Suspense>
   );
@@ -358,22 +358,25 @@ function DaftarPageInner() {
 
   if (!authChecked) return null;
 
-  const inp: React.CSSProperties = { width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: 'white', color: '#0A1628', outline: 'none' };
-  const lbl: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 5 };
+  const inp: React.CSSProperties = { width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: 'var(--adm-surface)', color: 'var(--adm-text)', outline: 'none' };
+  const lbl: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: 'var(--adm-text)', display: 'block', marginBottom: 5 };
   const grid2: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 };
   const grid3: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 16 };
-  const onFocus = (e: React.FocusEvent<any>) => (e.target.style.borderColor = '#C8973A');
-  const onBlur = (e: React.FocusEvent<any>) => (e.target.style.borderColor = '#D1D5DB');
+  const onFocus = (e: React.FocusEvent<any>) => (e.target.style.borderColor = 'var(--cn-emas)');
+  const onBlur = (e: React.FocusEvent<any>) => (e.target.style.borderColor = 'var(--adm-border-strong)');
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FAF7F0' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--adm-surface-alt)' }}>
       <header style={{ background: 'linear-gradient(180deg, #123524 0%, #0B2A1C 100%)', borderBottom: '2px solid #C8973A', padding: '0 24px' }}>
         <div className="form-header-inner" style={{ maxWidth: 900, margin: '0 auto', display: 'flex', alignItems: 'center', height: 64 }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
             <div style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Image src="/images/logo.png" alt="Logo SMK Citra Negara" width={35} height={35} style={{ objectFit: 'cover' }} />
             </div>
-            <span className="form-header-title" style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>Formulir SPMB 2026 — {JENJANG_LABEL[jenjang]} Citra Negara</span>
+            {/* Header ini SENGAJA selalu hijau tua (identitas Citra Negara,
+                tidak ikut tema gelap/terang) — jadi teksnya harus putih tetap,
+                bukan token, supaya tidak pernah jadi gelap-di-atas-gelap. */}
+            <span className="form-header-title" style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 14 }}>Formulir SPMB 2026 — {JENJANG_LABEL[jenjang]} Citra Negara</span>
           </Link>
         </div>
       </header>
@@ -384,25 +387,25 @@ function DaftarPageInner() {
           {STEPS.map((s, i) => (
             <div key={s} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', background: i <= step ? 'linear-gradient(135deg,#C8973A,#E8B84B)' : '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, color: i <= step ? '#0A1628' : '#9CA3AF', marginBottom: 5 }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: i <= step ? 'linear-gradient(135deg,var(--cn-emas),var(--cn-emas-terang))' : 'var(--adm-neutral-weak)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, color: i <= step ? '#0A1628' : 'var(--adm-text-faint)', marginBottom: 5 }}>
                   {i < step ? '✓' : i + 1}
                 </div>
-                <span style={{ fontSize: 10, fontWeight: i === step ? 700 : 400, color: i === step ? '#C8973A' : i < step ? '#0A1628' : '#9CA3AF', whiteSpace: 'nowrap' }}>{s}</span>
+                <span style={{ fontSize: 10, fontWeight: i === step ? 700 : 400, color: i === step ? 'var(--cn-emas)' : i < step ? 'var(--adm-text)' : 'var(--adm-text-faint)', whiteSpace: 'nowrap' }}>{s}</span>
               </div>
-              {i < STEPS.length - 1 && <div style={{ width: 32, height: 2, background: i < step ? '#C8973A' : '#E5E7EB', margin: '0 4px', marginBottom: 18, flexShrink: 0 }} />}
+              {i < STEPS.length - 1 && <div style={{ width: 32, height: 2, background: i < step ? 'var(--cn-emas)' : 'var(--adm-border)', margin: '0 4px', marginBottom: 18, flexShrink: 0 }} />}
             </div>
           ))}
         </div>
 
-        <div className="form-card" style={{ background: 'white', borderRadius: 20, padding: '32px 36px', boxShadow: '0 4px 30px rgba(10,22,40,0.08)', border: '1px solid #F0EBE0' }}>
+        <div className="form-card" style={{ background: 'var(--adm-surface)', borderRadius: 20, padding: '32px 36px', boxShadow: 'var(--adm-shadow-md)', border: '1px solid var(--adm-border)' }}>
 
           {/* STEP 0: KETENTUAN */}
           {step === 0 && (
            <div>
-  <h2 className="font-display" style={{ fontSize: 22, color: '#0A1628', marginBottom: 6 }}>Ketentuan Pendaftaran</h2>
-  <p style={{ color: '#6B7280', fontSize: 13, marginBottom: 20 }}>Baca dan setujui ketentuan berikut sebelum melanjutkan</p>
-  <div className="form-terms-box" style={{ background: '#F8F9FA', borderRadius: 12, padding: 24, marginBottom: 24, maxHeight: 380, overflowY: 'auto', border: '1px solid #E5E7EB' }}>
-    <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.8, marginBottom: 16 }}>Menyatakan bahwa saya sangat menyadari dalam penyelenggaraan pendidikan di sekolah swasta sangat membutuhkan dukungan besar dan partisipasinya dari orang tua/wali peserta didik, maka dari itu saya:</p>
+  <h2 className="font-display" style={{ fontSize: 22, color: 'var(--adm-text)', marginBottom: 6 }}>Ketentuan Pendaftaran</h2>
+  <p style={{ color: 'var(--adm-text-muted)', fontSize: 13, marginBottom: 20 }}>Baca dan setujui ketentuan berikut sebelum melanjutkan</p>
+  <div className="form-terms-box" style={{ background: 'var(--adm-surface-alt)', borderRadius: 12, padding: 24, marginBottom: 24, maxHeight: 380, overflowY: 'auto', border: '1px solid var(--adm-border)' }}>
+    <p style={{ fontSize: 13, color: 'var(--adm-text)', lineHeight: 1.8, marginBottom: 16 }}>Menyatakan bahwa saya sangat menyadari dalam penyelenggaraan pendidikan di sekolah swasta sangat membutuhkan dukungan besar dan partisipasinya dari orang tua/wali peserta didik, maka dari itu saya:</p>
     {[
       'Sepenuh hati mempercayakan kepada SMK Citra Negara untuk memberikan pendidikan, pengajaran, dan pembinaan kepada putra/putri kami.',
       'Selama putra/putri saya menjadi peserta didik di SMK Citra Negara, saya mengizinkan untuk mengikuti seluruh agenda kegiatan yang diselenggarakan oleh sekolah.',
@@ -416,14 +419,14 @@ function DaftarPageInner() {
       'Bersedia menerima hasil Tes dan seleksi administrasi keuangan, serta menerima segala keputusan yang ditetapkan oleh pihak SMK Citra Negara sebagai hasil akhir proses seleksi.',
     ].map((item, i) => (
       <div key={i} style={{ display: 'flex', gap: 12, marginBottom: 10, alignItems: 'flex-start' }}>
-        <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#0A1628', color: 'white', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>{i + 1}</div>
-        <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.7, margin: 0 }} dangerouslySetInnerHTML={{ __html: item }} />
+        <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--cn-hijau)', color: '#FFFFFF', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>{i + 1}</div>
+        <p style={{ fontSize: 13, color: 'var(--adm-text)', lineHeight: 1.7, margin: 0 }} dangerouslySetInnerHTML={{ __html: item }} />
       </div>
     ))}
   </div>
-  <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer', padding: '14px 16px', background: setuju ? '#F0FDF4' : '#FFFBEB', borderRadius: 10, border: `1.5px solid ${setuju ? '#86EFAC' : '#FDE68A'}` }}>
+  <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer', padding: '14px 16px', background: setuju ? 'var(--adm-success-weak)' : 'var(--adm-warning-weak)', borderRadius: 10, border: `1.5px solid ${setuju ? 'var(--adm-success-border)' : 'var(--adm-warning-border)'}` }}>
     <input id="field-setuju" type="checkbox" checked={setuju} onChange={e => setSetuju(e.target.checked)} style={{ width: 18, height: 18, marginTop: 1, accentColor: '#C8973A' }} />
-    <span style={{ fontSize: 13, color: '#374151', lineHeight: 1.6 }}>Saya telah membaca, memahami, dan <strong>menyetujui</strong> seluruh ketentuan pendaftaran di atas.</span>
+    <span style={{ fontSize: 13, color: 'var(--adm-text)', lineHeight: 1.6 }}>Saya telah membaca, memahami, dan <strong>menyetujui</strong> seluruh ketentuan pendaftaran di atas.</span>
   </label>
 </div>
           )}
@@ -431,8 +434,8 @@ function DaftarPageInner() {
           {/* STEP 1: DATA PRIBADI */}
           {step === 1 && (
             <div>
-              <h2 className="font-display" style={{ fontSize: 22, color: '#0A1628', marginBottom: 6 }}>Data Pribadi</h2>
-              <p style={{ color: '#6B7280', fontSize: 13, marginBottom: 24 }}>Isi data pribadi calon peserta didik {JENJANG_LABEL[jenjang]} dengan lengkap</p>
+              <h2 className="font-display" style={{ fontSize: 22, color: 'var(--adm-text)', marginBottom: 6 }}>Data Pribadi</h2>
+              <p style={{ color: 'var(--adm-text-muted)', fontSize: 13, marginBottom: 24 }}>Isi data pribadi calon peserta didik {JENJANG_LABEL[jenjang]} dengan lengkap</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div style={grid2}>
                   <div><label style={lbl}>Nama Lengkap *</label><input id="field-namaLengkap" style={inp} value={form.namaLengkap} onChange={set('namaLengkap')} placeholder="Sesuai akte/ijazah" onFocus={onFocus} onBlur={onBlur} /></div>
@@ -440,7 +443,7 @@ function DaftarPageInner() {
                 </div>
                 <div style={grid2}>
                   <div><label style={lbl}>NISN</label><input style={inp} value={form.nisn} onChange={e => { const val = e.target.value.replace(/\D/g, ''); set('nisn')({ ...e, target: { ...e.target, value: val } }); }} placeholder="10 digit NISN" maxLength={10} onFocus={onFocus} onBlur={onBlur} /></div>
-                  <div><label style={lbl}>No. WhatsApp Aktif *</label><input id="field-noPribadi" style={inp} type="tel" value={form.noPribadi} onChange={e => { const val = e.target.value.replace(/[^\d\s+]/g, ''); set('noPribadi')({ ...e, target: { ...e.target, value: val } }); }} placeholder="08xxxxxxxxxx" onFocus={onFocus} onBlur={onBlur} /><p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Pastikan nomor WhatsApp ini aktif</p></div>
+                  <div><label style={lbl}>No. WhatsApp Aktif *</label><input id="field-noPribadi" style={inp} type="tel" value={form.noPribadi} onChange={e => { const val = e.target.value.replace(/[^\d\s+]/g, ''); set('noPribadi')({ ...e, target: { ...e.target, value: val } }); }} placeholder="08xxxxxxxxxx" onFocus={onFocus} onBlur={onBlur} /><p style={{ fontSize: 11, color: 'var(--adm-text-faint)', marginTop: 4 }}>Pastikan nomor WhatsApp ini aktif</p></div>
                 </div>
                 <div style={grid2}>
                   <div><label style={lbl}>Jenis Kelamin *</label>
@@ -495,8 +498,8 @@ function DaftarPageInner() {
                     </select>
                   </div>
                 </div>
-                <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 14 }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: '#0A1628', marginBottom: 12 }}>Referensi Pendaftaran <span style={{ fontWeight: 400, color: '#9CA3AF' }}>(opsional)</span></p>
+                <div style={{ borderTop: '1px solid var(--adm-border)', paddingTop: 14 }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 12 }}>Referensi Pendaftaran <span style={{ fontWeight: 400, color: 'var(--adm-text-faint)' }}>(opsional)</span></p>
                   <div style={grid2}>
                     <div><label style={lbl}>Nama Pemberi Referensi</label><input style={inp} value={form.namaPemberiReferensi} onChange={set('namaPemberiReferensi')} placeholder="Nama" onFocus={onFocus} onBlur={onBlur} /></div>
                     <div><label style={lbl}>No. HP Referensi</label><input style={inp} type="tel" value={form.noHpReferensi} onChange={set('noHpReferensi')} placeholder="08xxxxxxxxxx" onFocus={onFocus} onBlur={onBlur} /></div>
@@ -509,8 +512,8 @@ function DaftarPageInner() {
          {/* STEP 2: DATA ORANG TUA */}
 {step === 2 && (
   <div>
-    <h2 className="font-display" style={{ fontSize: 22, color: '#0A1628', marginBottom: 6 }}>Data Orang Tua Kandung / Wali</h2>
-    <p style={{ color: '#6B7280', fontSize: 13, marginBottom: 24 }}>Isi data orang tua calon peserta didik</p>
+    <h2 className="font-display" style={{ fontSize: 22, color: 'var(--adm-text)', marginBottom: 6 }}>Data Orang Tua Kandung / Wali</h2>
+    <p style={{ color: 'var(--adm-text-muted)', fontSize: 13, marginBottom: 24 }}>Isi data orang tua calon peserta didik</p>
 
     <div style={{ marginBottom: 28 }}>
       <div style={{ fontSize: 13, fontWeight: 700, color: '#1E40AF', marginBottom: 14, paddingBottom: 8, borderBottom: '2px solid #DBEAFE' }}>Data Ayah</div>
@@ -524,7 +527,7 @@ function DaftarPageInner() {
 
     <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: punyaWali ? 16 : 0, userSelect: 'none' }}>
       <input type="checkbox" checked={punyaWali} onChange={e => setPunyaWali(e.target.checked)} style={{ width: 18, height: 18, accentColor: '#C8973A', flexShrink: 0 }} />
-      <span style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>Mempunyai wali?</span>
+      <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--adm-text)' }}>Mempunyai wali?</span>
     </label>
 
     {punyaWali && (
@@ -539,8 +542,8 @@ function DaftarPageInner() {
           {/* STEP 3: DATA AKADEMIK */}
           {step === 3 && (
             <div>
-              <h2 className="font-display" style={{ fontSize: 22, color: '#0A1628', marginBottom: 6 }}>Data Akademik</h2>
-              <p style={{ color: '#6B7280', fontSize: 13, marginBottom: 24 }}>Informasi riwayat pendidikan sebelumnya</p>
+              <h2 className="font-display" style={{ fontSize: 22, color: 'var(--adm-text)', marginBottom: 6 }}>Data Akademik</h2>
+              <p style={{ color: 'var(--adm-text-muted)', fontSize: 13, marginBottom: 24 }}>Informasi riwayat pendidikan sebelumnya</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div>
                   <label style={lbl}>Tipe Pendaftaran *</label>
@@ -557,7 +560,7 @@ function DaftarPageInner() {
                       <option value="">Pilih kelas...</option>
                       {getKelasMasukOptions(jenjang).map(k => <option key={k}>{k}</option>)}
                     </select>
-                    <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Pendaftaran pindahan hanya dibuka untuk tingkat 1–2, tidak untuk kelas terakhir ({jenjang === 'smp' ? '9' : '12'}).</p>
+                    <p style={{ fontSize: 11, color: 'var(--adm-text-faint)', marginTop: 4 }}>Pendaftaran pindahan hanya dibuka untuk tingkat 1–2, tidak untuk kelas terakhir ({jenjang === 'smp' ? '9' : '12'}).</p>
                   </div>
                 )}
                 {isSMK && (
@@ -567,13 +570,13 @@ function DaftarPageInner() {
                       <option value="">Pilih jurusan...</option>
                       {jurusanOptions.map(j => <option key={j}>{j}</option>)}
                     </select>
-                    {hargaOptions.length === 0 && <p style={{ fontSize: 11, color: '#DC2626', marginTop: 4 }}>Belum ada jurusan yang tersedia — hubungi admin.</p>}
+                    {hargaOptions.length === 0 && <p style={{ fontSize: 11, color: 'var(--adm-danger)', marginTop: 4 }}>Belum ada jurusan yang tersedia — hubungi admin.</p>}
                   </div>
                 )}
                 {(!isSMK || form.jurusan) && (() => {
                   const tingkat = form.tipePendaftaran === 'pindahan' ? form.kelasMasuk : getKelasMasukBaru(jenjang);
                   if (!tingkat) {
-                    return <p style={{ fontSize: 12, color: '#9CA3AF' }}>Pilih Kelas Masuk terlebih dahulu untuk melihat pilihan Kelas.</p>;
+                    return <p style={{ fontSize: 12, color: 'var(--adm-text-faint)' }}>Pilih Kelas Masuk terlebih dahulu untuk melihat pilihan Kelas.</p>;
                   }
                   const opts = filterKelasByTingkat(kelasOptionsUntuk(isSMK ? form.jurusan : '-').map(k => ({ kelas: k })), tingkat);
                   return (
@@ -585,9 +588,9 @@ function DaftarPageInner() {
                           {opts.map(o => <option key={o.kelas} value={o.kelas}>{labelTier(pecahKelasHarga(o.kelas).tier)}</option>)}
                         </select>
                       ) : (
-                        <p style={{ fontSize: 12, color: '#DC2626' }}>Belum ada harga untuk pilihan ini — hubungi admin.</p>
+                        <p style={{ fontSize: 12, color: 'var(--adm-danger)' }}>Belum ada harga untuk pilihan ini — hubungi admin.</p>
                       )}
-                      <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Kelas Plus memiliki biaya pendidikan lebih tinggi dengan fasilitas tambahan.</p>
+                      <p style={{ fontSize: 11, color: 'var(--adm-text-faint)', marginTop: 4 }}>Kelas Plus memiliki biaya pendidikan lebih tinggi dengan fasilitas tambahan.</p>
                     </div>
                   );
                 })()}
@@ -604,7 +607,7 @@ function DaftarPageInner() {
                       <option value="ya">Ya, saya alumni SMP Citra Negara</option>
                       <option value="tidak">Tidak</option>
                     </select>
-                    <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Menentukan gelombang pendaftaran yang berlaku untuk Anda.</p>
+                    <p style={{ fontSize: 11, color: 'var(--adm-text-faint)', marginTop: 4 }}>Menentukan gelombang pendaftaran yang berlaku untuk Anda.</p>
                   </div>
                 )}
               </div>
@@ -614,42 +617,42 @@ function DaftarPageInner() {
           {/* STEP 4: UPLOAD BERKAS */}
           {step === 4 && (
             <div>
-              <h2 className="font-display" style={{ fontSize: 22, color: '#0A1628', marginBottom: 6 }}>Upload Berkas Persyaratan</h2>
-              <p style={{ color: '#6B7280', fontSize: 13, marginBottom: 24 }}>Upload scan/foto dokumen (JPG/PNG/PDF, maks. 2MB per file)</p>
+              <h2 className="font-display" style={{ fontSize: 22, color: 'var(--adm-text)', marginBottom: 6 }}>Upload Berkas Persyaratan</h2>
+              <p style={{ color: 'var(--adm-text-muted)', fontSize: 13, marginBottom: 24 }}>Upload scan/foto dokumen (JPG/PNG/PDF, maks. 2MB per file)</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {FILE_FIELDS.map(item => {
                   const f = files[item.key];
                   const isUploaded = !!f.path;
                   const isUploading = f.uploading;
                   return (
-                    <div key={item.key} id={`file-${item.key}`} className="file-upload-row" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: isUploaded ? '#F0FDF4' : f.error ? '#FFF1F2' : '#FAFAFA', borderRadius: 12, border: `1.5px solid ${isUploaded ? '#86EFAC' : f.error ? '#FECDD3' : '#E5E7EB'}` }}>
-                      <div style={{ width: 36, height: 36, borderRadius: '50%', background: isUploaded ? '#DCFCE7' : isUploading ? '#DBEAFE' : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div key={item.key} id={`file-${item.key}`} className="file-upload-row" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: isUploaded ? 'var(--adm-success-weak)' : f.error ? 'var(--adm-danger-weak)' : 'var(--adm-surface-alt)', borderRadius: 12, border: `1.5px solid ${isUploaded ? 'var(--adm-success-border)' : f.error ? 'var(--adm-danger-border)' : 'var(--adm-border)'}` }}>
+                      <div style={{ width: 36, height: 36, borderRadius: '50%', background: isUploaded ? 'var(--adm-success-weak)' : isUploading ? 'var(--adm-info-weak)' : 'var(--adm-neutral-weak)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         {isUploading ? <Loader size={16} color="#3B82F6" /> : isUploaded ? <CheckCircle size={16} color="#16A34A" /> : <Upload size={16} color="#9CA3AF" />}
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{item.label}{item.required && <span style={{ color: '#EF4444', marginLeft: 4 }}>*</span>}</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--adm-text)' }}>{item.label}{item.required && <span style={{ color: 'var(--adm-danger)', marginLeft: 4 }}>*</span>}</div>
                         {item.key === 'ijazah' && (
                           <div style={{ display: 'flex', gap: 14, marginTop: 6 }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#374151', cursor: 'pointer' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--adm-text)', cursor: 'pointer' }}>
                               <input type="radio" checked={jenisIjazah === 'ijazah'} onChange={() => setJenisIjazah('ijazah')} style={{ accentColor: '#C8973A' }} /> Ijazah
                             </label>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#374151', cursor: 'pointer' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--adm-text)', cursor: 'pointer' }}>
                               <input type="radio" checked={jenisIjazah === 'skl'} onChange={() => setJenisIjazah('skl')} style={{ accentColor: '#C8973A' }} /> Surat Keterangan Lulus (SKL)
                             </label>
                           </div>
                         )}
-                        {isUploaded && <div style={{ fontSize: 11, color: '#16A34A', marginTop: 2 }}>✓ {f.file?.name} — Berhasil diupload</div>}
-                        {isUploading && <div style={{ fontSize: 11, color: '#3B82F6', marginTop: 2 }}>Mengupload ke server...</div>}
-                        {f.error && <div style={{ fontSize: 11, color: '#DC2626', marginTop: 2 }}>✗ {f.error}</div>}
-                        {!isUploaded && !isUploading && !f.error && <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>JPG, PNG, atau PDF — maks. 2MB</div>}
+                        {isUploaded && <div style={{ fontSize: 11, color: 'var(--adm-success)', marginTop: 2 }}>✓ {f.file?.name} — Berhasil diupload</div>}
+                        {isUploading && <div style={{ fontSize: 11, color: 'var(--adm-info)', marginTop: 2 }}>Mengupload ke server...</div>}
+                        {f.error && <div style={{ fontSize: 11, color: 'var(--adm-danger)', marginTop: 2 }}>✗ {f.error}</div>}
+                        {!isUploaded && !isUploading && !f.error && <div style={{ fontSize: 11, color: 'var(--adm-text-faint)', marginTop: 2 }}>JPG, PNG, atau PDF — maks. 2MB</div>}
                       </div>
                       {!isUploaded ? (
-                        <label style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#0A1628', color: 'white', padding: '8px 16px', borderRadius: 8, cursor: isUploading ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 600, flexShrink: 0, opacity: isUploading ? 0.6 : 1 }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--cn-hijau)', color: '#FFFFFF', padding: '8px 16px', borderRadius: 8, cursor: isUploading ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 600, flexShrink: 0, opacity: isUploading ? 0.6 : 1 }}>
                           <Upload size={13} /> Browse
                           <input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={e => handleFileChange(item.key, e)} disabled={isUploading} style={{ display: 'none' }} />
                         </label>
                       ) : (
-                        <button onClick={() => removeFile(item.key)} style={{ background: '#FEE2E2', border: 'none', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', fontSize: 12, color: '#DC2626', fontWeight: 600, fontFamily: 'inherit' }}>
+                        <button onClick={() => removeFile(item.key)} style={{ background: 'var(--adm-danger-weak)', border: 'none', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', fontSize: 12, color: 'var(--adm-danger)', fontWeight: 600, fontFamily: 'inherit' }}>
                           <X size={13} /> Hapus
                         </button>
                       )}
@@ -657,15 +660,15 @@ function DaftarPageInner() {
                   );
                 })}
               </div>
-              <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 14 }}>* Wajib diisi — File tersimpan aman di server sekolah</p>
+              <p style={{ fontSize: 11, color: 'var(--adm-text-faint)', marginTop: 14 }}>* Wajib diisi — File tersimpan aman di server sekolah</p>
             </div>
           )}
 
           {/* STEP 5: KONFIRMASI */}
           {step === 5 && (
             <div>
-              <h2 className="font-display" style={{ fontSize: 22, color: '#0A1628', marginBottom: 6 }}>Konfirmasi Data</h2>
-              <p style={{ color: '#6B7280', fontSize: 13, marginBottom: 24 }}>Periksa kembali semua data sebelum mengirim</p>
+              <h2 className="font-display" style={{ fontSize: 22, color: 'var(--adm-text)', marginBottom: 6 }}>Konfirmasi Data</h2>
+              <p style={{ color: 'var(--adm-text-muted)', fontSize: 13, marginBottom: 24 }}>Periksa kembali semua data sebelum mengirim</p>
               {[
                 { title: 'Data Pribadi', items: [['Nama Lengkap',form.namaLengkap],['Nama Panggilan',form.namaPanggilan],['Tempat Lahir',form.tempatLahir],['Tanggal Lahir',form.tanggalLahir],['Jenis Kelamin',form.jenisKelamin],['Agama',form.agama === 'Lainnya' ? form.agamaLainnya : form.agama],['NIK',form.nik],['NISN',form.nisn],['Alamat',`${form.alamat}, RT ${form.rt}/RW ${form.rw}`],['Kecamatan',form.kecamatan],['Kab/Kota',form.kabupaten]] },
                 { title: 'Data Akademik', items: [['Jenjang', JENJANG_LABEL[jenjang]], ['Tipe Pendaftaran', form.tipePendaftaran === 'pindahan' ? 'Pindahan' : 'Baru'], ...(form.tipePendaftaran === 'pindahan' ? [['Kelas Masuk', form.kelasMasuk]] : []), ...(isSMK ? [['Jurusan',form.jurusan]] : []), ['Kelas',form.kelas], jenjang === 'smp' ? ['Asal SD/MI', form.asalSD] : ['Asal SMP/MTs', form.asalSMP], ...(jenjang !== 'smp' ? [['Alumni SMP Citra Negara', form.alumniSmpCitraNegara === 'ya' ? 'Ya' : form.alumniSmpCitraNegara === 'tidak' ? 'Tidak' : '']] : [])] },
@@ -673,31 +676,31 @@ function DaftarPageInner() {
                 { title: 'Berkas Upload', items: FILE_FIELDS.map((f, i) => [`${i+1}. ${f.label.split(' ').slice(1,3).join(' ')}`, files[f.key].path ? '✓ Sudah diupload' : f.required ? '✗ Belum diupload' : '— (opsional)']) },
               ].map(section => (
                 <div key={section.title} style={{ marginBottom: 20 }}>
-                  <h4 style={{ fontSize: 11, fontWeight: 700, color: '#C8973A', letterSpacing: 1, marginBottom: 10 }}>{section.title.toUpperCase()}</h4>
+                  <h4 style={{ fontSize: 11, fontWeight: 700, color: 'var(--cn-hijau)', letterSpacing: 1, marginBottom: 10 }}>{section.title.toUpperCase()}</h4>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8 }}>
                     {section.items.map(([label, val], idx) => (
-                        <div key={`${section.title}-${idx}`} style={{ background: '#FAFAFA', borderRadius: 8, padding: '8px 12px' }}>
-                        <div style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, marginBottom: 2 }}>{label}</div>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: String(val).startsWith('✗') ? '#EF4444' : String(val).startsWith('✓') ? '#16A34A' : val ? '#0A1628' : '#EF4444' }}>{val || '⚠ Belum diisi'}</div>
+                        <div key={`${section.title}-${idx}`} style={{ background: 'var(--adm-surface-alt)', borderRadius: 8, padding: '8px 12px' }}>
+                        <div style={{ fontSize: 10, color: 'var(--adm-text-faint)', fontWeight: 600, marginBottom: 2 }}>{label}</div>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: String(val).startsWith('✗') ? 'var(--adm-danger)' : String(val).startsWith('✓') ? 'var(--adm-success)' : val ? 'var(--adm-text)' : 'var(--adm-danger)' }}>{val || '⚠ Belum diisi'}</div>
                       </div>
                     ))}
                   </div>
                 </div>
               ))}
-              <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 10, padding: 14 }}>
-                <p style={{ fontSize: 12, color: '#92400E', lineHeight: 1.6 }}>✓ Dengan menekan tombol <strong>"Kirim Pendaftaran"</strong>, saya menyatakan bahwa semua data yang diisikan adalah benar dan dapat dipertanggungjawabkan.</p>
+              <div style={{ background: 'var(--adm-warning-weak)', border: '1px solid var(--adm-warning-border)', borderRadius: 10, padding: 14 }}>
+                <p style={{ fontSize: 12, color: 'var(--adm-warning)', lineHeight: 1.6 }}>✓ Dengan menekan tombol <strong>"Kirim Pendaftaran"</strong>, saya menyatakan bahwa semua data yang diisikan adalah benar dan dapat dipertanggungjawabkan.</p>
               </div>
             </div>
           )}
 
           {/* Navigation */}
-          <div style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid #F3F4F6' }}>
+          <div style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid var(--adm-border)' }}>
             <div className="form-nav-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
-              <button onClick={() => setStep(s => s - 1)} disabled={step === 0} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'transparent', border: '1.5px solid #E5E7EB', color: step === 0 ? '#9CA3AF' : '#374151', padding: '10px 22px', borderRadius: 8, cursor: step === 0 ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 600, fontFamily: 'inherit' }}>
+              <button onClick={() => setStep(s => s - 1)} disabled={step === 0} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'transparent', border: '1.5px solid var(--adm-border-strong)', color: step === 0 ? 'var(--adm-text-faint)' : 'var(--adm-text)', padding: '10px 22px', borderRadius: 8, cursor: step === 0 ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 600, fontFamily: 'inherit' }}>
                 <ChevronLeft size={16} /> Sebelumnya
               </button>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <button onClick={handleSaveDraft} disabled={saving} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'transparent', border: '1.5px solid #C8973A', color: '#C8973A', padding: '10px 18px', borderRadius: 8, cursor: saving ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', opacity: saving ? 0.7 : 1 }}>
+                <button onClick={handleSaveDraft} disabled={saving} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'transparent', border: '1.5px solid #C8973A', color: 'var(--cn-hijau)', padding: '10px 18px', borderRadius: 8, cursor: saving ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', opacity: saving ? 0.7 : 1 }}>
                   {saving ? 'Menyimpan...' : 'Simpan'}
                 </button>
                 {step < 5 ? (
@@ -712,7 +715,7 @@ function DaftarPageInner() {
               </div>
             </div>
             {step === 5 && (
-              <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 10 }}>
+              <p style={{ fontSize: 11, color: 'var(--adm-text-faint)', marginTop: 10 }}>
                 Formulir belum terkirim ke admin. Setelah ini Anda akan diarahkan ke halaman pembayaran — formulir baru masuk ke admin setelah Anda membayar uang pendaftaran minimal dan menekan tombol &quot;Kirim Formulir&quot;.
               </p>
             )}

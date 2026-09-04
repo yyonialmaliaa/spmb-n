@@ -1,18 +1,32 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronLeft, Percent, CheckCircle, Plus, Trash2 } from 'lucide-react';
+import { Percent, CheckCircle, Plus, Trash2, CalendarClock } from 'lucide-react';
+import { TopHeader } from '@/components/admin/TopHeader';
+import { useAdmin } from '@/components/admin/AdminProvider';
+import { EmptyState } from '@/components/admin/ui';
 
-type Gelombang = { id: string; nama: string; urutan: number; diskonPersen: number; aktif: boolean; untukAlumni: boolean; jenjang: string };
+type Gelombang = {
+  id: string; nama: string; urutan: number; diskonPersen: number;
+  aktif: boolean; untukAlumni: boolean; jenjang: string;
+  tanggalMulai: string | null; tanggalSelesai: string | null;
+};
 
-const JENJANG_TABS: { value: 'smp' | 'sma' | 'smk'; label: string }[] = [
-  { value: 'smp', label: 'SMP' },
-  { value: 'sma', label: 'SMA' },
-  { value: 'smk', label: 'SMK' },
-];
+/** ISO -> nilai <input type="date"> (YYYY-MM-DD). */
+const keTanggalInput = (v: string | null) => (v ? new Date(v).toISOString().slice(0, 10) : '');
 
 export default function AdminGelombangPage() {
-  const [jenjang, setJenjang] = useState<'smp' | 'sma' | 'smk'>('smp');
+  return <Suspense fallback={null}><AdminGelombangInner /></Suspense>;
+}
+
+function AdminGelombangInner() {
+  // Jenjang mengikuti konteks sidebar, bukan tab sendiri — supaya halaman ini
+  // tunduk pada jenjang aktif seperti seluruh modul lainnya.
+  const { jenjang: jenjangKonteks, jenjangSingkat, tahunAjaran } = useAdmin();
+  const searchParams = useSearchParams();
+  const tahunAjaranId = searchParams.get('tahunAjaranId') || '';
+  const jenjang = jenjangKonteks ?? 'smk';
   const [list, setList] = useState<Gelombang[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState('');
@@ -22,14 +36,21 @@ export default function AdminGelombangPage() {
   const [addingUmum, setAddingUmum] = useState(false);
   const [addingAlumni, setAddingAlumni] = useState(false);
 
+  // Tanpa tahunAjaranId, halaman ini SELALU menampilkan tahun ajaran aktif —
+  // walau admin sedang membuka tahun ajaran historis. Itu bug lama.
   const load = (j: string) => {
     setLoading(true);
-    fetch(`/api/admin/gelombang?jenjang=${j}`).then(r => r.json()).then(d => {
+    const qp = new URLSearchParams({ jenjang: j });
+    if (tahunAjaranId) qp.set('tahunAjaranId', tahunAjaranId);
+    fetch(`/api/admin/gelombang?${qp}`).then(r => r.json()).then(d => {
       setList(d.data || []);
       setLoading(false);
     });
   };
-  useEffect(() => { load(jenjang); }, [jenjang]);
+  // `load` sengaja tidak masuk dependensi: fungsinya dibuat ulang tiap render
+  // dan hanya bergantung pada jenjang + tahun ajaran yang sudah terdaftar.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load(jenjang); }, [jenjang, tahunAjaranId]);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2500); };
 
@@ -46,6 +67,21 @@ export default function AdminGelombangPage() {
 
   const handleDiskonChange = (id: string, val: string) => {
     setList(l => l.map(g => g.id === id ? { ...g, diskonPersen: parseFloat(val) || 0 } : g));
+  };
+
+  // Tanggal mulai/selesai sudah didukung schema & endpoint PUT sejak awal,
+  // tetapi tidak pernah ditampilkan — padahal itulah inti "Jadwal SPMB".
+  const handleTanggal = async (g: Gelombang, medan: 'tanggalMulai' | 'tanggalSelesai', nilai: string) => {
+    setList(l => l.map(x => (x.id === g.id ? { ...x, [medan]: nilai || null } : x)));
+    setSavingId(g.id);
+    const res = await fetch(`/api/admin/gelombang/${g.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [medan]: nilai || null }),
+    });
+    if (res.ok) showToast('Jadwal disimpan');
+    else { showToast('Gagal menyimpan jadwal'); load(jenjang); }
+    setSavingId('');
   };
 
   const handleSimpanDiskon = async (g: Gelombang) => {
@@ -87,28 +123,50 @@ export default function AdminGelombangPage() {
   const renderGroup = (groupList: Gelombang[]) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {groupList.map(g => (
-        <div key={g.id} style={{ background: 'white', borderRadius: 12, padding: 20, border: g.aktif ? '2px solid #C8973A' : '1px solid #E5E7EB', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+        <div key={g.id} style={{ background: 'var(--adm-surface)', borderRadius: 12, padding: 20, border: g.aktif ? '2px solid var(--adm-secondary)' : '1px solid var(--adm-border)', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 140 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#0A1628', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--adm-text)', display: 'flex', alignItems: 'center', gap: 8 }}>
               {g.nama}
               {g.aktif && <span style={{ background: '#D1FAE5', color: '#065F46', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10 }}>AKTIF</span>}
             </div>
           </div>
 
+          {/* Periode gelombang — kolom ini sudah ada di basis data sejak awal
+              tapi belum pernah bisa diisi dari panel. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <CalendarClock size={14} color="var(--adm-text-faint)" />
+            <input
+              type="date"
+              aria-label={`Tanggal mulai ${g.nama}`}
+              value={keTanggalInput(g.tanggalMulai)}
+              onChange={e => handleTanggal(g, 'tanggalMulai', e.target.value)}
+              style={{ padding: '6px 8px', border: '1px solid var(--adm-border)', borderRadius: 8, fontSize: 12, fontFamily: 'inherit', background: 'var(--adm-surface)', color: 'var(--adm-text)' }}
+            />
+            <span style={{ color: 'var(--adm-text-faint)', fontSize: 12 }}>–</span>
+            <input
+              type="date"
+              aria-label={`Tanggal selesai ${g.nama}`}
+              value={keTanggalInput(g.tanggalSelesai)}
+              min={keTanggalInput(g.tanggalMulai) || undefined}
+              onChange={e => handleTanggal(g, 'tanggalSelesai', e.target.value)}
+              style={{ padding: '6px 8px', border: '1px solid var(--adm-border)', borderRadius: 8, fontSize: 12, fontFamily: 'inherit', background: 'var(--adm-surface)', color: 'var(--adm-text)' }}
+            />
+          </div>
+
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <label style={{ fontSize: 12, color: '#6B7280', fontWeight: 600 }}>Diskon:</label>
+            <label style={{ fontSize: 12, color: 'var(--adm-text-muted)', fontWeight: 600 }}>Diskon:</label>
             <input
               type="number" min={0} max={100} step={0.5}
               value={g.diskonPersen}
               onChange={e => handleDiskonChange(g.id, e.target.value)}
               onBlur={() => handleSimpanDiskon(g)}
-              style={{ width: 70, padding: '7px 8px', border: '1px solid #E5E7EB', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' }}
+              style={{ width: 70, padding: '7px 8px', border: '1px solid var(--adm-border)', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' }}
             />
-            <Percent size={14} color="#9CA3AF" />
+            <Percent size={14} color="var(--adm-text-faint)" />
           </div>
 
           {!g.aktif ? (
-            <button onClick={() => handleAktifkan(g.id)} disabled={savingId === g.id} style={{ padding: '8px 16px', background: '#0A1628', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: savingId === g.id ? 0.6 : 1 }}>
+            <button onClick={() => handleAktifkan(g.id)} disabled={savingId === g.id} style={{ padding: '8px 16px', background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: savingId === g.id ? 0.6 : 1 }}>
               Aktifkan
             </button>
           ) : (
@@ -135,7 +193,7 @@ export default function AdminGelombangPage() {
       <button
         onClick={() => handleTambah(untukAlumni, nama, () => setNama(''), setAdding)}
         disabled={adding || !nama.trim()}
-        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#0A1628', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: adding || !nama.trim() ? 0.6 : 1 }}
+        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: adding || !nama.trim() ? 0.6 : 1 }}
       >
         <Plus size={14} /> Tambah
       </button>
@@ -146,63 +204,45 @@ export default function AdminGelombangPage() {
   const alumni = list.filter(g => g.untukAlumni);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F8F9FA', fontFamily: 'Inter, sans-serif' }}>
-      <div style={{ background: '#0A1628', padding: '16px 24px' }}>
-        <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Link href="/admin/dashboard" style={{ color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center' }}>
-            <ChevronLeft size={20} />
-          </Link>
-          <h1 style={{ color: 'white', fontSize: 16, fontWeight: 700, margin: 0 }}>Atur Gelombang & Diskon Pendaftaran</h1>
-        </div>
-      </div>
+    <>
+      <TopHeader
+        judul={`Jadwal SPMB${jenjangSingkat ? ` ${jenjangSingkat}` : ''}`}
+        subjudul="Gelombang pendaftaran, periode, dan diskon yang berlaku."
+        remah={[{ label: 'Manajemen' }, { label: 'Jadwal SPMB' }]}
+      />
 
-      <div style={{ maxWidth: 800, margin: '32px auto', padding: '0 24px' }}>
-        <p style={{ color: '#6B7280', fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
-          Setiap jenjang punya gelombangnya sendiri-sendiri. Untuk SMA/SMK, pendaftar yang mengaku alumni SMP Citra Negara memakai jalur gelombang tersendiri. Aktifkan salah satu gelombang per jalur — diskon (%) otomatis dipotong dari harga di panel Harga.
+      <div className="adm-content" style={{ maxWidth: 900 }}>
+        <p style={{ color: 'var(--adm-text-muted)', fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
+          Gelombang berlaku per jenjang dan per tahun ajaran. Untuk SMA/SMK, pendaftar alumni SMP Citra
+          Negara memakai jalur tersendiri. Aktifkan satu gelombang per jalur — diskonnya otomatis
+          memotong harga dari panel Harga. Berlaku untuk TA {tahunAjaran?.nama}.
         </p>
-
-        {/* Tab jenjang */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-          {JENJANG_TABS.map(t => (
-            <button
-              key={t.value}
-              onClick={() => setJenjang(t.value)}
-              style={{
-                padding: '9px 22px', borderRadius: 10, border: jenjang === t.value ? '2px solid #C8973A' : '1.5px solid #E5E7EB',
-                background: jenjang === t.value ? '#FFFBEB' : 'white', color: jenjang === t.value ? '#92400E' : '#374151',
-                fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
 
         {toast && (
           <div style={{ background: '#D1FAE5', color: '#065F46', padding: '10px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, marginBottom: 16 }}>{toast}</div>
         )}
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#9CA3AF' }}>Memuat...</div>
+          <div style={{ textAlign: 'center', padding: 40, color: 'var(--adm-text-faint)' }}>Memuat...</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
             <div>
-              {jenjang !== 'smp' && <h3 style={{ fontSize: 13, fontWeight: 700, color: '#0B2A1C', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.3 }}>Jalur Umum</h3>}
-              {umum.length > 0 ? renderGroup(umum) : <p style={{ fontSize: 13, color: '#9CA3AF' }}>Belum ada gelombang.</p>}
+              {jenjang !== 'smp' && <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.3 }}>Jalur Umum</h3>}
+              {umum.length > 0 ? renderGroup(umum) : <p style={{ fontSize: 13, color: 'var(--adm-text-faint)' }}>Belum ada gelombang.</p>}
               {renderTambahForm(namaBaruUmum, setNamaBaruUmum, addingUmum, setAddingUmum, false)}
             </div>
 
             {jenjang !== 'smp' && (
               <div>
-                <h3 style={{ fontSize: 13, fontWeight: 700, color: '#0B2A1C', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.3 }}>Jalur Alumni SMP Citra Negara</h3>
-                <p style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 12 }}>Khusus pendaftar {jenjang.toUpperCase()} yang alumni SMP Citra Negara — biasanya 2 gelombang.</p>
-                {alumni.length > 0 ? renderGroup(alumni) : <p style={{ fontSize: 13, color: '#9CA3AF' }}>Belum ada gelombang.</p>}
+                <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.3 }}>Jalur Alumni SMP Citra Negara</h3>
+                <p style={{ fontSize: 12, color: 'var(--adm-text-faint)', marginBottom: 12 }}>Khusus pendaftar {jenjang.toUpperCase()} yang alumni SMP Citra Negara — biasanya 2 gelombang.</p>
+                {alumni.length > 0 ? renderGroup(alumni) : <p style={{ fontSize: 13, color: 'var(--adm-text-faint)' }}>Belum ada gelombang.</p>}
                 {renderTambahForm(namaBaruAlumni, setNamaBaruAlumni, addingAlumni, setAddingAlumni, true)}
               </div>
             )}
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }

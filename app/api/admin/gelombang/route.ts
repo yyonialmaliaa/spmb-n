@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { requirePermission } from '@/lib/adminSession'
 import { prisma } from '@/lib/db'
 import { resolveTahunAjaran } from '@/lib/tahunAjaran'
 
@@ -9,8 +9,8 @@ const JENJANG_VALID = ['smp', 'sma', 'smk']
 // tahun ajaran (default aktif) untuk jenjang tsb (jalur umum + jalur alumni
 // SMP Citra Negara untuk sma/smk). Gelombang tidak lintas tahun ajaran.
 export async function GET(req: Request) {
-  const session = await getSession()
-  if (!session || session.role !== 'admin') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const gate = await requirePermission('jadwal', 'read')
+  if (!gate.ok) return gate.res
 
   try {
     const url = new URL(req.url)
@@ -35,8 +35,8 @@ export async function GET(req: Request) {
 
 // POST - tambah gelombang baru untuk jenjang (& jalur) tertentu
 export async function POST(req: Request) {
-  const session = await getSession()
-  if (!session || session.role !== 'admin') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const gate = await requirePermission('jadwal', 'create')
+  if (!gate.ok) return gate.res
 
   try {
     const body = await req.json()

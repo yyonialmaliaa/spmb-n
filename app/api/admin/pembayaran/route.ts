@@ -1,28 +1,83 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { requirePermission, requireJenjang, scopedJenjang } from '@/lib/adminSession'
+import { resolveTahunAjaran } from '@/lib/tahunAjaran'
+import { scopePendaftar, isJenjangValid } from '@/lib/pendaftarQuery'
 import { prisma } from '@/lib/db'
 import { recalculatePembayaran, hitungRingkasan, lockTagihanJikaBelum, formatRupiah, HargaTidakDitemukanError } from '@/lib/keuangan'
 import { kirimNotifikasi } from '@/lib/notifikasi'
 
-// GET - admin lihat riwayat cicilan milik satu pendaftar (?pendaftaranId=xxx)
+// GET - dua mode:
+//   ?pendaftaranId=xxx  -> riwayat cicilan SATU pendaftar (dipakai halaman
+//                          detail pendaftar; perilaku lama, tidak berubah)
+//   tanpa pendaftaranId -> ANTREAN VERIFIKASI lintas pendaftar, di-scope ke
+//                          jenjang + tahun ajaran yang sedang dibuka
 export async function GET(req: Request) {
-  const session = await getSession()
-  if (!session || session.role !== 'admin') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const gate = await requirePermission('pembayaran', 'read')
+  if (!gate.ok) return gate.res
+  const { session } = gate
 
   const { searchParams } = new URL(req.url)
   const pendaftaranId = searchParams.get('pendaftaranId')
-  if (!pendaftaranId) {
-    return NextResponse.json({ error: 'pendaftaranId wajib diisi' }, { status: 400 })
-  }
 
   try {
-    const riwayat = await prisma.pembayaran.findMany({
-      where: { pendaftaranId },
-      orderBy: { angsuranKe: 'asc' },
+    if (pendaftaranId) {
+      const riwayat = await prisma.pembayaran.findMany({
+        where: { pendaftaranId },
+        orderBy: { angsuranKe: 'asc' },
+      })
+      return NextResponse.json({ data: riwayat })
+    }
+
+    const jenjangParam = (searchParams.get('jenjang') || '').toLowerCase()
+    const diminta = isJenjangValid(jenjangParam) ? jenjangParam : null
+    const tolak = requireJenjang(session, diminta)
+    if (tolak) return tolak
+    const jenjang = scopedJenjang(session, diminta)
+
+    const tahunAjaran = await resolveTahunAjaran(searchParams.get('tahunAjaranId'))
+    if (!tahunAjaran) return NextResponse.json({ data: [], ringkasan: null, tahunAjaran: null })
+
+    const status = searchParams.get('status') || 'menunggu_verifikasi'
+
+    const rows = await prisma.pembayaran.findMany({
+      where: {
+        pendaftaran: scopePendaftar({ tahunAjaranId: tahunAjaran.id, jenjang }),
+        ...(status === 'semua' ? {} : { status }),
+      },
+      include: {
+        pendaftaran: {
+          select: { id: true, namaLengkap: true, jenjang: true, totalTagihan: true, statusPembayaran: true },
+        },
+      },
+      orderBy: { tanggalBayar: 'desc' },
+      take: 300,
     })
-    return NextResponse.json({ data: riwayat })
+
+    return NextResponse.json({
+      data: rows.map(t => ({
+        id: t.id,
+        pendaftaranId: t.pendaftaranId,
+        nama: t.pendaftaran.namaLengkap,
+        jenjang: t.pendaftaran.jenjang,
+        totalTagihan: t.pendaftaran.totalTagihan,
+        statusPembayaran: t.pendaftaran.statusPembayaran,
+        jenis: t.jenis,
+        angsuranKe: t.angsuranKe,
+        nominal: t.nominal,
+        metodePembayaran: t.metodePembayaran,
+        bankPengirim: t.bankPengirim,
+        namaPengirim: t.namaPengirim,
+        buktiPembayaran: t.buktiPembayaran,
+        status: t.status,
+        catatanAdmin: t.catatanAdmin,
+        tanggalBayar: t.tanggalBayar,
+      })),
+      ringkasan: {
+        jumlah: rows.length,
+        nominal: rows.reduce((n, t) => n + t.nominal, 0),
+      },
+      tahunAjaran: { id: tahunAjaran.id, nama: tahunAjaran.nama, aktif: tahunAjaran.aktif },
+    })
   } catch (err) {
     console.error('Admin pembayaran GET error:', err)
     return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 })
@@ -36,10 +91,8 @@ export async function GET(req: Request) {
 // TETAP di sekolah — bukan transaksi bayar sungguhan, tidak perlu metode/bukti).
 // Langsung berstatus "lunas" karena diinput/diverifikasi langsung oleh admin.
 export async function POST(req: Request) {
-  const session = await getSession()
-  if (!session || session.role !== 'admin') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const gate = await requirePermission('pembayaran', 'update')
+  if (!gate.ok) return gate.res
 
   try {
     const body = await req.json()

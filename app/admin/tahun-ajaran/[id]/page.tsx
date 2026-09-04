@@ -28,8 +28,8 @@ type Ringkasan = {
 };
 
 const statCard = (bg: string, border: string): React.CSSProperties => ({ background: bg, border: `1px solid ${border}`, borderRadius: 12, padding: '14px 16px' });
-const statLabel: React.CSSProperties = { fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 4 };
-const statValue: React.CSSProperties = { fontSize: 20, fontWeight: 800, color: '#0A1628' };
+const statLabel: React.CSSProperties = { fontSize: 10, fontWeight: 700, color: 'var(--adm-text-faint)', textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 4 };
+const statValue: React.CSSProperties = { fontSize: 20, fontWeight: 800, color: 'var(--adm-text)' };
 
 export default function LihatDataTahunAjaranPage() {
   const params = useParams();
@@ -124,23 +124,23 @@ export default function LihatDataTahunAjaranPage() {
     setExporting('');
   };
 
-  if (loading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF' }}>Memuat...</div>;
-  if (!data) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF' }}>Tahun ajaran tidak ditemukan</div>;
+  if (loading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--adm-text-faint)' }}>Memuat...</div>;
+  if (!data) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--adm-text-faint)' }}>Tahun ajaran tidak ditemukan</div>;
 
   const { tahunAjaran, pendaftar, keuangan, harga, diskon, gelombang } = data;
   const jenjangList: ('smp' | 'sma' | 'smk')[] = ['smp', 'sma', 'smk'];
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F8F9FA', fontFamily: 'Inter, sans-serif' }}>
-      {toast && <div style={{ position: 'fixed', top: 24, right: 24, background: '#0A1628', color: 'white', padding: '12px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, zIndex: 9999 }}>{toast}</div>}
+    <div style={{ minHeight: '100vh', background: 'var(--adm-bg)', fontFamily: 'Inter, sans-serif' }}>
+      {toast && <div style={{ position: 'fixed', top: 24, right: 24, background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', padding: '12px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, zIndex: 9999 }}>{toast}</div>}
 
-      <div style={{ background: '#0A1628', padding: '18px 24px' }}>
+      <div style={{ background: 'var(--adm-primary)', padding: '18px 24px' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
           <Link href="/admin/tahun-ajaran" style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.6)', fontSize: 12, textDecoration: 'none', marginBottom: 10, width: 'fit-content' }}>
             <ChevronLeft size={14} /> Kembali ke Tahun Ajaran
           </Link>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <h1 style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>Lihat Kesimpulan — Tahun Ajaran {tahunAjaran.nama}</h1>
+            <h1 style={{ color: 'var(--adm-text-invert)', fontSize: 20, fontWeight: 700 }}>Lihat Kesimpulan — Tahun Ajaran {tahunAjaran.nama}</h1>
             <span style={{ background: tahunAjaran.aktif ? '#D1FAE5' : 'rgba(255,255,255,0.1)', color: tahunAjaran.aktif ? '#065F46' : 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 10 }}>
               {tahunAjaran.aktif ? 'AKTIF' : 'TIDAK AKTIF (HISTORIS)'}
             </span>
@@ -150,7 +150,7 @@ export default function LihatDataTahunAjaranPage() {
               ? 'Seluruh data pendaftaran baru saat ini masuk ke tahun ajaran ini.'
               : 'Tahun ajaran ini tidak aktif — data di bawah bersifat historis dan tidak berubah.'}
           </p>
-          <Link href={`/admin/dashboard?tahunAjaranId=${tahunAjaran.id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10, fontSize: 12, fontWeight: 700, color: '#E8B84B', textDecoration: 'none' }}>
+          <Link href={`/admin/dashboard?tahunAjaranId=${tahunAjaran.id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10, fontSize: 12, fontWeight: 700, color: 'var(--adm-secondary)', textDecoration: 'none' }}>
             Buka Panel Admin Lengkap untuk Tahun Ini →
           </Link>
         </div>
@@ -159,8 +159,8 @@ export default function LihatDataTahunAjaranPage() {
       <div style={{ maxWidth: 1000, margin: '28px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
 
         {/* Pendaftar */}
-        <div style={{ background: 'white', borderRadius: 14, padding: 20, border: '1px solid #F3F4F6' }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0A1628', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}><Users size={16} color="#C8973A" /> Pendaftar</h3>
+        <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}><Users size={16} color="var(--adm-secondary)" /> Pendaftar</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
             <div style={statCard('#FAFAFA', '#F0EBE0')}><div style={statLabel}>TOTAL</div><div style={statValue}>{pendaftar.total}</div></div>
             <div style={statCard('#FAFAFA', '#F0EBE0')}><div style={statLabel}>SMP</div><div style={statValue}>{pendaftar.smp}</div></div>
@@ -183,8 +183,8 @@ export default function LihatDataTahunAjaranPage() {
         </div>
 
         {/* Keuangan */}
-        <div style={{ background: 'white', borderRadius: 14, padding: 20, border: '1px solid #F3F4F6' }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0A1628', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}><Wallet size={16} color="#C8973A" /> Keuangan</h3>
+        <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}><Wallet size={16} color="var(--adm-secondary)" /> Keuangan</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
             <div style={statCard('#FAFAFA', '#F0EBE0')}><div style={statLabel}>TOTAL TAGIHAN</div><div style={{ ...statValue, fontSize: 15 }}>{formatRupiah(keuangan.totalTagihan)}</div></div>
             <div style={statCard('#F0FDF4', '#A7F3D0')}><div style={{ ...statLabel, color: '#059669' }}>TOTAL DIBAYAR</div><div style={{ ...statValue, fontSize: 15, color: '#065F46' }}>{formatRupiah(keuangan.totalDibayar)}</div></div>
@@ -196,17 +196,17 @@ export default function LihatDataTahunAjaranPage() {
         </div>
 
         {/* Harga */}
-        <div style={{ background: 'white', borderRadius: 14, padding: 20, border: '1px solid #F3F4F6' }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0A1628', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}><DollarSign size={16} color="#C8973A" /> Harga</h3>
+        <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}><DollarSign size={16} color="var(--adm-secondary)" /> Harga</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
             {jenjangList.map(j => (
               <div key={j}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#C8973A', marginBottom: 6 }}>{j.toUpperCase()} ({harga[j].length} baris)</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--adm-secondary)', marginBottom: 6 }}>{j.toUpperCase()} ({harga[j].length} baris)</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 160, overflowY: 'auto' }}>
-                  {harga[j].length === 0 ? <p style={{ fontSize: 11, color: '#9CA3AF' }}>Belum ada harga</p> : harga[j].map(h => (
+                  {harga[j].length === 0 ? <p style={{ fontSize: 11, color: 'var(--adm-text-faint)' }}>Belum ada harga</p> : harga[j].map(h => (
                     <div key={h.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, background: '#FAFAFA', borderRadius: 6, padding: '5px 8px', opacity: h.aktif ? 1 : 0.5 }}>
-                      <span style={{ color: '#374151' }}>{j === 'smk' ? `${h.jurusan} — ${h.kelas}` : h.kelas}</span>
-                      <span style={{ fontWeight: 700, color: '#0A1628' }}>{formatRupiah(h.nominal)}</span>
+                      <span style={{ color: 'var(--adm-text)' }}>{j === 'smk' ? `${h.jurusan} — ${h.kelas}` : h.kelas}</span>
+                      <span style={{ fontWeight: 700, color: 'var(--adm-text)' }}>{formatRupiah(h.nominal)}</span>
                     </div>
                   ))}
                 </div>
@@ -216,9 +216,9 @@ export default function LihatDataTahunAjaranPage() {
         </div>
 
         {/* Diskon */}
-        <div style={{ background: 'white', borderRadius: 14, padding: 20, border: '1px solid #F3F4F6' }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0A1628', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}><Tag size={16} color="#C8973A" /> Diskon ({diskon.length})</h3>
-          {diskon.length === 0 ? <p style={{ fontSize: 12, color: '#9CA3AF' }}>Belum ada diskon untuk tahun ajaran ini.</p> : (
+        <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}><Tag size={16} color="var(--adm-secondary)" /> Diskon ({diskon.length})</h3>
+          {diskon.length === 0 ? <p style={{ fontSize: 12, color: 'var(--adm-text-faint)' }}>Belum ada diskon untuk tahun ajaran ini.</p> : (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {diskon.map(d => (
                 <span key={d.id} style={{ background: d.aktif ? '#F0FDF4' : '#F3F4F6', color: d.aktif ? '#065F46' : '#9CA3AF', fontSize: 12, fontWeight: 600, padding: '6px 12px', borderRadius: 10, border: `1px solid ${d.aktif ? '#A7F3D0' : '#E5E7EB'}` }}>
@@ -230,16 +230,16 @@ export default function LihatDataTahunAjaranPage() {
         </div>
 
         {/* Gelombang */}
-        <div style={{ background: 'white', borderRadius: 14, padding: 20, border: '1px solid #F3F4F6' }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0A1628', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}><Layers size={16} color="#C8973A" /> Gelombang</h3>
+        <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}><Layers size={16} color="var(--adm-secondary)" /> Gelombang</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
             {jenjangList.map(j => (
               <div key={j}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#C8973A', marginBottom: 6 }}>{j.toUpperCase()}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--adm-secondary)', marginBottom: 6 }}>{j.toUpperCase()}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {gelombang[j].length === 0 ? <p style={{ fontSize: 11, color: '#9CA3AF' }}>Belum ada gelombang</p> : gelombang[j].map(g => (
+                  {gelombang[j].length === 0 ? <p style={{ fontSize: 11, color: 'var(--adm-text-faint)' }}>Belum ada gelombang</p> : gelombang[j].map(g => (
                     <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, background: '#FAFAFA', borderRadius: 6, padding: '5px 8px' }}>
-                      <span style={{ color: '#374151' }}>{g.nama}{g.untukAlumni ? ' (Alumni)' : ''}</span>
+                      <span style={{ color: 'var(--adm-text)' }}>{g.nama}{g.untukAlumni ? ' (Alumni)' : ''}</span>
                       {g.aktif && <span style={{ color: '#065F46', fontWeight: 700 }}>AKTIF</span>}
                     </div>
                   ))}
@@ -250,17 +250,17 @@ export default function LihatDataTahunAjaranPage() {
         </div>
 
         {/* Ekspor */}
-        <div style={{ background: 'white', borderRadius: 14, padding: 20, border: '1px solid #F3F4F6' }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0A1628', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}><FileText size={16} color="#C8973A" /> Ekspor Data</h3>
-          <p style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 14 }}>Ekspor hanya mengambil data dari tahun ajaran {tahunAjaran.nama} ini.</p>
+        <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}><FileText size={16} color="var(--adm-secondary)" /> Ekspor Data</h3>
+          <p style={{ fontSize: 12, color: 'var(--adm-text-faint)', marginBottom: 14 }}>Ekspor hanya mengambil data dari tahun ajaran {tahunAjaran.nama} ini.</p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <button onClick={handleExportPendaftar} disabled={!!exporting} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#0A1628', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: exporting ? 0.6 : 1 }}>
+            <button onClick={handleExportPendaftar} disabled={!!exporting} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: exporting ? 0.6 : 1 }}>
               <Download size={14} /> {exporting === 'pendaftar' ? 'Mengekspor...' : 'Data Pendaftar'}
             </button>
-            <button onClick={handleExportKeuangan} disabled={!!exporting} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#0A1628', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: exporting ? 0.6 : 1 }}>
+            <button onClick={handleExportKeuangan} disabled={!!exporting} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: exporting ? 0.6 : 1 }}>
               <Download size={14} /> {exporting === 'keuangan' ? 'Mengekspor...' : 'Data Keuangan'}
             </button>
-            <button onClick={handleExportRingkasan} disabled={!!exporting} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#0A1628', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: exporting ? 0.6 : 1 }}>
+            <button onClick={handleExportRingkasan} disabled={!!exporting} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: exporting ? 0.6 : 1 }}>
               <Download size={14} /> {exporting === 'ringkasan' ? 'Mengekspor...' : 'Ringkasan Keseluruhan'}
             </button>
           </div>

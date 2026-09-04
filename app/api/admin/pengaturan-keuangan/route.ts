@@ -1,19 +1,14 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { requirePermission } from '@/lib/adminSession'
 import { prisma } from '@/lib/db'
 import { resolveTahunAjaran } from '@/lib/tahunAjaran'
-
-async function requireAdmin() {
-  const session = await getSession()
-  return session && session.role === 'admin' ? session : null
-}
 
 // GET ?tahunAjaranId= - ambil pengaturan minimal pembayaran awal & minimal
 // cicilan untuk satu tahun ajaran (default aktif), dibuat dengan nilai
 // default kalau belum pernah diatur untuk tahun ajaran itu.
 export async function GET(req: Request) {
-  const session = await requireAdmin()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const gate = await requirePermission('pengaturan', 'read')
+  if (!gate.ok) return gate.res
 
   try {
     const url = new URL(req.url)
@@ -36,8 +31,8 @@ export async function GET(req: Request) {
 // minimal cicilan berikutnya, untuk satu tahun ajaran (body.tahunAjaranId,
 // default aktif)
 export async function PUT(req: Request) {
-  const session = await requireAdmin()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const gate = await requirePermission('pengaturan_keuangan', 'update')
+  if (!gate.ok) return gate.res
 
   try {
     const body = await req.json()

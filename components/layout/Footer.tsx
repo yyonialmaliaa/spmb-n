@@ -11,7 +11,7 @@ import {
 
 export default function Footer() {
   return (
-    <footer style={{ background: '#0B3D2E ', color: 'white', borderTop: '2px solid #C8973A' }}>
+    <footer style={{ background: 'var(--adm-surface-alt)', color: 'var(--adm-text)', borderTop: '3px solid var(--cn-hijau)' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 24px 30px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 40, marginBottom: 40 }}>
           
@@ -39,10 +39,10 @@ export default function Footer() {
               </div>
               <div>
                 <div style={{ fontWeight: 800, fontSize: 15 }}>SMK Citra Negara</div>
-                <div style={{ fontSize: 11, color: '#C8973A' }}>Terakreditasi A</div>
+                <div style={{ fontSize: 11, color: 'var(--cn-emas)' }}>Terakreditasi A</div>
               </div>
             </div>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, marginBottom: 20 }}>
+            <p style={{ fontSize: 13, color: 'var(--adm-text-muted)', lineHeight: 1.7, marginBottom: 20 }}>
               Sekolah Menengah Kejuruan unggulan yang mencetak generasi profesional, berkarakter, dan siap kerja.
             </p>
             <div style={{ display: 'flex', gap: 12 }}>
@@ -58,7 +58,7 @@ export default function Footer() {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#C8973A', // warna icon
+    color: 'var(--cn-hijau)', // warna icon
     textDecoration: 'none',
   }}
 >
@@ -77,7 +77,7 @@ export default function Footer() {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#C8973A', // warna icon
+    color: 'var(--cn-hijau)', // warna icon
     textDecoration: 'none',
   }}
 >
@@ -96,7 +96,7 @@ export default function Footer() {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#C8973A', // warna icon
+    color: 'var(--cn-hijau)', // warna icon
     textDecoration: 'none',
   }}
 >
@@ -115,7 +115,7 @@ export default function Footer() {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#C8973A',
+    color: 'var(--cn-hijau)',
     textDecoration: 'none',
     transition: 'all 0.2s',
   }}
@@ -135,7 +135,7 @@ export default function Footer() {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#C8973A', // warna icon
+    color: 'var(--cn-hijau)', // warna icon
     textDecoration: 'none',
   }}
 >
@@ -150,25 +150,25 @@ export default function Footer() {
 
           {/* Links */}
           <div>
-            <h4 style={{ fontWeight: 700, marginBottom: 16, fontSize: 14, color: '#C8973A' }}>Menu Utama</h4>
+            <h4 style={{ fontWeight: 700, marginBottom: 16, fontSize: 14, color: 'var(--cn-hijau)' }}>Menu Utama</h4>
             {[
               { href: '/spmb', label: 'SPMB Online' },
               { href: '/login', label: 'Login Siswa' },
             ].map(link => (
               <Link key={link.href} href={link.href} style={{
-                display: 'block', color: 'rgba(255,255,255,0.6)',
+                display: 'block', color: 'var(--adm-text-muted)',
                 textDecoration: 'none', fontSize: 13, padding: '5px 0',
                 transition: 'color 0.2s',
               }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#C8973A')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--cn-hijau)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--adm-text-muted)')}
               >→ {link.label}</Link>
             ))}
           </div>
 
           {/* Kontak */}
           <div>
-            <h4 style={{ fontWeight: 700, marginBottom: 16, fontSize: 14, color: '#C8973A' }}>Kontak</h4>
+            <h4 style={{ fontWeight: 700, marginBottom: 16, fontSize: 14, color: 'var(--cn-hijau)' }}>Kontak</h4>
             {[
               { Icon: MapPin, text: 'Jl. Tanah Baru Jl. Kemiri Jaya No.99, Beji, Kecamatan Beji, Kota Depok, Jawa Barat 16421' },
               { Icon: Phone, text: '(021) 7720-1052 / WA: 0813-2526-9477' },
@@ -176,15 +176,15 @@ export default function Footer() {
               { Icon: Clock12Icon, text: 'Senin - Jumat: 07:00 - 15:30 | Sabtu - Minggu: 07:00 - 13:00' },
             ].map(({ Icon, text }, i) => (
               <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 12, alignItems: 'flex-start' }}>
-                <Icon size={14} color="#C8973A" style={{ marginTop: 3, flexShrink: 0 }} />
-                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>{text}</span>
+                <Icon size={14} color="var(--cn-hijau)" style={{ marginTop: 3, flexShrink: 0 }} />
+                <span style={{ fontSize: 13, color: 'var(--adm-text-muted)', lineHeight: 1.5 }}>{text}</span>
               </div>
             ))}
           </div>
         </div>
 
         <div style={{
-          borderTop: '1px solid rgba(255,255,255,0.1)',
+          borderTop: '1px solid var(--adm-border)',
           paddingTop: 20,
           display: 'flex',
           justifyContent: 'space-between',
@@ -192,10 +192,10 @@ export default function Footer() {
           flexWrap: 'wrap',
           gap: 10,
         }}>
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
+          <p style={{ fontSize: 12, color: 'var(--adm-text-muted)' }}>
             © 2026 SMK Citra Negara. All rights reserved.
           </p>
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
+          <p style={{ fontSize: 12, color: 'var(--adm-text-muted)' }}>
             SPMB v1.0 team 5
           </p>
         </div>

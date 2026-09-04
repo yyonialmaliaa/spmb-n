@@ -1,16 +1,15 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { requirePermission } from '@/lib/adminSession'
+import { catatAudit, bedanya, rupiah } from '@/lib/audit'
 import { prisma } from '@/lib/db'
 
-async function requireAdmin() {
-  const session = await getSession()
-  return session && session.role === 'admin' ? session : null
-}
+const nilaiDiskon = (d: { tipeNominal: string; nominal: number }) =>
+  d.tipeNominal === 'persen' ? `${d.nominal}%` : rupiah(d.nominal)
 
 // PUT - edit jenis/tipe nominal/nominal/aktif
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireAdmin()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const gate = await requirePermission('diskon', 'update')
+  if (!gate.ok) return gate.res
 
   try {
     const { id } = await params
@@ -30,7 +29,29 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
     if (body.aktif !== undefined) data.aktif = !!body.aktif
 
+    const lama = await prisma.diskon.findUnique({ where: { id } })
+    if (!lama) return NextResponse.json({ error: 'Data diskon tidak ditemukan' }, { status: 404 })
+
     const updated = await prisma.diskon.update({ where: { id }, data })
+
+    const diff = bedanya(lama as unknown as Record<string, unknown>, data)
+    if (diff.fields.length > 0) {
+      const nilaiBerubah = diff.fields.includes('nominal') || diff.fields.includes('tipeNominal')
+      await catatAudit({
+        session: gate.session,
+        aksi: 'update',
+        entitas: 'diskon',
+        entitasId: id,
+        ringkasan: nilaiBerubah
+          ? `Mengubah diskon "${lama.jenis}": ${nilaiDiskon(lama)} → ${nilaiDiskon(updated)}`
+          : `Mengubah diskon "${lama.jenis}" (${diff.fields.join(', ')})`,
+        sebelum: diff.sebelum,
+        sesudah: diff.sesudah,
+        tahunAjaranId: lama.tahunAjaranId,
+        req,
+      })
+    }
+
     return NextResponse.json({ success: true, data: updated })
   } catch (err) {
     console.error('Admin diskon PUT error:', err)
@@ -40,13 +61,28 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
 // DELETE - hapus jenis diskon (pendaftar yang sudah pakai tetap menyimpan
 // snapshot diskonNominal-nya sendiri, tidak terpengaruh)
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireAdmin()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const gate = await requirePermission('diskon', 'delete')
+  if (!gate.ok) return gate.res
 
   try {
     const { id } = await params
+    const lama = await prisma.diskon.findUnique({ where: { id } })
     await prisma.diskon.delete({ where: { id } })
+
+    if (lama) {
+      await catatAudit({
+        session: gate.session,
+        aksi: 'delete',
+        entitas: 'diskon',
+        entitasId: id,
+        ringkasan: `Menghapus diskon "${lama.jenis}" (${nilaiDiskon(lama)})`,
+        sebelum: { jenis: lama.jenis, nominal: lama.nominal, tipeNominal: lama.tipeNominal },
+        tahunAjaranId: lama.tahunAjaranId,
+        req,
+      })
+    }
+
     return NextResponse.json({ success: true })
   } catch (err) {
     console.error('Admin diskon DELETE error:', err)

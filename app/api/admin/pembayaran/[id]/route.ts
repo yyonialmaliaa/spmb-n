@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { requirePermission } from '@/lib/adminSession'
+import { catatAudit } from '@/lib/audit'
 import { prisma } from '@/lib/db'
 import { recalculatePembayaran, formatRupiah } from '@/lib/keuangan'
 import { kirimNotifikasi } from '@/lib/notifikasi'
 
 // GET - detail satu cicilan pembayaran + data pendaftar terkait (untuk cetak kwitansi)
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSession()
-  if (!session || session.role !== 'admin') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const gate = await requirePermission('pembayaran', 'read')
+  if (!gate.ok) return gate.res
   try {
     const { id } = await params
     const cicilan = await prisma.pembayaran.findUnique({
@@ -26,10 +25,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
 // PUT - admin verifikasi (lunas) atau tolak satu cicilan pembayaran
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSession()
-  if (!session || session.role !== 'admin') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const gate = await requirePermission('pembayaran', 'update')
+  if (!gate.ok) return gate.res
 
   try {
     const { id } = await params
@@ -52,6 +49,26 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     })
 
     const pendaftaranUpdated = await recalculatePembayaran(cicilan.pendaftaranId)
+
+    if (status !== cicilan.status) {
+      const pendaftar = await prisma.pendaftaran.findUnique({
+        where: { id: cicilan.pendaftaranId },
+        select: { namaLengkap: true, jenjang: true, tahunAjaranId: true },
+      })
+      const aksiLabel = status === 'lunas' ? 'Memverifikasi' : status === 'ditolak' ? 'Menolak' : 'Mengembalikan ke menunggu'
+      await catatAudit({
+        session: gate.session,
+        aksi: status === 'lunas' ? 'verify' : status === 'ditolak' ? 'reject' : 'update',
+        entitas: 'pembayaran',
+        entitasId: id,
+        ringkasan: `${aksiLabel} pembayaran ${formatRupiah(cicilan.nominal)} (cicilan ke-${cicilan.angsuranKe}) atas nama ${pendaftar?.namaLengkap || 'pendaftar'}`,
+        sebelum: { status: cicilan.status },
+        sesudah: { status, catatanAdmin: catatanAdmin ?? null },
+        jenjang: pendaftar?.jenjang ?? null,
+        tahunAjaranId: pendaftar?.tahunAjaranId ?? null,
+        req,
+      })
+    }
 
     // Notifikasi ke pendaftar — hanya untuk cicilan "bayar" milik pendaftar
     // sendiri (bukan refund/alokasi yang sudah dinotifikasi saat dibuat, dan

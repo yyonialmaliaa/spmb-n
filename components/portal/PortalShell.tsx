@@ -16,10 +16,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   Home, FileText, Wallet, FolderOpen, Lock,
-  Bell, User, LogOut, ChevronDown,
+  Bell, User, LogOut, ChevronDown, Sun, Moon,
 } from 'lucide-react';
 import HelpFloatingButton from './HelpFloatingButton';
 import LockedFeatureDialog from './LockedFeatureDialog';
+import { isAdminRole, normalizeRole } from '@/lib/permissions';
+import { useTema } from '@/components/TemaProvider';
 
 export type Session = { userId: string; email: string; role: string; namaLengkap?: string };
 
@@ -78,12 +80,12 @@ const CSS = `
     .portal-bottom-nav { display: flex !important; }
     .portal-main { padding: 18px 16px 88px; }
   }
-  .portal-nav-link:not(.portal-nav-link-active):hover { background: rgba(255,255,255,0.1) !important; color: white !important; }
+  .portal-nav-link:not(.portal-nav-link-active):hover { background: var(--adm-neutral-weak) !important; color: var(--adm-text) !important; }
   .portal-nav-link:focus-visible, .portal-icon-btn:focus-visible, .portal-bottom-link:focus-visible {
-    outline: 2px solid #E8B84B; outline-offset: 2px;
+    outline: 2px solid var(--cn-hijau); outline-offset: 2px;
   }
-  .portal-icon-btn:hover { background: rgba(255,255,255,0.16) !important; }
-  .portal-avatar-btn:hover, .portal-avatar-btn:focus-visible { filter: brightness(1.1); outline: 2px solid white; outline-offset: 2px; }
+  .portal-icon-btn:hover { background: var(--adm-neutral-weak) !important; }
+  .portal-avatar-btn:hover, .portal-avatar-btn:focus-visible { filter: brightness(1.06); outline: 2px solid var(--cn-hijau); outline-offset: 2px; }
   .portal-bottom-link:active { opacity: 0.7; }
 `;
 
@@ -149,7 +151,7 @@ export default function PortalShell({
   useEffect(() => {
     fetch('/api/auth/me').then(r => r.json()).then(d => {
       if (!d.user) { router.push('/login'); return; }
-      if (d.user.role === 'admin') { router.push('/admin/dashboard'); return; }
+      if (isAdminRole(normalizeRole(d.user.role))) { router.push('/admin/dashboard'); return; }
       setSession(d.user);
     });
     fetch('/api/pendaftaran').then(r => r.json()).then(d => {
@@ -175,6 +177,8 @@ export default function PortalShell({
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  const { tema, gantiTema } = useTema();
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -230,11 +234,11 @@ export default function PortalShell({
   const ctaHrefMulaiPendaftaran = pendaftaran?.jenjang ? `/spmb/daftar?jenjang=${pendaftaran.jenjang}` : '/dashboard';
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FAF7F0' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--adm-bg)' }}>
       <style>{CSS}</style>
 
       {/* ── Desktop navbar ── */}
-      <nav className="portal-desktop-nav" style={{ background: 'linear-gradient(180deg, #123524 0%, #0B2A1C 100%)', borderBottom: '2px solid #C8973A', position: 'sticky', top: 0, zIndex: 100, alignItems: 'center', height: 60 }}>
+      <nav className="portal-desktop-nav" style={{ background: 'var(--adm-kaca-pekat)', backdropFilter: 'var(--adm-blur)', WebkitBackdropFilter: 'var(--adm-blur)', borderBottom: '1px solid var(--adm-border)', position: 'sticky', top: 0, zIndex: 100, alignItems: 'center', height: 60 }}>
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24 }}>
           <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 }}>
             <div style={{ width: 32, height: 32, borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
@@ -277,8 +281,8 @@ export default function PortalShell({
                   style={{
                     display: 'flex', alignItems: 'center', gap: 7, padding: '8px 16px', borderRadius: 8,
                     textDecoration: 'none', fontSize: 13, fontWeight: 600,
-                    color: isActive ? '#0A1628' : 'rgba(255,255,255,0.75)',
-                    background: isActive ? '#E8B84B' : 'transparent',
+                    color: isActive ? '#FFFFFF' : 'var(--adm-text-muted)',
+                    background: isActive ? 'var(--cn-hijau)' : 'transparent',
                   }}
                 >
                   <item.icon size={15} /> {item.label}
@@ -299,7 +303,7 @@ export default function PortalShell({
                 style={{ position: 'relative', background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 8, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
               >
                 <Bell size={16} color="white" />
-                {adaNotifBaru && <span aria-hidden style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', background: '#DC2626', border: '1.5px solid #123524' }} />}
+                {adaNotifBaru && <span aria-hidden style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', background: '#DC2626', border: '1.5px solid var(--adm-surface)' }} />}
               </button>
               {notifOpen && <NotifDropdown items={notifGabungan} onNavigate={() => setNotifOpen(false)} />}
             </div>
@@ -314,16 +318,21 @@ export default function PortalShell({
                 className="portal-icon-btn"
                 style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 8, padding: '5px 10px 5px 5px', cursor: 'pointer' }}
               >
-                <span style={{ width: 26, height: 26, borderRadius: '50%', background: '#C8973A', color: '#0A1628', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>{initial}</span>
-                <span style={{ color: 'white', fontSize: 12.5, fontWeight: 600, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session?.namaLengkap || 'Akun'}</span>
-                <ChevronDown size={13} color="rgba(255,255,255,0.6)" />
+                <span style={{ width: 26, height: 26, borderRadius: '50%', background: 'var(--cn-hijau)', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>{initial}</span>
+                <span style={{ color: 'var(--adm-text)', fontSize: 12.5, fontWeight: 600, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session?.namaLengkap || 'Akun'}</span>
+                <ChevronDown size={13} color="var(--adm-text-muted)" />
               </button>
               {accountOpen && (
-                <div style={{ position: 'absolute', top: '110%', right: 0, background: 'white', borderRadius: 10, boxShadow: '0 12px 32px rgba(0,0,0,0.18)', border: '1px solid #F0EBE0', minWidth: 170, overflow: 'hidden', zIndex: 200 }}>
-                  <Link href="/dashboard/profil" onClick={() => setAccountOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', color: '#374151', textDecoration: 'none', fontSize: 13, borderBottom: '1px solid #F3F4F6' }}>
+                <div style={{ position: 'absolute', top: '110%', right: 0, background: 'var(--adm-surface)', borderRadius: 10, boxShadow: 'var(--adm-shadow-md)', border: '1px solid var(--adm-border)', minWidth: 170, overflow: 'hidden', zIndex: 200 }}>
+                  <Link href="/dashboard/profil" onClick={() => setAccountOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', color: 'var(--adm-text)', textDecoration: 'none', fontSize: 13, borderBottom: '1px solid var(--adm-border)' }}>
                     <User size={14} /> Profil
                   </Link>
-                  <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', color: '#DC2626', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
+                  {/* Pendaftar juga bisa memilih tema terang/gelap, sama
+                      seperti ketiga peran admin. */}
+                  <button onClick={gantiTema} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', color: 'var(--adm-text)', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', borderBottom: '1px solid var(--adm-border)' }}>
+                    {tema === 'gelap' ? <Sun size={14} /> : <Moon size={14} />} Tema {tema === 'gelap' ? 'Terang' : 'Gelap'}
+                  </button>
+                  <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', color: 'var(--adm-danger)', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
                     <LogOut size={14} /> Keluar
                   </button>
                 </div>
@@ -334,7 +343,7 @@ export default function PortalShell({
       </nav>
 
       {/* ── Mobile header ── */}
-      <header className="portal-mobile-header" style={{ background: 'linear-gradient(180deg, #123524 0%, #0B2A1C 100%)', borderBottom: '2px solid #C8973A', position: 'sticky', top: 0, zIndex: 100, alignItems: 'center', justifyContent: 'space-between', height: 56, padding: '0 16px' }}>
+      <header className="portal-mobile-header" style={{ background: 'var(--adm-kaca-pekat)', backdropFilter: 'var(--adm-blur)', WebkitBackdropFilter: 'var(--adm-blur)', borderBottom: '1px solid var(--adm-border)', position: 'sticky', top: 0, zIndex: 100, alignItems: 'center', justifyContent: 'space-between', height: 56, padding: '0 16px' }}>
         <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
           <div style={{ width: 28, height: 28, borderRadius: 7, overflow: 'hidden', flexShrink: 0 }}>
             <Image src="/images/logo.png" alt="Logo SMK Citra Negara" width={28} height={28} style={{ objectFit: 'cover' }} />
@@ -353,7 +362,7 @@ export default function PortalShell({
               style={{ position: 'relative', background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 8, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
             >
               <Bell size={16} color="white" />
-              {adaNotifBaru && <span aria-hidden style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', background: '#DC2626', border: '1.5px solid #123524' }} />}
+              {adaNotifBaru && <span aria-hidden style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', background: '#DC2626', border: '1.5px solid var(--adm-surface)' }} />}
             </button>
             {notifOpen && <NotifDropdown items={notifGabungan} onNavigate={() => setNotifOpen(false)} />}
           </div>
@@ -365,17 +374,20 @@ export default function PortalShell({
               aria-expanded={accountOpen}
               title="Menu akun"
               className="portal-avatar-btn"
-              style={{ width: 34, height: 34, borderRadius: '50%', background: '#C8973A', color: '#0A1628', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, border: 'none', cursor: 'pointer' }}
+              style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--cn-hijau)', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, border: 'none', cursor: 'pointer' }}
             >
               {initial}
             </button>
             {accountOpen && (
-              <div style={{ position: 'absolute', top: '120%', right: 0, background: 'white', borderRadius: 10, boxShadow: '0 12px 32px rgba(0,0,0,0.18)', border: '1px solid #F0EBE0', minWidth: 170, overflow: 'hidden', zIndex: 200 }}>
-                <div style={{ padding: '10px 14px', fontSize: 12, color: '#9CA3AF', borderBottom: '1px solid #F3F4F6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session?.namaLengkap}</div>
-                <Link href="/dashboard/profil" onClick={() => setAccountOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', color: '#374151', textDecoration: 'none', fontSize: 13, borderBottom: '1px solid #F3F4F6' }}>
+              <div style={{ position: 'absolute', top: '120%', right: 0, background: 'var(--adm-surface)', borderRadius: 10, boxShadow: 'var(--adm-shadow-md)', border: '1px solid var(--adm-border)', minWidth: 170, overflow: 'hidden', zIndex: 200 }}>
+                <div style={{ padding: '10px 14px', fontSize: 12, color: 'var(--adm-text-muted)', borderBottom: '1px solid var(--adm-border)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session?.namaLengkap}</div>
+                <Link href="/dashboard/profil" onClick={() => setAccountOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', color: 'var(--adm-text)', textDecoration: 'none', fontSize: 13, borderBottom: '1px solid var(--adm-border)' }}>
                   <User size={14} /> Profil
                 </Link>
-                <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', color: '#DC2626', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
+                <button onClick={gantiTema} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', color: 'var(--adm-text)', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', borderBottom: '1px solid var(--adm-border)' }}>
+                  {tema === 'gelap' ? <Sun size={14} /> : <Moon size={14} />} Tema {tema === 'gelap' ? 'Terang' : 'Gelap'}
+                </button>
+                <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', color: 'var(--adm-danger)', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
                   <LogOut size={14} /> Keluar
                 </button>
               </div>
@@ -389,8 +401,8 @@ export default function PortalShell({
         {loading ? (
           <div style={{ minHeight: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ width: 36, height: 36, border: '4px solid #E5E7EB', borderTopColor: '#C8973A', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
-              <p style={{ color: '#6B7280', fontSize: 13 }}>Memuat data...</p>
+              <div style={{ width: 36, height: 36, border: '4px solid var(--adm-border)', borderTopColor: 'var(--cn-hijau)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
+              <p style={{ color: 'var(--adm-text-muted)', fontSize: 13 }}>Memuat data...</p>
               <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
           </div>
@@ -400,7 +412,7 @@ export default function PortalShell({
       </main>
 
       {/* ── Bottom navigation (mobile) ── */}
-      <nav className="portal-bottom-nav" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'white', borderTop: '1px solid #EDE7DA', zIndex: 100, justifyContent: 'space-around', alignItems: 'center', height: 62, boxShadow: '0 -2px 12px rgba(0,0,0,0.05)' }}>
+      <nav className="portal-bottom-nav" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--adm-surface)', borderTop: '1px solid var(--adm-border)', zIndex: 100, justifyContent: 'space-around', alignItems: 'center', height: 62, boxShadow: 'var(--adm-shadow-sm)' }}>
         {NAV_ITEMS.map(item => {
           const isActive = active === item.key;
           const isLocked = item.lockable && !punyaPendaftaran;
@@ -417,13 +429,13 @@ export default function PortalShell({
                 style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
                   flex: 1, height: '100%', justifyContent: 'center',
-                  color: '#B9B2A0', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                  color: 'var(--adm-text-faint)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                 }}
               >
                 <span style={{ position: 'relative', display: 'inline-flex' }}>
                   <item.icon size={20} strokeWidth={2} />
-                  <span style={{ position: 'absolute', bottom: -3, right: -5, background: 'white', borderRadius: '50%', width: 13, height: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 1px #EDE7DA' }}>
-                    <Lock size={8} color="#92681A" />
+                  <span style={{ position: 'absolute', bottom: -3, right: -5, background: 'var(--adm-surface)', borderRadius: '50%', width: 13, height: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 1px var(--adm-border)' }}>
+                    <Lock size={8} color="var(--adm-warning)" />
                   </span>
                 </span>
                 <span style={{ fontSize: 10.5, fontWeight: 500 }}>{item.label}</span>
@@ -440,7 +452,7 @@ export default function PortalShell({
               style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
                 textDecoration: 'none', flex: 1, height: '100%', justifyContent: 'center',
-                color: isActive ? '#0B3D2E' : '#9CA3AF',
+                color: isActive ? 'var(--cn-hijau)' : 'var(--adm-text-faint)',
               }}
             >
               <item.icon size={20} strokeWidth={isActive ? 2.4 : 2} />
@@ -462,22 +474,26 @@ type NotifDropdownItem = { text: string; href?: string; waktu?: string; baru?: b
 
 function NotifDropdown({ items, onNavigate }: { items: NotifDropdownItem[]; onNavigate: () => void }) {
   return (
-    <div style={{ position: 'absolute', top: '120%', right: 0, background: 'white', borderRadius: 12, boxShadow: '0 12px 32px rgba(0,0,0,0.18)', border: '1px solid #F0EBE0', width: 300, maxWidth: '85vw', maxHeight: 380, overflowY: 'auto', zIndex: 200 }}>
-      <div style={{ padding: '10px 14px', fontSize: 12, fontWeight: 700, color: '#6B7280', borderBottom: '1px solid #F3F4F6', background: '#FAFAFA', position: 'sticky', top: 0 }}>NOTIFIKASI</div>
+    <div style={{ position: 'absolute', top: '120%', right: 0, background: 'var(--adm-surface)', borderRadius: 12, boxShadow: 'var(--adm-shadow-md)', border: '1px solid var(--adm-border)', width: 300, maxWidth: '85vw', maxHeight: 380, overflowY: 'auto', zIndex: 200 }}>
+      <div style={{ padding: '10px 14px', fontSize: 12, fontWeight: 700, color: 'var(--adm-text-muted)', borderBottom: '1px solid var(--adm-border)', background: 'var(--adm-surface-alt)', position: 'sticky', top: 0 }}>NOTIFIKASI</div>
       {items.length === 0 ? (
-        <div style={{ padding: '20px 14px', textAlign: 'center', fontSize: 12.5, color: '#9CA3AF' }}>Tidak ada notifikasi</div>
+        <div style={{ padding: '20px 14px', textAlign: 'center', fontSize: 12.5, color: 'var(--adm-text-faint)' }}>Tidak ada notifikasi</div>
       ) : (
         items.map((n, i) => {
           const isi = (
             <>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                {n.baru && <span aria-hidden style={{ width: 6, height: 6, borderRadius: '50%', background: '#C8973A', marginTop: 5, flexShrink: 0 }} />}
+                {n.baru && <span aria-hidden style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--cn-hijau)', marginTop: 5, flexShrink: 0 }} />}
                 <span style={{ flex: 1 }}>{n.text}</span>
               </div>
-              {n.waktu && <div style={{ fontSize: 10.5, color: '#9CA3AF', marginTop: 3 }}>{formatWaktuNotif(n.waktu)}</div>}
+              {n.waktu && <div style={{ fontSize: 10.5, color: 'var(--adm-text-faint)', marginTop: 3 }}>{formatWaktuNotif(n.waktu)}</div>}
             </>
           );
-          const style: React.CSSProperties = { display: 'block', padding: '11px 14px', fontSize: 12.5, color: '#374151', textDecoration: 'none', borderBottom: i < items.length - 1 ? '1px solid #F3F4F6' : 'none', lineHeight: 1.5, background: n.baru ? '#FFFBEB' : 'transparent' };
+          // BUG lama: teks fixed abu-gelap di atas latar 'transparent' —
+          // saat panel ini ikut menjadi gelap (tema gelap), teks tetap
+          // gelap dan nyaris tidak terlihat. Latar & teks kini sama-sama
+          // token supaya berpindah tema bersamaan.
+          const style: React.CSSProperties = { display: 'block', padding: '11px 14px', fontSize: 12.5, color: 'var(--adm-text)', textDecoration: 'none', borderBottom: i < items.length - 1 ? '1px solid var(--adm-border)' : 'none', lineHeight: 1.5, background: n.baru ? 'var(--adm-warning-weak)' : 'transparent' };
           return n.href
             ? <Link key={i} href={n.href} onClick={onNavigate} style={style}>{isi}</Link>
             : <div key={i} style={style}>{isi}</div>;

@@ -50,19 +50,56 @@ const DOKUMEN_DEFAULT: { jenis: string; nama: string }[] = [
   { jenis: 'surat_perjanjian', nama: 'Surat Perjanjian Daftar Ulang' },
 ]
 
+// Berkas yang wajib diunggah pendaftar. Disalin PERSIS dari FILE_FIELDS di
+// app/spmb/daftar/page.tsx supaya data admin dan formulir siswa yang sedang
+// berjalan sepakat sejak hari pertama. fieldKey = nama kolom di Pendaftaran.
+const PERSYARATAN_PENDAFTARAN: { jenis: string; nama: string; fieldKey: string; wajib: boolean }[] = [
+  { jenis: 'ijazah', nama: 'Ijazah atau Surat Keterangan Lulus (SKL) yang telah dilegalisir', fieldKey: 'fileIjazah', wajib: true },
+  { jenis: 'akte', nama: 'Akte Kelahiran / Surat Keterangan Lahir', fieldKey: 'fileAkte', wajib: true },
+  { jenis: 'kk', nama: 'Kartu Keluarga', fieldKey: 'fileKK', wajib: true },
+  { jenis: 'ktp_ortu', nama: 'KTP Ayah dan Ibu', fieldKey: 'fileKtpOrtu', wajib: true },
+  { jenis: 'kip', nama: 'KIP/PKH/KKS/DTKS/SKTM (Jika Ada)', fieldKey: 'fileKip', wajib: false },
+  { jenis: 'foto', nama: 'Pas Photo Siswa Ukuran 3x4 (Kode Warna #0000FF)', fieldKey: 'fileFoto', wajib: true },
+]
+
 async function main() {
-  const adminCount = await prisma.user.count({ where: { role: 'admin' } })
-  if (adminCount === 0) {
-    await prisma.user.create({
-      data: {
-        email: 'admin@smkcitranegara.sch.id',
-        password: await bcrypt.hash('admin123', 10),
-        role: 'admin',
-        namaLengkap: 'Administrator',
-      },
-    })
-    console.log('Admin default dibuat: admin@smkcitranegara.sch.id / admin123')
+  // Backfill role lama -> role baru. Idempoten: sekali jalan menyisakan 0
+  // baris 'admin', jalan berikutnya tidak mengubah apa pun.
+  const backfill = await prisma.user.updateMany({
+    where: { role: 'admin' },
+    data: { role: 'super_admin' },
+  })
+  if (backfill.count > 0) {
+    console.log(`Role: ${backfill.count} akun 'admin' dipromosikan jadi 'super_admin'`)
   }
+
+  // ---------------------------------------------------------------------
+  // TIGA AKUN ADMIN RESMI
+  // ---------------------------------------------------------------------
+  // Seluruhnya memakai kotak surat sekolah info@citranegara.sch.id. Kolom
+  // email bersifat UNIK di basis data, jadi tiga akun tidak bisa memakai
+  // string yang sama persis — dipakai sub-addressing (info+peran@...), yang
+  // tetap terkirim ke info@citranegara.sch.id pada layanan surel mana pun,
+  // tetapi terhitung sebagai identitas login yang berbeda.
+  const AKUN_ADMIN: { email: string; password: string; role: string; nama: string }[] = [
+    { email: 'info+superadmin@citranegara.sch.id', password: 'superadmin123', role: 'super_admin',    nama: 'Super Admin' },
+    { email: 'info+spmb@citranegara.sch.id',       password: 'adminspmb123',  role: 'admin_spmb',     nama: 'Admin SPMB (Front Office)' },
+    { email: 'info+loket@citranegara.sch.id',      password: 'adminloket123', role: 'admin_keuangan', nama: 'Admin Keuangan (Loket)' },
+  ]
+
+  for (const a of AKUN_ADMIN) {
+    await prisma.user.upsert({
+      where: { email: a.email },
+      // Password ikut disetel ulang supaya seed selalu memulihkan kredensial
+      // resmi bila ada yang mengubahnya saat uji coba.
+      update: { role: a.role, aktif: true, namaLengkap: a.nama, password: await bcrypt.hash(a.password, 10) },
+      create: { email: a.email, password: await bcrypt.hash(a.password, 10), role: a.role, namaLengkap: a.nama },
+    })
+  }
+  console.log('Akun admin disiapkan:')
+  for (const a of AKUN_ADMIN) console.log(`  ${a.role.padEnd(15)} ${a.email}`)
+
+
 
   const tahunAjaran = await prisma.tahunAjaran.upsert({
     where: { nama: '2026/2027' },
@@ -137,15 +174,58 @@ async function main() {
   console.log('Gelombang: 3 jalur umum (smp/sma/smk) + 2 jalur alumni (sma/smk) disiapkan')
 
   for (const jenjang of jenjangList) {
-    for (const d of DOKUMEN_DEFAULT) {
+    for (const [i, d] of DOKUMEN_DEFAULT.entries()) {
       await prisma.dokumenPersyaratan.upsert({
-        where: { tahunAjaranId_jenjang_jenis: { tahunAjaranId: tahunAjaran.id, jenjang, jenis: d.jenis } },
+        where: {
+          tahunAjaranId_jenjang_kategori_jenis: {
+            tahunAjaranId: tahunAjaran.id,
+            jenjang,
+            kategori: 'daftar_ulang',
+            jenis: d.jenis,
+          },
+        },
         update: {},
-        create: { tahunAjaranId: tahunAjaran.id, jenjang, jenis: d.jenis, nama: d.nama },
+        create: {
+          tahunAjaranId: tahunAjaran.id,
+          jenjang,
+          kategori: 'daftar_ulang',
+          jenis: d.jenis,
+          nama: d.nama,
+          urutan: i,
+        },
       })
     }
   }
-  console.log('Dokumen persyaratan daftar ulang: disiapkan per jenjang')
+  console.log('Dokumen daftar ulang: disiapkan per jenjang')
+
+  for (const jenjang of jenjangList) {
+    for (const [i, p] of PERSYARATAN_PENDAFTARAN.entries()) {
+      await prisma.dokumenPersyaratan.upsert({
+        where: {
+          tahunAjaranId_jenjang_kategori_jenis: {
+            tahunAjaranId: tahunAjaran.id,
+            jenjang,
+            kategori: 'pendaftaran',
+            jenis: p.jenis,
+          },
+        },
+        // Nama/wajib/urutan sengaja TIDAK di-update: admin boleh mengubahnya
+        // lewat /admin/persyaratan dan seed ulang tidak boleh menimpanya.
+        update: {},
+        create: {
+          tahunAjaranId: tahunAjaran.id,
+          jenjang,
+          kategori: 'pendaftaran',
+          jenis: p.jenis,
+          nama: p.nama,
+          fieldKey: p.fieldKey,
+          wajib: p.wajib,
+          urutan: i,
+        },
+      })
+    }
+  }
+  console.log('Persyaratan berkas pendaftaran: disiapkan per jenjang')
 }
 
 main()

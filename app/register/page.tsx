@@ -59,7 +59,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="auth-shell" style={{ minHeight: '100vh', background: '#032511', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+    <div className="auth-shell" style={{ minHeight: '100vh', background: 'var(--adm-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 480 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
@@ -67,62 +67,62 @@ export default function RegisterPage() {
               <Image src="/images/logo.png" alt="Logo SMK Citra Negara" width={48} height={48} style={{ objectFit: 'cover' }} />
             </div>
             <div style={{ textAlign: 'left' }}>
-              <div style={{ color: 'white', fontWeight: 800, fontSize: 17 }}>SMK Citra Negara</div>
-              <div style={{ color: '#C8973A', fontSize: 12 }}>Registrasi SPMB</div>
+              <div style={{ color: 'var(--adm-text)', fontWeight: 800, fontSize: 17 }}>SMK Citra Negara</div>
+              <div style={{ color: 'var(--cn-hijau)', fontSize: 12 }}>Registrasi SPMB</div>
             </div>
           </Link>
         </div>
 
-        <div className="auth-card" style={{ background: 'white', borderRadius: 16, padding: 36, border: '1px solid rgba(200,151,58,0.15)', boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }}>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0A1628', marginBottom: 6 }}>Buat Akun SPMB</h1>
-          <p style={{ color: '#6B7280', fontSize: 13.5, lineHeight: 1.6, marginBottom: 28 }}>Daftarkan akun untuk memulai proses penerimaan murid baru SMK Citra Negara.</p>
+        <div className="auth-card" style={{ background: 'var(--adm-surface)', borderRadius: 16, padding: 36, border: '1px solid rgba(200,151,58,0.15)', boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 6 }}>Buat Akun SPMB</h1>
+          <p style={{ color: 'var(--adm-text-muted)', fontSize: 13.5, lineHeight: 1.6, marginBottom: 28 }}>Daftarkan akun untuk memulai proses penerimaan murid baru SMK Citra Negara.</p>
 
           {error && (
-            <div style={{ background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 8, padding: '12px 16px', marginBottom: 22, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ background: 'var(--adm-danger-weak)', border: '1px solid var(--adm-danger-border)', borderRadius: 8, padding: '12px 16px', marginBottom: 22, display: 'flex', alignItems: 'center', gap: 10 }}>
               <AlertCircle size={16} color="#DC2626" />
-              <span style={{ fontSize: 13, color: '#DC2626' }}>{error}</span>
+              <span style={{ fontSize: 13, color: 'var(--adm-danger)' }}>{error}</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Nama Lengkap</label>
+              <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--adm-text)', display: 'block', marginBottom: 6 }}>Nama Lengkap</label>
               <input type="text" className="form-input" placeholder="Nama lengkap sesuai KTP/Akte" value={form.namaLengkap} onChange={e => setForm({ ...form, namaLengkap: e.target.value })} required />
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Email</label>
+              <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--adm-text)', display: 'block', marginBottom: 6 }}>Email</label>
               <input type="email" className="form-input" placeholder="email@contoh.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Jenjang Pendidikan</label>
+              <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--adm-text)', display: 'block', marginBottom: 6 }}>Jenjang Pendidikan</label>
               <select className="form-input" value={form.jenjang} onChange={e => setForm({ ...form, jenjang: e.target.value })} required>
                 <option value="">Pilih jenjang pendidikan</option>
                 {JENJANG_OPTIONS.map(j => (
                   <option key={j.value} value={j.value}>{j.label}</option>
                 ))}
               </select>
-              <p style={{ fontSize: 11.5, color: '#9CA3AF', marginTop: 5 }}>Jenjang ini akan menjadi acuan formulir pendaftaran Anda.</p>
+              <p style={{ fontSize: 11.5, color: 'var(--adm-text-faint)', marginTop: 5 }}>Jenjang ini akan menjadi acuan formulir pendaftaran Anda.</p>
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Password</label>
+              <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--adm-text)', display: 'block', marginBottom: 6 }}>Password</label>
               <div style={{ position: 'relative' }}>
                 <input type={showPass ? 'text' : 'password'} className="form-input" placeholder="Min. 8 karakter" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required style={{ paddingRight: 44 }} />
-                <button type="button" onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}>
+                <button type="button" onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--adm-text-faint)' }}>
                   {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
 
             <div style={{ marginBottom: 26 }}>
-              <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Konfirmasi Password</label>
+              <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--adm-text)', display: 'block', marginBottom: 6 }}>Konfirmasi Password</label>
               <input type="password" className="form-input" placeholder="Ulangi password" value={form.konfirmasi} onChange={e => setForm({ ...form, konfirmasi: e.target.value })} required />
               {form.konfirmasi && form.password === form.konfirmasi && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
-                  <CheckCircle size={14} color="#16A34A" />
-                  <span style={{ fontSize: 12, color: '#16A34A' }}>Password cocok</span>
+                  <CheckCircle size={14} color="var(--adm-success)" />
+                  <span style={{ fontSize: 12, color: 'var(--adm-success)' }}>Password cocok</span>
                 </div>
               )}
             </div>
@@ -133,9 +133,9 @@ export default function RegisterPage() {
           </form>
 
           <div style={{ textAlign: 'center', marginTop: 22 }}>
-            <p style={{ color: '#6B7280', fontSize: 13 }}>
+            <p style={{ color: 'var(--adm-text-muted)', fontSize: 13 }}>
               Sudah memiliki akun?{' '}
-              <Link href="/login" style={{ color: '#C8973A', fontWeight: 600, textDecoration: 'none' }}>Masuk</Link>
+              <Link href="/login" style={{ color: 'var(--cn-hijau)', fontWeight: 600, textDecoration: 'none' }}>Masuk</Link>
             </p>
           </div>
         </div>

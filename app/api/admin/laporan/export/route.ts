@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { requirePermission } from '@/lib/adminSession'
 import { getLaporanData, type JenjangLaporan } from '@/lib/laporanSpmb'
 import { buatWorkbookLaporan } from '@/lib/laporanExcel'
 
@@ -11,10 +11,8 @@ const JENJANG_UPPER: Record<string, string> = { smp: 'SMP', sma: 'SMA', smk: 'SM
 // PERSIS sama dengan yang dihitung untuk tampilan di layar (lib/laporanSpmb)
 // supaya angka di Excel tidak pernah berbeda dari yang dilihat admin.
 export async function GET(req: Request) {
-  const session = await getSession()
-  if (!session || session.role !== 'admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const gate = await requirePermission('laporan_pendaftaran', 'export')
+  if (!gate.ok) return gate.res
 
   const url = new URL(req.url)
   const jenjang = (url.searchParams.get('jenjang') || '').toLowerCase()

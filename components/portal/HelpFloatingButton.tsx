@@ -45,7 +45,7 @@ const CSS = `
   }
   .help-fab-btn:hover { background: #123524; }
   .help-fab-btn:focus-visible { outline: 2px solid #E8B84B; outline-offset: 2px; }
-  .help-contact-link:hover { background: #F3EFE3 !important; }
+  .help-contact-link:hover { background: var(--adm-warning-weak) !important; }
   .help-contact-link:focus-visible { outline: 2px solid #C8973A; outline-offset: 2px; }
 `;
 
@@ -81,8 +81,8 @@ export default function HelpFloatingButton({ jenjang }: { jenjang?: string }) {
           aria-label="Panel bantuan"
           style={{
             position: 'absolute', bottom: '100%', right: 0, marginBottom: 12,
-            width: 288, maxWidth: '82vw', background: 'white', borderRadius: 14,
-            border: '1px solid #F0EBE0', boxShadow: '0 16px 40px rgba(10,22,40,0.18)',
+            width: 288, maxWidth: '82vw', background: 'var(--adm-surface)', borderRadius: 14,
+            border: '1px solid var(--adm-border)', boxShadow: '0 16px 40px rgba(10,22,40,0.18)',
             overflow: 'hidden', animation: 'helpPanelIn 0.16s ease-out',
           }}
         >
@@ -98,7 +98,7 @@ export default function HelpFloatingButton({ jenjang }: { jenjang?: string }) {
           </div>
 
           <div style={{ padding: '14px 16px' }}>
-            <p style={{ fontSize: 12.5, color: '#6B7280', lineHeight: 1.6, margin: '0 0 14px' }}>
+            <p style={{ fontSize: 12.5, color: 'var(--adm-text-muted)', lineHeight: 1.6, margin: '0 0 14px' }}>
               Hubungi kami jika Anda memiliki pertanyaan seputar SPMB.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -140,16 +140,16 @@ function ContactLink({ href, icon: Icon, label, value, external }: { href: strin
       {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
       style={{
         display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px',
-        borderRadius: 9, textDecoration: 'none', background: '#FAF7F0',
-        border: '1px solid #F0EBE0',
+        borderRadius: 9, textDecoration: 'none', background: 'var(--adm-surface-alt)',
+        border: '1px solid var(--adm-border)',
       }}
     >
-      <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(200,151,58,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <Icon size={14} color="#92681A" />
+      <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--adm-warning-weak)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <Icon size={14} color="var(--adm-warning)" />
       </span>
       <span style={{ minWidth: 0 }}>
-        <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#0B2A1C' }}>{label}</span>
-        <span style={{ display: 'block', fontSize: 11.5, color: '#6B7280' }}>{value}</span>
+        <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--adm-text)' }}>{label}</span>
+        <span style={{ display: 'block', fontSize: 11.5, color: 'var(--adm-text-muted)' }}>{value}</span>
       </span>
     </a>
   );

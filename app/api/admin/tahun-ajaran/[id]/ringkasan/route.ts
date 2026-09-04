@@ -1,20 +1,16 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { requirePermission } from '@/lib/adminSession'
+import { scopePendaftar } from '@/lib/pendaftarQuery'
 import { prisma } from '@/lib/db'
 import { hitungRingkasan } from '@/lib/pembayaran-utils'
-
-async function requireAdmin() {
-  const session = await getSession()
-  return session && session.role === 'admin' ? session : null
-}
 
 // GET - ringkasan LENGKAP satu tahun ajaran: pendaftar, keuangan, harga,
 // diskon, gelombang. Ini yang menjadi isi halaman "Lihat Data" — satu-
 // satunya tempat admin bisa membuka data tahun ajaran manapun (aktif atau
 // tidak) tanpa perlu mengubah tahun ajaran yang sedang berjalan.
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireAdmin()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const gate = await requirePermission('tahun_ajaran', 'read')
+  if (!gate.ok) return gate.res
 
   try {
     const { id } = await params
@@ -27,7 +23,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     // (dibuat admin sendiri lewat "Tambah Pendaftar Offline") tetap dihitung.
     const [pendaftarList, harga, diskon, gelombang, dokumen] = await Promise.all([
       prisma.pendaftaran.findMany({
-        where: { tahunAjaranId: id, NOT: { status: 'draft', sumberDaftar: 'online' } },
+        where: scopePendaftar({ tahunAjaranId: id }),
         include: { pembayaranList: true },
       }),
       prisma.harga.findMany({ where: { tahunAjaranId: id }, orderBy: [{ jenjang: 'asc' }, { jurusan: 'asc' }, { urutan: 'asc' }] }),

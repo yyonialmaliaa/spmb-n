@@ -95,8 +95,8 @@ export default function KwitansiPage() {
     });
   }, [id]);
 
-  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#9CA3AF' }}>Memuat...</div>;
-  if (!data) return <div style={{ padding: 40, textAlign: 'center', color: '#9CA3AF' }}>Data tidak ditemukan</div>;
+  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--adm-text-faint)' }}>Memuat...</div>;
+  if (!data) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--adm-text-faint)' }}>Data tidak ditemukan</div>;
 
   const jenjang = (data.jenjang || 'smk') as Jenjang;
   const totalTagihan = data.totalTagihan || 0;
@@ -106,7 +106,7 @@ export default function KwitansiPage() {
   const tanggalTerakhir = lunas.length > 0 ? lunas[lunas.length - 1].tanggalBayar : data.createdAt;
 
   return (
-    <div style={{ background: '#F3F4F6', minHeight: '100vh', padding: '32px 16px' }}>
+    <div style={{ background: 'var(--adm-neutral-weak)', minHeight: '100vh', padding: '32px 16px' }}>
       <style>{`
         @media print {
           .no-print { display: none !important; }
@@ -116,12 +116,12 @@ export default function KwitansiPage() {
       `}</style>
 
       <div className="no-print" style={{ maxWidth: 700, margin: '0 auto 16px', display: 'flex', justifyContent: 'flex-end' }}>
-        <button onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#0A1628', color: 'white', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+        <button onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
           <Printer size={16} /> Cetak / Simpan PDF
         </button>
       </div>
 
-      <div className="kwitansi-sheet" style={{ maxWidth: 700, margin: '0 auto', background: 'white', padding: 40, boxShadow: '0 1px 6px rgba(0,0,0,0.1)', fontFamily: 'Georgia, serif', color: '#111' }}>
+      <div className="kwitansi-sheet" style={{ maxWidth: 700, margin: '0 auto', background: 'var(--adm-surface)', padding: 40, boxShadow: '0 1px 6px rgba(0,0,0,0.1)', fontFamily: 'Georgia, serif', color: '#111' }}>
         {/* Kop Surat — logo & teks dipusatkan sebagai satu grup, jaraknya
             rapat (bukan logo mepet kiri lalu teks memenuhi sisa ruang). */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, borderBottom: '2px solid #111', paddingBottom: 12, marginBottom: 16 }}>
@@ -156,13 +156,13 @@ export default function KwitansiPage() {
           <thead>
             <tr>
               {['Tipe Bayar', 'Tanggal', 'Angsuran Ke-', 'Nominal Bayar'].map(h => (
-                <th key={h} style={{ border: '1px solid #999', padding: '6px 8px', background: '#F3F4F6', fontWeight: 700 }}>{h}</th>
+                <th key={h} style={{ border: '1px solid #999', padding: '6px 8px', background: 'var(--adm-neutral-weak)', fontWeight: 700 }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {lunas.length === 0 ? (
-              <tr><td colSpan={4} style={{ border: '1px solid #999', padding: '10px 8px', textAlign: 'center', color: '#9CA3AF' }}>Belum ada pembayaran terverifikasi</td></tr>
+              <tr><td colSpan={4} style={{ border: '1px solid #999', padding: '10px 8px', textAlign: 'center', color: 'var(--adm-text-faint)' }}>Belum ada pembayaran terverifikasi</td></tr>
             ) : (
               lunas.map(c => (
                 <tr key={c.id}>

@@ -34,10 +34,17 @@ export async function GET(req: Request) {
     const tahunAjaran = await resolveTahunAjaran(tahunAjaranId)
     if (!tahunAjaran) return NextResponse.json({ data: [] })
 
-    let list = await prisma.dokumenPersyaratan.findMany({ where: { tahunAjaranId: tahunAjaran.id, jenjang } })
+    // WAJIB di-scope ke kategori 'daftar_ulang'. Tabel yang sama juga
+    // menyimpan berkas persyaratan pendaftaran (kategori 'pendaftaran');
+    // tanpa filter ini `list.length` tidak pernah 0, auto-buat di bawah tidak
+    // pernah jalan, dan halaman Dokumen siswa menampilkan daftar yang salah.
+    const where = { tahunAjaranId: tahunAjaran.id, jenjang, kategori: 'daftar_ulang' }
+    let list = await prisma.dokumenPersyaratan.findMany({ where })
     if (list.length === 0) {
-      await prisma.dokumenPersyaratan.createMany({ data: DEFAULT_DOKUMEN.map(d => ({ ...d, jenjang, tahunAjaranId: tahunAjaran.id })) })
-      list = await prisma.dokumenPersyaratan.findMany({ where: { tahunAjaranId: tahunAjaran.id, jenjang } })
+      await prisma.dokumenPersyaratan.createMany({
+        data: DEFAULT_DOKUMEN.map((d, i) => ({ ...d, jenjang, kategori: 'daftar_ulang', urutan: i, tahunAjaranId: tahunAjaran.id })),
+      })
+      list = await prisma.dokumenPersyaratan.findMany({ where })
     }
     // urutkan sesuai DEFAULT_DOKUMEN
     const order = DEFAULT_DOKUMEN.map(d => d.jenis)

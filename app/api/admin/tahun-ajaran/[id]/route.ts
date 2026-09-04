@@ -1,29 +1,42 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { requirePermission } from '@/lib/adminSession'
+import { catatAudit } from '@/lib/audit'
 import { prisma } from '@/lib/db'
-
-async function requireAdmin() {
-  const session = await getSession()
-  return session && session.role === 'admin' ? session : null
-}
 
 // PUT - edit nama, dan/atau aktifkan tahun ajaran ini. Mengaktifkan selalu
 // dibungkus transaksi (nonaktifkan semua dulu, baru aktifkan satu ini) —
 // supaya tidak pernah ada dua tahun ajaran aktif sekaligus meski ada request
 // bertabrakan.
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireAdmin()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const gate = await requirePermission('tahun_ajaran', 'update')
+  if (!gate.ok) return gate.res
 
   try {
     const { id } = await params
     const body = await req.json()
 
     if (body.aktif === true) {
+      const sebelumnyaAktif = await prisma.tahunAjaran.findFirst({ where: { aktif: true } })
       const [, activated] = await prisma.$transaction([
         prisma.tahunAjaran.updateMany({ data: { aktif: false } }),
         prisma.tahunAjaran.update({ where: { id }, data: { aktif: true, ...(body.nama !== undefined ? { nama: String(body.nama).trim() } : {}) } }),
       ])
+      // Aksi paling berdampak di sistem: mengubah konteks data SELURUH modul.
+      if (sebelumnyaAktif?.id !== activated.id) {
+        await catatAudit({
+          session: gate.session,
+          aksi: 'activate',
+          entitas: 'tahun_ajaran',
+          entitasId: id,
+          ringkasan: sebelumnyaAktif
+            ? `Mengaktifkan Tahun Ajaran ${activated.nama} (sebelumnya ${sebelumnyaAktif.nama})`
+            : `Mengaktifkan Tahun Ajaran ${activated.nama}`,
+          sebelum: sebelumnyaAktif ? { aktif: sebelumnyaAktif.nama } : undefined,
+          sesudah: { aktif: activated.nama },
+          tahunAjaranId: activated.id,
+          req,
+        })
+      }
       return NextResponse.json({ success: true, data: activated })
     }
 
@@ -52,8 +65,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 // jelas sebelum benar-benar menghapus — sesuai permintaan: jangan menghapus
 // tanpa konfirmasi.
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireAdmin()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const gate = await requirePermission('tahun_ajaran', 'delete')
+  if (!gate.ok) return gate.res
 
   try {
     const { id } = await params
@@ -88,6 +101,18 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     }
 
     await prisma.tahunAjaran.delete({ where: { id } })
+    // AuditLog sengaja tidak berelasi ke TahunAjaran justru supaya catatan
+    // ini selamat dari cascade delete barusan.
+    await catatAudit({
+      session: gate.session,
+      aksi: 'delete',
+      entitas: 'tahun_ajaran',
+      entitasId: id,
+      ringkasan: `Menghapus Tahun Ajaran ${tahunAjaran.nama} beserta ${totalRelated} data terkait`,
+      sebelum: { nama: tahunAjaran.nama, ...counts },
+      tahunAjaranId: id,
+      req,
+    })
     return NextResponse.json({ success: true })
   } catch (err) {
     console.error('Tahun ajaran DELETE error:', err)

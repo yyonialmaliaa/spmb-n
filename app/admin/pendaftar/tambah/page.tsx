@@ -43,7 +43,7 @@ const INITIAL_FORM = {
 
 export default function TambahPendaftarOfflinePage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF' }}>Memuat...</div>}>
+    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--adm-text-faint)' }}>Memuat...</div>}>
       <TambahPendaftarOfflineInner />
     </Suspense>
   );
@@ -141,8 +141,8 @@ function TambahPendaftarOfflineInner() {
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
 
-  const inp: React.CSSProperties = { width: '100%', padding: '9px 12px', border: '1.5px solid #D1D5DB', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' };
-  const lbl: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 5 };
+  const inp: React.CSSProperties = { width: '100%', padding: '9px 12px', border: '1.5px solid var(--adm-border-strong)', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' };
+  const lbl: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: 'var(--adm-text)', display: 'block', marginBottom: 5 };
 
   const handleFileChange = async (key: keyof FilesState, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -307,16 +307,16 @@ function TambahPendaftarOfflineInner() {
     );
   };
 
-  if (loadingData) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF' }}>Memuat...</div>;
+  if (loadingData) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--adm-text-faint)' }}>Memuat...</div>;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F8F9FA' }}>
-      <header style={{ background: '#0A1628', padding: '18px 24px' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--adm-bg)' }}>
+      <header style={{ background: 'var(--adm-primary)', padding: '18px 24px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
           <Link href={`/admin/pendaftar?jenjang=${jenjang}&sumber=offline${qsOnly}`} style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.6)', fontSize: 12, textDecoration: 'none', marginBottom: 10, width: 'fit-content' }}>
             <ChevronLeft size={14} /> Kembali
           </Link>
-          <h1 style={{ color: 'white', fontSize: 18, fontWeight: 700 }}>{pendaftaranId ? 'Lanjutkan Formulir Offline' : 'Tambah Pendaftar Offline'} — {jenjang.toUpperCase()}</h1>
+          <h1 style={{ color: 'var(--adm-text-invert)', fontSize: 18, fontWeight: 700 }}>{pendaftaranId ? 'Lanjutkan Formulir Offline' : 'Tambah Pendaftar Offline'} — {jenjang.toUpperCase()}</h1>
           <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>Untuk siswa yang mendaftar langsung di sekolah. Boleh disimpan sekalipun belum lengkap — bisa dilanjutkan kapan saja.</p>
         </div>
       </header>
@@ -325,15 +325,15 @@ function TambahPendaftarOfflineInner() {
         {error && <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: 12, fontSize: 13, color: '#991B1B' }}>{error}</div>}
         {success && !error && <div style={{ background: '#F0FDF4', border: '1px solid #A7F3D0', borderRadius: 8, padding: 12, fontSize: 13, color: '#065F46' }}>{success}</div>}
 
-        <div style={{ background: 'white', borderRadius: 14, padding: 20, border: '1px solid #F3F4F6' }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0A1628', marginBottom: 4 }}>Akun Login Siswa</h3>
+        <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 4 }}>Akun Login Siswa</h3>
           {hasAccount ? (
             <p style={{ fontSize: 13, color: '#065F46', background: '#F0FDF4', border: '1px solid #A7F3D0', borderRadius: 8, padding: '10px 12px' }}>
               ✓ Sudah punya akun login: <strong>{accountEmail}</strong>. Pendaftar bisa login dari rumah untuk melanjutkan formulir ini.
             </p>
           ) : (
             <>
-              <p style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 14 }}>Opsional — isi kalau ingin langsung membuatkan akun supaya pendaftar bisa lanjut isi dari rumah. Boleh dikosongkan dan dibuat belakangan.</p>
+              <p style={{ fontSize: 12, color: 'var(--adm-text-faint)', marginBottom: 14 }}>Opsional — isi kalau ingin langsung membuatkan akun supaya pendaftar bisa lanjut isi dari rumah. Boleh dikosongkan dan dibuat belakangan.</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
                 <div><label style={lbl}>Email</label><input style={inp} type="email" value={form.email} onChange={set('email')} placeholder="email@contoh.com" /></div>
                 <div><label style={lbl}>Password</label><input style={inp} value={form.password} onChange={set('password')} placeholder="Minimal 8 karakter" /></div>
@@ -342,8 +342,8 @@ function TambahPendaftarOfflineInner() {
           )}
         </div>
 
-        <div style={{ background: 'white', borderRadius: 14, padding: 20, border: '1px solid #F3F4F6' }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0A1628', marginBottom: 14 }}>Data Pribadi</h3>
+        <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 14 }}>Data Pribadi</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
             <div><label style={lbl}>Nama Lengkap</label><input style={inp} value={form.namaLengkap} onChange={set('namaLengkap')} /></div>
             <div><label style={lbl}>Nama Panggilan</label><input style={inp} value={form.namaPanggilan} onChange={set('namaPanggilan')} /></div>
@@ -399,8 +399,8 @@ function TambahPendaftarOfflineInner() {
           </div>
         </div>
 
-        <div style={{ background: 'white', borderRadius: 14, padding: 20, border: '1px solid #F3F4F6' }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0A1628', marginBottom: 14 }}>Data Akademik</h3>
+        <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 14 }}>Data Akademik</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
             <div>
               <label style={lbl}>Tipe Pendaftaran</label>
@@ -430,9 +430,9 @@ function TambahPendaftarOfflineInner() {
             <div>
               <label style={lbl}>Kelas</label>
               {(() => {
-                if (isSMK && !form.jurusan) return <p style={{ fontSize: 12, color: '#9CA3AF' }}>Pilih jurusan dahulu.</p>;
+                if (isSMK && !form.jurusan) return <p style={{ fontSize: 12, color: 'var(--adm-text-faint)' }}>Pilih jurusan dahulu.</p>;
                 const tingkat = form.tipePendaftaran === 'pindahan' ? form.kelasMasuk : getKelasMasukBaru(jenjang);
-                if (!tingkat) return <p style={{ fontSize: 12, color: '#9CA3AF' }}>Pilih Kelas Masuk dahulu.</p>;
+                if (!tingkat) return <p style={{ fontSize: 12, color: 'var(--adm-text-faint)' }}>Pilih Kelas Masuk dahulu.</p>;
                 const opts = filterKelasByTingkat(kelasOptionsUntuk(isSMK ? form.jurusan : '-').map(k => ({ kelas: k })), tingkat);
                 return opts.length > 0 ? (
                   <select style={inp} value={form.kelas} onChange={set('kelas')}>
@@ -460,17 +460,17 @@ function TambahPendaftarOfflineInner() {
           </div>
         </div>
 
-        <div style={{ background: 'white', borderRadius: 14, padding: 20, border: '1px solid #F3F4F6' }}>
+        <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1E40AF', marginBottom: 14 }}>Data Ayah</h3>
           {renderOrtuBlock('Ayah')}
         </div>
 
-        <div style={{ background: 'white', borderRadius: 14, padding: 20, border: '1px solid #F3F4F6' }}>
+        <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: '#BE185D', marginBottom: 14 }}>Data Ibu</h3>
           {renderOrtuBlock('Ibu')}
         </div>
 
-        <div style={{ background: 'white', borderRadius: 14, padding: 20, border: '1px solid #F3F4F6' }}>
+        <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: punyaWali ? 16 : 0 }}>
             <input type="checkbox" checked={punyaWali} onChange={e => setPunyaWali(e.target.checked)} style={{ width: 18, height: 18, accentColor: '#C8973A' }} />
             <span style={{ fontSize: 14, fontWeight: 700, color: '#065F46' }}>Mempunyai Wali?</span>
@@ -478,9 +478,9 @@ function TambahPendaftarOfflineInner() {
           {punyaWali && renderOrtuBlock('Wali')}
         </div>
 
-        <div style={{ background: 'white', borderRadius: 14, padding: 20, border: '1px solid #F3F4F6' }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0A1628', marginBottom: 4 }}>Upload Berkas</h3>
-          <p style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 14 }}>Tidak wajib diisi sekarang — boleh disusulkan kapan saja lewat halaman ini lagi.</p>
+        <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 4 }}>Upload Berkas</h3>
+          <p style={{ fontSize: 12, color: 'var(--adm-text-faint)', marginBottom: 14 }}>Tidak wajib diisi sekarang — boleh disusulkan kapan saja lewat halaman ini lagi.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
             {FILE_FIELDS.map(item => {
               const f = files[item.key];
@@ -494,10 +494,10 @@ function TambahPendaftarOfflineInner() {
                   <div style={{ display: 'flex', gap: 12, marginBottom: 6, minHeight: 18 }}>
                     {item.key === 'ijazah' && (
                       <>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#374151', cursor: 'pointer' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--adm-text)', cursor: 'pointer' }}>
                           <input type="radio" checked={form.jenisIjazah === 'ijazah'} onChange={() => setForm(f2 => ({ ...f2, jenisIjazah: 'ijazah' }))} /> Ijazah
                         </label>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#374151', cursor: 'pointer' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--adm-text)', cursor: 'pointer' }}>
                           <input type="radio" checked={form.jenisIjazah === 'skl'} onChange={() => setForm(f2 => ({ ...f2, jenisIjazah: 'skl' }))} /> SKL
                         </label>
                       </>
@@ -509,7 +509,7 @@ function TambahPendaftarOfflineInner() {
                       <button onClick={() => removeFile(item.key)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', flexShrink: 0 }}><X size={14} /></button>
                     </div>
                   ) : (
-                    <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, border: '1.5px dashed #D1D5DB', borderRadius: 8, padding: '9px 12px', cursor: f.uploading ? 'wait' : 'pointer', fontSize: 12, color: '#6B7280' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, border: '1.5px dashed #D1D5DB', borderRadius: 8, padding: '9px 12px', cursor: f.uploading ? 'wait' : 'pointer', fontSize: 12, color: 'var(--adm-text-muted)' }}>
                       {f.uploading ? <Loader size={14} className="animate-spin" /> : <Upload size={14} />}
                       {f.uploading ? 'Mengupload...' : 'Pilih file'}
                       <input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={e => handleFileChange(item.key, e)} disabled={f.uploading} style={{ display: 'none' }} />
@@ -526,7 +526,7 @@ function TambahPendaftarOfflineInner() {
           <button onClick={handleSubmit} disabled={loading} className="btn-primary" style={{ padding: '12px 28px', fontSize: 14, opacity: loading ? 0.6 : 1 }}>
             {loading ? 'Menyimpan...' : 'Simpan'}
           </button>
-          <Link href={`/admin/pendaftar?jenjang=${jenjang}&sumber=offline${qsOnly}`} style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>
+          <Link href={`/admin/pendaftar?jenjang=${jenjang}&sumber=offline${qsOnly}`} style={{ fontSize: 13, color: 'var(--adm-text-muted)', textDecoration: 'none' }}>
             Selesai, kembali ke Data Pendaftar →
           </Link>
         </div>

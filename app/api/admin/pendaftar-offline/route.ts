@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { requirePermission } from '@/lib/adminSession'
 import { prisma } from '@/lib/db'
 import { resolveTahunAjaran } from '@/lib/tahunAjaran'
 
@@ -36,10 +36,8 @@ function pickEditableFields(body: Record<string, unknown>) {
 // pendaftar yang sama dipakai untuk offline & online, akun dikaitkan
 // belakangan begitu emailnya sudah diketahui).
 export async function POST(req: Request) {
-  const session = await getSession()
-  if (!session || session.role !== 'admin') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const gate = await requirePermission('pendaftar', 'create')
+  if (!gate.ok) return gate.res
 
   try {
     const body = await req.json()

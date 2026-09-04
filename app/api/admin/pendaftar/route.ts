@@ -1,47 +1,51 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { requirePermission, requireJenjang, scopedJenjang } from '@/lib/adminSession'
 import { prisma } from '@/lib/db'
 import { resolveTahunAjaran } from '@/lib/tahunAjaran'
+import { scopePendaftar, hitungStats, STATS_KOSONG, isJenjangValid } from '@/lib/pendaftarQuery'
 
-// GET ?tahunAjaranId= - daftar pendaftar milik SATU tahun ajaran (default:
-// tahun ajaran aktif). Ini yang membuat Dashboard/Data Pendaftar/Laporan
-// otomatis menampilkan data tahun ajaran yang sedang berjalan tanpa
-// tercampur data tahun ajaran lain — lihat lib/tahunAjaran.ts.
+// GET ?tahunAjaranId=&jenjang=&status= - daftar pendaftar milik SATU tahun
+// ajaran (default: tahun ajaran aktif), opsional disaring per jenjang dan
+// status. Inilah yang membuat Dashboard/Data Pendaftar/Laporan otomatis
+// menampilkan tahun ajaran yang sedang berjalan tanpa tercampur tahun lain —
+// lihat lib/tahunAjaran.ts.
+//
+// `jenjang` SENGAJA opsional: halaman Pilih Jenjang butuh ketiga jenjang
+// sekaligus. Tapi kalau dikirim, penyaringan terjadi di DATABASE — dulu
+// seluruh pendaftar 3 jenjang (~90 kolom per baris) dikirim ke browser lalu
+// disaring di sana, sehingga scopeJenjang mustahil ditegakkan.
 export async function GET(req: Request) {
-  const session = await getSession()
-  if (!session || session.role !== 'admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const gate = await requirePermission('pendaftar', 'read')
+  if (!gate.ok) return gate.res
+  const { session } = gate
 
   const url = new URL(req.url)
+  const jenjangParam = (url.searchParams.get('jenjang') || '').toLowerCase()
+  const diminta = isJenjangValid(jenjangParam) ? jenjangParam : null
+
+  const tolak = requireJenjang(session, diminta)
+  if (tolak) return tolak
+  // Admin dengan scope jenjang selalu dipaksa ke jenjangnya sendiri, apa pun
+  // yang dikirim di query string.
+  const jenjang = scopedJenjang(session, diminta)
+
+  const statusParam = url.searchParams.get('status')
+
   const tahunAjaran = await resolveTahunAjaran(url.searchParams.get('tahunAjaranId'))
   if (!tahunAjaran) {
-    return NextResponse.json({ data: [], stats: { total: 0, verified: 0, diterima: 0, ditolak: 0, daftar_ulang: 0, menungguPembayaran: 0 }, tahunAjaran: null })
+    return NextResponse.json({ data: [], stats: STATS_KOSONG, tahunAjaran: null })
   }
 
-  // Draft ONLINE (calon pendaftar masih mengisi/menyimpan sendiri, belum
-  // bayar minimal & klik "Kirim Formulir") BUKAN pendaftaran yang sudah
-  // masuk — tidak boleh muncul/dihitung di sisi admin sama sekali. Draft
-  // OFFLINE tetap ditampilkan (itu draft yang dibuat ADMIN sendiri lewat
-  // "Tambah Pendaftar Offline", admin memang perlu melihat & melanjutkannya).
   const data = await prisma.pendaftaran.findMany({
-    where: {
-      tahunAjaranId: tahunAjaran.id,
-      NOT: { status: 'draft', sumberDaftar: 'online' },
-    },
+    where: scopePendaftar({ tahunAjaranId: tahunAjaran.id, jenjang, status: statusParam }),
     include: { user: { select: { email: true } }, pembayaranList: true },
     orderBy: { createdAt: 'desc' },
   })
 
-  const stats = {
-    total:    data.length,
-    verified: data.filter(p => p.status === 'verified').length,
-    diterima: data.filter(p => p.status === 'diterima_berkas').length,
-    ditolak:  data.filter(p => p.status === 'ditolak').length,
-    daftar_ulang: data.filter(p => p.sudahDaftarUlang).length,
-    menungguPembayaran: data.filter(p => p.statusPembayaran === 'menunggu_verifikasi').length,
-  }
-
   const enriched = data.map(p => ({ ...p, userEmail: p.user?.email ?? null }))
-  return NextResponse.json({ data: enriched, stats, tahunAjaran: { id: tahunAjaran.id, nama: tahunAjaran.nama, aktif: tahunAjaran.aktif } })
+  return NextResponse.json({
+    data: enriched,
+    stats: hitungStats(data),
+    tahunAjaran: { id: tahunAjaran.id, nama: tahunAjaran.nama, aktif: tahunAjaran.aktif },
+  })
 }

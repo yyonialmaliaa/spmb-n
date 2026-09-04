@@ -18,6 +18,7 @@
 
 import { prisma } from './db'
 import { resolveTahunAjaran } from './tahunAjaran'
+import { scopePendaftar } from './pendaftarQuery'
 import { hitungRingkasan } from './pembayaran-utils'
 import { pecahKelasHarga, labelTier } from './kelas'
 
@@ -48,11 +49,7 @@ export async function getLaporanData(jenjang: JenjangLaporan, tahunAjaranId?: st
   // aturan di /api/admin/pendaftar. Draft OFFLINE (dibuat admin) tetap
   // dihitung sebagai "masih diproses".
   const rows = await prisma.pendaftaran.findMany({
-    where: {
-      tahunAjaranId: tahunAjaran.id,
-      jenjang,
-      NOT: { status: 'draft', sumberDaftar: 'online' },
-    },
+    where: scopePendaftar({ tahunAjaranId: tahunAjaran.id, jenjang }),
     select: {
       status: true,
       jurusan: true,

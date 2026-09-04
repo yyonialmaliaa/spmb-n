@@ -89,29 +89,29 @@ export default function AdminTahunAjaranPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F8F9FA', fontFamily: 'Inter, sans-serif' }}>
-      {toast && <div style={{ position: 'fixed', top: 24, right: 24, background: '#0A1628', color: 'white', padding: '12px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, zIndex: 9999, maxWidth: 340 }}>{toast}</div>}
+    <div style={{ minHeight: '100vh', background: 'var(--adm-bg)', fontFamily: 'Inter, sans-serif' }}>
+      {toast && <div style={{ position: 'fixed', top: 24, right: 24, background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', padding: '12px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, zIndex: 9999, maxWidth: 340 }}>{toast}</div>}
 
-      <div style={{ background: '#0A1628', padding: '16px 24px' }}>
+      <div style={{ background: 'var(--adm-primary)', padding: '16px 24px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 12 }}>
           <Link href="/admin/dashboard" style={{ color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center' }}>
             <ChevronLeft size={20} />
           </Link>
-          <h1 style={{ color: 'white', fontSize: 16, fontWeight: 700, margin: 0 }}>Tahun Ajaran</h1>
+          <h1 style={{ color: 'var(--adm-text-invert)', fontSize: 16, fontWeight: 700, margin: 0 }}>Tahun Ajaran</h1>
         </div>
       </div>
 
       <div style={{ maxWidth: 800, margin: '32px auto', padding: '0 24px' }}>
-        <p style={{ color: '#6B7280', fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
+        <p style={{ color: 'var(--adm-text-muted)', fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
           Tahun ajaran adalah sumber utama seluruh sistem SPMB. Hanya satu yang aktif dalam satu waktu — pendaftar, harga, diskon, gelombang, pembayaran, dan laporan yang baru selalu mengikuti tahun ajaran yang aktif. Data tahun ajaran lama tetap tersimpan terpisah dan bisa dibuka lewat "Lihat Kesimpulan" (ringkasan angka) atau "Lihat Data" (buka panel admin lengkap untuk tahun itu) tanpa mengubah tahun ajaran yang sedang berjalan.
         </p>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#9CA3AF' }}>Memuat...</div>
+          <div style={{ textAlign: 'center', padding: 40, color: 'var(--adm-text-faint)' }}>Memuat...</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
             {list.map(t => (
-              <div key={t.id} style={{ background: 'white', borderRadius: 12, padding: 20, border: t.aktif ? '2px solid #C8973A' : '1px solid #E5E7EB', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+              <div key={t.id} style={{ background: 'var(--adm-surface)', borderRadius: 12, padding: 20, border: t.aktif ? '2px solid #C8973A' : '1px solid #E5E7EB', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
                 <div style={{ flex: 1, minWidth: 140 }}>
                   {editingId === t.id ? (
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -119,19 +119,19 @@ export default function AdminTahunAjaranPage() {
                         value={editingNama} onChange={e => setEditingNama(e.target.value)} autoFocus
                         style={{ padding: '6px 10px', border: '1.5px solid #C8973A', borderRadius: 8, fontSize: 14, fontWeight: 700, fontFamily: 'inherit' }}
                       />
-                      <button onClick={() => handleSimpanEdit(t)} disabled={savingId === t.id} style={{ padding: '6px 12px', background: '#0A1628', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Simpan</button>
-                      <button onClick={cancelEdit} style={{ padding: '6px 12px', background: 'transparent', color: '#6B7280', border: '1px solid #E5E7EB', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Batal</button>
+                      <button onClick={() => handleSimpanEdit(t)} disabled={savingId === t.id} style={{ padding: '6px 12px', background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Simpan</button>
+                      <button onClick={cancelEdit} style={{ padding: '6px 12px', background: 'transparent', color: 'var(--adm-text-muted)', border: '1px solid var(--adm-border)', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Batal</button>
                     </div>
                   ) : (
-                    <div style={{ fontSize: 16, fontWeight: 700, color: '#0A1628', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--adm-text)', display: 'flex', alignItems: 'center', gap: 8 }}>
                       {t.nama}
                       {t.aktif && <span style={{ background: '#D1FAE5', color: '#065F46', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10 }}>AKTIF</span>}
-                      <button onClick={() => startEdit(t)} title="Ubah nama" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'flex', padding: 2 }}>
+                      <button onClick={() => startEdit(t)} title="Ubah nama" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--adm-text-faint)', display: 'flex', padding: 2 }}>
                         <Pencil size={13} />
                       </button>
                     </div>
                   )}
-                  <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: 'var(--adm-text-faint)', marginTop: 2 }}>
                     Dibuat {new Date(t.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                     {t.aktif && ' · Sedang Berjalan'}
                   </div>
@@ -146,7 +146,7 @@ export default function AdminTahunAjaranPage() {
                 </Link>
 
                 {!t.aktif ? (
-                  <button onClick={() => handleAktifkan(t)} disabled={savingId === t.id} style={{ padding: '8px 16px', background: '#0A1628', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: savingId === t.id ? 0.6 : 1 }}>
+                  <button onClick={() => handleAktifkan(t)} disabled={savingId === t.id} style={{ padding: '8px 16px', background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: savingId === t.id ? 0.6 : 1 }}>
                     Aktifkan
                   </button>
                 ) : (
@@ -163,12 +163,12 @@ export default function AdminTahunAjaranPage() {
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: 8, background: 'white', border: '1px solid #F3F4F6', borderRadius: 12, padding: 16, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 8, background: 'var(--adm-surface)', border: '1px solid var(--adm-border)', borderRadius: 12, padding: 16, flexWrap: 'wrap' }}>
           <input
             value={namaBaru} onChange={e => setNamaBaru(e.target.value)} placeholder="Contoh: 2027/2028"
             style={{ flex: 1, minWidth: 200, padding: '9px 12px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' }}
           />
-          <button onClick={handleTambah} disabled={adding} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#0A1628', color: 'white', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: adding ? 0.6 : 1 }}>
+          <button onClick={handleTambah} disabled={adding} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: adding ? 0.6 : 1 }}>
             <Plus size={14} /> Tambah Tahun Ajaran
           </button>
         </div>

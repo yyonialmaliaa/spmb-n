@@ -7,15 +7,52 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// role: "super_admin" | "admin_spmb" | "admin_keuangan" | "user".
+// Jenjang BUKAN role — jenjang adalah scope data (lihat scopeJenjang).
+// Nilai lama "admin" dipetakan ke "super_admin" oleh normalizeRole() di
+// lib/permissions.ts, supaya JWT yang terbit sebelum migrasi tetap valid.
 model User {
-  id          String       @id @default(cuid())
-  email       String       @unique
-  password    String
-  role        String       @default("user")
-  namaLengkap String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  pendaftaran Pendaftaran?
+  id           String       @id @default(cuid())
+  email        String       @unique
+  password     String
+  role         String       @default("user")
+  namaLengkap  String?
+  aktif        Boolean      @default(true)
+  lastLoginAt  DateTime?
+  scopeJenjang String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  pendaftaran  Pendaftaran?
+
+  @@index([role])
+}
+
+// Jejak audit untuk aksi yang berdampak: ubah harga/diskon, aktivasi tahun
+// ajaran, verifikasi pembayaran, reset password, kelola pengguna.
+//
+// actorId & tahunAjaranId SENGAJA bukan relasi. Seluruh anak TahunAjaran
+// memakai onDelete: Cascade dan /api/admin/tahun-ajaran/[id] DELETE benar-
+// benar menghapus tahun ajaran — relasi akan ikut menghapus jejak audit dari
+// persis aksi destruktif yang ingin dicatat. Sama untuk User.
+model AuditLog {
+  id            String   @id @default(cuid())
+  actorId       String?
+  actorEmail    String
+  actorRole     String
+  aksi          String
+  entitas       String
+  entitasId     String?
+  ringkasan     String
+  sebelum       Json?
+  sesudah       Json?
+  jenjang       String?
+  tahunAjaranId String?
+  ip            String?
+  createdAt     DateTime @default(now())
+
+  @@index([entitas, entitasId, createdAt])
+  @@index([tahunAjaranId, createdAt])
+  @@index([actorId, createdAt])
 }
 
 model TahunAjaran {
@@ -232,11 +269,27 @@ model Notifikasi {
   @@index([pendaftaranId, createdAt])
 }
 
+// Dua kategori dalam satu tabel:
+//   kategori = "pendaftaran"  -> berkas yang WAJIB DIUNGGAH pendaftar.
+//              fieldKey memetakan baris ini ke kolom file di Pendaftaran
+//              (fileIjazah/fileAkte/fileKK/fileKtpOrtu/fileKip/fileFoto),
+//              sehingga formulir siswa tidak perlu tabel sendiri.
+//   kategori = "daftar_ulang" -> template dokumen yang DIUNDUH pendaftar
+//              (tata tertib, surat pernyataan, surat perjanjian); di sini
+//              `url`/`namaFile` diisi admin lewat upload.
+//
+// @@unique melebar dengan kategori: baris lama otomatis dapat default
+// "daftar_ulang", jadi keunikan lama tetap terjamin oleh kunci baru.
 model DokumenPersyaratan {
   id            String      @id @default(cuid())
   jenjang       String
+  kategori      String      @default("daftar_ulang")
   jenis         String
   nama          String
+  deskripsi     String?
+  fieldKey      String?
+  wajib         Boolean     @default(true)
+  aktif         Boolean     @default(true)
   url           String?
   namaFile      String?
   urutan        Int         @default(0)
@@ -245,5 +298,6 @@ model DokumenPersyaratan {
   tahunAjaranId String
   tahunAjaran   TahunAjaran @relation(fields: [tahunAjaranId], references: [id], onDelete: Cascade)
 
-  @@unique([tahunAjaranId, jenjang, jenis])
+  @@unique([tahunAjaranId, jenjang, kategori, jenis])
+  @@index([tahunAjaranId, jenjang, kategori, aktif])
 }

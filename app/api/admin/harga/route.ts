@@ -1,21 +1,16 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { requirePermission } from '@/lib/adminSession'
 import { prisma } from '@/lib/db'
 import { resolveTahunAjaran } from '@/lib/tahunAjaran'
 
 const JENJANG_VALID = ['smp', 'sma', 'smk']
 
-async function requireAdmin() {
-  const session = await getSession()
-  return session && session.role === 'admin' ? session : null
-}
-
 // GET ?jenjang=&tahunAjaranId= - semua harga (aktif & nonaktif) milik satu
 // tahun ajaran (default: tahun ajaran aktif kalau tahunAjaranId tidak
 // dikirim — dipakai halaman "Lihat Data" untuk membuka tahun ajaran lama).
 export async function GET(req: Request) {
-  const session = await requireAdmin()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const gate = await requirePermission('harga', 'read')
+  if (!gate.ok) return gate.res
 
   try {
     const url = new URL(req.url)
@@ -42,8 +37,8 @@ export async function GET(req: Request) {
 // "tambah jurusan/kelas" dari sisi admin — satu baris = satu kombinasi
 // jenjang+jurusan+kelas yang bisa dipilih pendaftar.
 export async function POST(req: Request) {
-  const session = await requireAdmin()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const gate = await requirePermission('harga', 'create')
+  if (!gate.ok) return gate.res
 
   try {
     const body = await req.json()

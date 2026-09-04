@@ -2,8 +2,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { GraduationCap, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
+import { isAdminRole, normalizeRole } from '@/lib/permissions';
+import { TemaToggle } from '@/components/TemaToggle';
+import { NAMA_INSTITUSI } from '@/lib/labels';
+import '../admin/admin.css';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,7 +34,9 @@ export default function LoginPage() {
         return;
       }
 
-      if (data.user.role === 'admin') {
+      // Ketiga role admin (Super Admin, Admin SPMB, Admin Keuangan) masuk ke
+      // halaman Pilih Jenjang; pendaftar masuk ke portal siswa.
+      if (isAdminRole(normalizeRole(data.user.role))) {
         router.push('/admin/dashboard');
       } else {
         router.push('/dashboard');
@@ -43,51 +49,58 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="auth-shell" style={{ minHeight: '100vh', background: '#032511', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div style={{ width: '100%', maxWidth: 440 }}>
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 36 }}>
+    <div
+      className="adm-root auth-shell"
+      style={{
+        minHeight: '100vh', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', padding: 24, position: 'relative',
+      }}
+    >
+      {/* Ganti tema tersedia sejak layar login, jadi pengguna yang memakai
+          tema gelap tidak dipaksa melewati satu layar terang dulu. */}
+      <div style={{ position: 'absolute', top: 20, right: 20 }}>
+        <TemaToggle gaya="ikon" />
+      </div>
+
+      <div style={{ width: '100%', maxWidth: 420 }}>
+        <div style={{ textAlign: 'center', marginBottom: 26 }}>
           <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
-            <div style={{
-                          width: 52, height: 52,
-                          borderRadius: 10,
-                          overflow: 'hidden',
-                          position: 'relative',
-                        }}>
-                          <Image
-                            src="/images/logo.png"
-                            alt="Logo SMK Citra Negara"
-                            width={52}
-                            height={52}
-                            style={{ objectFit: 'cover' }}
-                          />
-                        </div>
-            
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ color: 'white', fontWeight: 800, fontSize: 18 }}>SMK Citra Negara</div>
-              <div style={{ color: '#C8973A', fontSize: 12 }}>Portal SPMB</div>
-            </div>
+            <span style={{ width: 46, height: 46, borderRadius: 12, overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
+              <Image src="/images/logo.png" alt="" width={46} height={46} style={{ objectFit: 'cover' }} />
+            </span>
+            <span style={{ textAlign: 'left' }}>
+              <span style={{ display: 'block', color: 'var(--adm-text)', fontWeight: 800, fontSize: 17, letterSpacing: '-0.02em' }}>
+                {NAMA_INSTITUSI.toUpperCase()}
+              </span>
+              <span style={{ display: 'block', color: 'var(--adm-secondary)', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.09em' }}>
+                PORTAL SPMB
+              </span>
+            </span>
           </Link>
         </div>
 
-        {/* Card */}
-        <div className="auth-card" style={{ background: 'white', borderRadius: 20, padding: 40, boxShadow: '0 25px 60px rgba(0,0,0,0.4)' }}>
-          <h1 className="font-display" style={{ fontSize: 28, color: '#0A1628', marginBottom: 6 }}>Selamat Datang</h1>
-          <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 32 }}>Masuk ke akun SPMB Anda</p>
+        <div className="adm-card" style={{ padding: 32, boxShadow: 'var(--adm-shadow-lg)' }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.025em', color: 'var(--adm-text)' }}>
+            Selamat Datang
+          </h1>
+          <p style={{ color: 'var(--adm-text-muted)', fontSize: 13.5, marginTop: 5, marginBottom: 24 }}>
+            Masuk untuk melanjutkan ke portal SPMB.
+          </p>
 
           {error && (
-            <div style={{ background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 8, padding: '12px 16px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <AlertCircle size={16} color="#DC2626" />
-              <span style={{ fontSize: 13, color: '#DC2626' }}>{error}</span>
+            <div className="adm-banner adm-banner--danger" style={{ marginBottom: 18 }}>
+              <AlertCircle size={15} style={{ flexShrink: 0, marginTop: 1 }} />
+              <span>{error}</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: 20 }}>
-              <label className="form-label" style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Email</label>
+            <div style={{ marginBottom: 16 }}>
+              <label className="adm-label" htmlFor="email">Email</label>
               <input
+                id="email"
                 type="email"
-                className="form-input"
+                className="adm-input"
                 placeholder="nama@email.com"
                 value={form.email}
                 onChange={e => setForm({ ...form, email: e.target.value })}
@@ -95,41 +108,54 @@ export default function LoginPage() {
               />
             </div>
 
-            <div style={{ marginBottom: 28 }}>
-              <label className="form-label" style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Password</label>
+            <div style={{ marginBottom: 22 }}>
+              <label className="adm-label" htmlFor="password">Password</label>
               <div style={{ position: 'relative' }}>
                 <input
+                  id="password"
                   type={showPass ? 'text' : 'password'}
-                  className="form-input"
+                  className="adm-input"
                   placeholder="Masukkan password"
                   value={form.password}
                   onChange={e => setForm({ ...form, password: e.target.value })}
                   required
-                  style={{ paddingRight: 44 }}
+                  style={{ paddingRight: 42 }}
                 />
-                <button type="button" onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}>
-                  {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                <button
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  aria-label={showPass ? 'Sembunyikan password' : 'Tampilkan password'}
+                  style={{
+                    position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: 'var(--adm-text-faint)', display: 'flex', padding: 4,
+                  }}
+                >
+                  {showPass ? <EyeOff size={17} /> : <Eye size={17} />}
                 </button>
               </div>
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%', textAlign: 'center', padding: '13px', fontSize: 15, opacity: loading ? 0.7 : 1 }}>
-              {loading ? 'Memproses...' : 'Masuk'}
+            <button
+              type="submit"
+              disabled={loading}
+              className="adm-btn adm-btn--hijau"
+              style={{ width: '100%', padding: '11px', fontSize: 14 }}
+            >
+              {loading ? 'Memproses…' : 'Masuk'}
             </button>
           </form>
 
-          <div style={{ textAlign: 'center', marginTop: 24 }}>
-            <p style={{ color: '#6B7280', fontSize: 13 }}>
-              Belum punya akun?{' '}
-              <Link href="/register" style={{ color: '#C8973A', fontWeight: 600, textDecoration: 'none' }}>Daftar Sekarang</Link>
-            </p>
-          </div>
-
-          
+          <p style={{ textAlign: 'center', marginTop: 20, color: 'var(--adm-text-muted)', fontSize: 13 }}>
+            Belum punya akun?{' '}
+            <Link href="/register" style={{ color: 'var(--adm-secondary)', fontWeight: 650, textDecoration: 'none' }}>
+              Daftar Sekarang
+            </Link>
+          </p>
         </div>
 
-        <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 24 }}>
-          © 2026 SMK Citra Negara
+        <p style={{ textAlign: 'center', color: 'var(--adm-text-faint)', fontSize: 11.5, marginTop: 20 }}>
+          © {new Date().getFullYear()} Yayasan Pendidikan {NAMA_INSTITUSI}
         </p>
       </div>
     </div>

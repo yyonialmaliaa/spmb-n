@@ -1,0 +1,690 @@
+/* ===========================================================================
+   SPMB ADMIN — sistem desain area /admin.
+   ===========================================================================
+   Diimpor HANYA oleh app/admin/layout.tsx (dan halaman login lewat class
+   .adm-root), bukan oleh globals.css — supaya tema biru enterprise ini tidak
+   pernah bocor ke halaman publik /spmb dan portal siswa /dashboard yang
+   memakai identitas hijau/emas Citra Negara.
+
+   Warna didefinisikan sebagai CSS custom property, BUKAN nilai hex langsung.
+   Alasannya: lima halaman admin lama tetap memakai inline style, dan inline
+   style tidak bisa diretema oleh class CSS — tapi bisa memakai
+   `color: var(--adm-text)`. Satu palet, dua cara pakai, nol hex ganda.
+   =========================================================================== */
+
+.adm-root {
+  /* Palet kini didefinisikan di app/globals.css pada :root dan
+     [data-tema='gelap'], supaya sisi admin & portal siswa berbagi tema yang
+     sama. Di sini tinggal tipografi dan latar dasarnya. */
+  font-family: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--adm-text);
+  background: var(--adm-bg);
+  background-image: var(--adm-bg-hias);
+  background-attachment: fixed;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+
+/* Playfair Display dari globals.css tidak dipakai di admin — sistem
+   administrasi butuh keterbacaan, bukan serif dekoratif. */
+.adm-root .font-display {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* ---------------------------------------------------------------- SHELL -- */
+
+.adm-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--adm-bg);
+}
+
+.adm-main {
+  flex: 1;
+  min-width: 0; /* tanpa ini, tabel lebar memaksa seluruh halaman melebar */
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-content {
+  padding: 24px 28px 48px;
+  flex: 1;
+}
+
+/* -------------------------------------------------------------- SIDEBAR -- */
+
+.adm-sidebar {
+  width: var(--adm-sidebar-w);
+  flex-shrink: 0;
+  /* Permukaan kaca: semi-transparan + blur, jadi latar berhias di belakangnya
+     tetap terasa tanpa mengganggu keterbacaan menu. */
+  background: var(--adm-kaca);
+  backdrop-filter: var(--adm-blur);
+  -webkit-backdrop-filter: var(--adm-blur);
+  border-right: 1px solid var(--adm-border);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.adm-sidebar-head {
+  padding: 18px 16px;
+  border-bottom: 1px solid var(--adm-border);
+}
+
+.adm-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.adm-brand-nama {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--adm-text);
+  letter-spacing: -0.01em;
+}
+
+.adm-brand-sistem {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--adm-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.adm-nav {
+  padding: 12px 10px;
+  flex: 1;
+}
+
+.adm-nav-grup + .adm-nav-grup {
+  margin-top: 14px;
+}
+
+.adm-nav-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--adm-text-faint);
+  padding: 0 10px 6px;
+}
+
+.adm-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--adm-r-sm);
+  color: var(--adm-text-muted);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+}
+
+.adm-nav-link:hover {
+  background: var(--adm-neutral-weak);
+  color: var(--adm-text);
+}
+
+.adm-nav-link.is-active {
+  background: var(--adm-secondary-weak);
+  color: var(--adm-secondary);
+  font-weight: 600;
+}
+
+.adm-nav-link.is-active svg {
+  color: var(--adm-secondary);
+}
+
+.adm-nav-link:focus-visible,
+.adm-btn:focus-visible,
+.adm-input:focus-visible {
+  outline: 2px solid var(--adm-secondary);
+  outline-offset: 2px;
+}
+
+.adm-sidebar-foot {
+  padding: 12px 10px;
+  border-top: 1px solid var(--adm-border);
+}
+
+/* Logout: satu-satunya aksi di sidebar yang mengakhiri sesi, jadi diberi
+   warna bahaya supaya tidak tertukar dengan menu navigasi. */
+.adm-nav-link--keluar {
+  color: var(--adm-danger);
+  font-weight: 600;
+}
+.adm-nav-link--keluar:hover {
+  background: var(--adm-danger-weak);
+  color: var(--adm-danger);
+}
+
+/* Kartu akun: nama, role, tahun ajaran, jenjang aktif. */
+.adm-akun {
+  background: var(--adm-surface-alt);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r-md);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+/* ----------------------------------------------------------- TOP HEADER -- */
+
+.adm-topbar {
+  background: var(--adm-kaca-pekat);
+  backdrop-filter: var(--adm-blur);
+  -webkit-backdrop-filter: var(--adm-blur);
+  border-bottom: 1px solid var(--adm-border);
+  padding: 12px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.adm-breadcrumb {
+  font-size: 12px;
+  color: var(--adm-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.adm-breadcrumb a {
+  color: var(--adm-text-muted);
+  text-decoration: none;
+}
+
+.adm-breadcrumb a:hover {
+  color: var(--adm-primary);
+  text-decoration: underline;
+}
+
+.adm-page-title {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--adm-text);
+  margin-top: 2px;
+}
+
+.adm-page-sub {
+  font-size: 12.5px;
+  color: var(--adm-text-muted);
+  margin-top: 2px;
+}
+
+/* ----------------------------------------------------------------- KARTU -- */
+
+.adm-card {
+  background: var(--adm-kaca-pekat);
+  backdrop-filter: var(--adm-blur);
+  -webkit-backdrop-filter: var(--adm-blur);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-r-lg);
+  box-shadow: var(--adm-shadow-sm);
+}
+
+.adm-card-pad {
+  padding: 18px 20px;
+}
+
+.adm-card-head {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--adm-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.adm-card-title {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--adm-text);
+}
+
+/* --------------------------------------------------------------- TOMBOL -- */
+
+.adm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: var(--adm-r-sm);
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.adm-btn--primary {
+  background: var(--adm-primary);
+  color: var(--adm-text-invert);
+}
+.adm-btn--primary:hover { background: var(--adm-primary-hover); }
+
+/* Sesuai referensi: Secondary = abu terang netral, bukan ungu. Ungu
+   dicadangkan untuk aksen informasi sekunder (mis. tombol Export Keuangan),
+   bukan untuk tombol umum. */
+.adm-btn--secondary {
+  background: var(--adm-neutral-weak);
+  color: var(--adm-text);
+  border-color: var(--adm-border);
+}
+.adm-btn--secondary:hover { background: var(--adm-surface-alt); }
+
+/* Aksen hijau — identitas Citra Negara, dipakai untuk aksi yang menegaskan
+   sesuatu selesai/sah (verifikasi, simpan, konfirmasi). */
+.adm-btn--hijau {
+  background: var(--adm-secondary);
+  color: #FFFFFF;
+}
+.adm-btn--hijau:hover { background: var(--adm-secondary-hover); }
+
+/* Inverted: latar gelap, dipakai untuk satu aksi berat per halaman. */
+.adm-btn--inverted {
+  background: var(--adm-text);
+  color: var(--adm-text-invert);
+}
+.adm-btn--inverted:hover { background: #1E293B; }
+
+/* Outlined: netral berbingkai, setara "Outlined" di referensi. */
+.adm-btn--outlined {
+  background: transparent;
+  color: var(--adm-text);
+  border-color: var(--adm-border-strong);
+}
+.adm-btn--outlined:hover { background: var(--adm-neutral-weak); }
+
+/* Aksen ungu, hanya untuk aksi sekunder yang memang perlu dibedakan. */
+.adm-btn--accent {
+  background: var(--adm-secondary-weak);
+  color: var(--adm-secondary);
+  border-color: #C7D2FE;
+}
+.adm-btn--accent:hover { background: #E0E7FF; }
+
+.adm-btn--ghost {
+  background: var(--adm-surface);
+  color: var(--adm-text-muted);
+  border-color: var(--adm-border-strong);
+}
+.adm-btn--ghost:hover { background: var(--adm-neutral-weak); color: var(--adm-text); }
+
+.adm-btn--success {
+  background: var(--adm-success);
+  color: var(--adm-text-invert);
+}
+.adm-btn--success:hover { background: #047857; }
+
+.adm-btn--warning {
+  background: var(--adm-warning-weak);
+  color: var(--adm-warning);
+  border-color: var(--adm-warning-border);
+}
+.adm-btn--warning:hover { background: #FEF3C7; }
+
+/* Aksi merusak: outline merah, bukan blok merah penuh — supaya tidak
+   menarik mata lebih kuat daripada aksi utama di halaman yang sama. */
+.adm-btn--danger {
+  background: var(--adm-surface);
+  color: var(--adm-danger);
+  border-color: var(--adm-danger-border);
+}
+.adm-btn--danger:hover { background: var(--adm-danger-weak); }
+
+.adm-btn:disabled,
+.adm-btn[aria-disabled='true'] {
+  background: var(--adm-neutral-weak);
+  color: var(--adm-text-faint);
+  border-color: var(--adm-border);
+  cursor: not-allowed;
+}
+
+.adm-btn--sm { padding: 5px 10px; font-size: 12px; }
+
+/* ---------------------------------------------------------------- INPUT -- */
+
+.adm-input,
+.adm-select {
+  width: 100%;
+  color-scheme: inherit;
+  padding: 8px 11px;
+  border: 1px solid var(--adm-border-strong);
+  border-radius: var(--adm-r-sm);
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--adm-text);
+  background: var(--adm-surface);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.adm-input::placeholder { color: var(--adm-text-faint); }
+
+.adm-input:focus,
+.adm-select:focus {
+  outline: none;
+  border-color: var(--adm-secondary);
+  box-shadow: 0 0 0 3px var(--adm-secondary-weak);
+}
+
+.adm-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--adm-text-muted);
+  margin-bottom: 5px;
+}
+
+/* ---------------------------------------------------------------- TABEL -- */
+
+.adm-table-wrap {
+  overflow-x: auto; /* tabel lebar bergulir sendiri, body halaman tidak */
+}
+
+.adm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.adm-table th {
+  background: var(--adm-surface-alt);
+  color: var(--adm-text-muted);
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--adm-border);
+  white-space: nowrap;
+}
+
+.adm-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--adm-border);
+  color: var(--adm-text);
+  vertical-align: middle;
+}
+
+.adm-table tbody tr:last-child td { border-bottom: none; }
+.adm-table tbody tr:hover td { background: var(--adm-surface-alt); }
+
+/* ---------------------------------------------------------------- BADGE -- */
+
+.adm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+/* Setiap badge SELALU membawa teks, tidak pernah warna saja — aksesibilitas
+   (poin 52): status tidak boleh hanya dibedakan lewat warna. */
+.adm-badge--netral     { background: var(--adm-neutral-weak); color: var(--adm-tertiary); border-color: var(--adm-border); }
+.adm-badge--info       { background: var(--adm-info-weak);    color: var(--adm-info);     border-color: #BAE6FD; }
+.adm-badge--sukses     { background: var(--adm-success-weak); color: var(--adm-success);  border-color: var(--adm-success-border); }
+.adm-badge--peringatan { background: var(--adm-warning-weak); color: var(--adm-warning);  border-color: var(--adm-warning-border); }
+.adm-badge--bahaya     { background: var(--adm-danger-weak);  color: var(--adm-danger);   border-color: var(--adm-danger-border); }
+
+/* --------------------------------------------------------------- BANNER -- */
+
+.adm-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: var(--adm-r-md);
+  font-size: 12.5px;
+  border: 1px solid;
+}
+
+.adm-banner--info    { background: var(--adm-primary-weak); color: #1E40AF; border-color: var(--adm-primary-border); }
+.adm-banner--warning { background: var(--adm-warning-weak); color: #92400E; border-color: var(--adm-warning-border); }
+.adm-banner--danger  { background: var(--adm-danger-weak);  color: #991B1B; border-color: var(--adm-danger-border); }
+
+/* ---------------------------------------------------------- GRID & MODAL -- */
+
+.adm-grid-stat {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.adm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: adm-fade 0.15s ease;
+}
+
+.adm-modal {
+  background: var(--adm-surface);
+  color: var(--adm-text);
+  border-radius: var(--adm-r-lg);
+  box-shadow: var(--adm-shadow-lg);
+  width: 100%;
+  max-width: 480px;
+  max-height: 88vh;
+  overflow-y: auto;
+  animation: adm-pop 0.16s ease;
+}
+
+/* Animasi sengaja sangat halus — ini sistem administrasi sekolah, bukan
+   halaman promosi. Tidak ada bounce, tidak ada gerak berlebihan. */
+@keyframes adm-fade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes adm-pop  { from { opacity: 0; transform: scale(0.98) } to { opacity: 1; transform: none } }
+
+@keyframes adm-shimmer { from { background-position: -400px 0 } to { background-position: 400px 0 } }
+
+.adm-skeleton {
+  background: linear-gradient(90deg, var(--adm-surface-alt) 25%, var(--adm-neutral-weak) 37%, var(--adm-surface-alt) 63%);
+  background-size: 800px 100%;
+  animation: adm-shimmer 1.4s linear infinite;
+  border-radius: var(--adm-r-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adm-overlay, .adm-modal, .adm-skeleton { animation: none; }
+}
+
+/* --------------------------------------------------------------- MOBILE -- */
+
+.adm-mobile-bar { display: none; }
+.adm-sidebar-backdrop { display: none; }
+
+@media (max-width: 1024px) {
+  .adm-mobile-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--adm-surface);
+    border-bottom: 1px solid var(--adm-border);
+    padding: 10px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+
+  .adm-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 60;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    box-shadow: var(--adm-shadow-lg);
+  }
+
+  .adm-sidebar.is-open { transform: translateX(0); }
+
+  .adm-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    z-index: 55;
+  }
+
+  .adm-topbar { padding: 12px 16px; }
+  .adm-content { padding: 18px 16px 40px; }
+
+  /* Tombol tutup drawer hanya relevan saat sidebar jadi overlay. */
+  .adm-sidebar-tutup { display: flex !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adm-sidebar { transition: none; }
+}
+
+/* ------------------------------------------------ HEADER PORTAL (atas) -- */
+
+/* Header lengkap ala referensi: kotak logo, identitas sistem, chip tanggal,
+   Bantuan, kartu profil. Dipakai halaman Pilih Jenjang; versi ringkasnya
+   menyatu dengan .adm-topbar pada halaman operasional. */
+.adm-portal-head {
+  background: var(--adm-kaca-pekat);
+  backdrop-filter: var(--adm-blur);
+  -webkit-backdrop-filter: var(--adm-blur);
+  border-bottom: 1px solid var(--adm-border);
+}
+
+.adm-portal-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Kotak inisial institusi — "CN" pada referensi. */
+.adm-logo-kotak {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--adm-r-md);
+  background: var(--adm-secondary);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.adm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--adm-border);
+  background: var(--adm-surface);
+  font-size: 12px;
+  color: var(--adm-text-muted);
+  white-space: nowrap;
+}
+
+/* Avatar inisial pengguna. */
+.adm-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--adm-secondary-weak);
+  color: var(--adm-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+/* Chip pemilih cepat tahun ajaran. */
+.adm-ta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--adm-border);
+  background: var(--adm-surface);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--adm-text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.adm-ta-chip:hover { background: var(--adm-neutral-weak); color: var(--adm-text); }
+.adm-ta-chip.is-active {
+  background: var(--adm-secondary);
+  border-color: var(--adm-secondary);
+  color: #FFFFFF;
+}
+
+/* Titik status kecil di depan label gelombang. */
+.adm-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+@media (max-width: 640px) {
+  .adm-portal-inner { padding: 12px 16px; }
+}
+
+@media print {
+  .adm-sidebar, .adm-topbar, .adm-mobile-bar, .adm-portal-head { display: none !important; }
+  .adm-content { padding: 0 !important; }
+}
+
+/* Panel bawah halaman Pilih Jenjang jadi satu kolom di layar sempit. */
+@media (max-width: 900px) {
+  .adm-bawah { grid-template-columns: 1fr !important; }
+}

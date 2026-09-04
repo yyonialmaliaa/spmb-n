@@ -1,16 +1,12 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { requirePermission } from '@/lib/adminSession'
+import { catatAudit, bedanya, rupiah } from '@/lib/audit'
 import { prisma } from '@/lib/db'
-
-async function requireAdmin() {
-  const session = await getSession()
-  return session && session.role === 'admin' ? session : null
-}
 
 // PUT - edit nominal/jurusan/kelas/aktif untuk satu baris harga
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireAdmin()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const gate = await requirePermission('harga', 'update')
+  if (!gate.ok) return gate.res
 
   try {
     const { id } = await params
@@ -30,7 +26,32 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
     if (body.aktif !== undefined) data.aktif = !!body.aktif
 
+    // Ambil kondisi sebelum diubah supaya jejak audit bisa menyebut nominal
+    // lama -> nominal baru, bukan sekadar "harga diubah".
+    const lama = await prisma.harga.findUnique({ where: { id } })
+    if (!lama) return NextResponse.json({ error: 'Data harga tidak ditemukan' }, { status: 404 })
+
     const updated = await prisma.harga.update({ where: { id }, data })
+
+    const diff = bedanya(lama as unknown as Record<string, unknown>, data)
+    if (diff.fields.length > 0) {
+      const ringkasan = diff.fields.includes('nominal')
+        ? `Mengubah harga ${lama.jenjang.toUpperCase()} ${lama.jurusan !== '-' ? lama.jurusan + ' ' : ''}${lama.kelas}: ${rupiah(lama.nominal)} → ${rupiah(updated.nominal)}`
+        : `Mengubah harga ${lama.jenjang.toUpperCase()} ${lama.kelas} (${diff.fields.join(', ')})`
+      await catatAudit({
+        session: gate.session,
+        aksi: 'update',
+        entitas: 'harga',
+        entitasId: id,
+        ringkasan,
+        sebelum: diff.sebelum,
+        sesudah: diff.sesudah,
+        jenjang: lama.jenjang,
+        tahunAjaranId: lama.tahunAjaranId,
+        req,
+      })
+    }
+
     return NextResponse.json({ success: true, data: updated })
   } catch (err: any) {
     if (err?.code === 'P2002') {
@@ -43,13 +64,27 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
 // DELETE - hapus baris harga. Pendaftar yang totalTagihan-nya sudah terkunci
 // tidak terpengaruh (snapshot hargaPokok tetap tersimpan di data mereka).
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireAdmin()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const gate = await requirePermission('harga', 'delete')
+  if (!gate.ok) return gate.res
 
   try {
     const { id } = await params
+    const lama = await prisma.harga.findUnique({ where: { id } })
     await prisma.harga.delete({ where: { id } })
+    if (lama) {
+      await catatAudit({
+        session: gate.session,
+        aksi: 'delete',
+        entitas: 'harga',
+        entitasId: id,
+        ringkasan: `Menghapus harga ${lama.jenjang.toUpperCase()} ${lama.jurusan !== '-' ? lama.jurusan + ' ' : ''}${lama.kelas} (${rupiah(lama.nominal)})`,
+        sebelum: { nominal: lama.nominal, jurusan: lama.jurusan, kelas: lama.kelas },
+        jenjang: lama.jenjang,
+        tahunAjaranId: lama.tahunAjaranId,
+        req,
+      })
+    }
     return NextResponse.json({ success: true })
   } catch (err) {
     console.error('Admin harga DELETE error:', err)

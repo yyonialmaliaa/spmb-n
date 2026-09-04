@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { requirePermission } from '@/lib/adminSession'
 import { prisma } from '@/lib/db'
 
 // PUT - edit nama/diskon/periode, atau aktifkan gelombang ini
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSession()
-  if (!session || session.role !== 'admin') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const gate = await requirePermission('jadwal', 'update')
+  if (!gate.ok) return gate.res
 
   try {
     const { id } = await params
@@ -42,8 +42,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 // DELETE - hapus gelombang (tidak boleh menghapus yang sedang aktif, supaya
 // jalur itu tidak sampai tanpa gelombang aktif sama sekali)
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSession()
-  if (!session || session.role !== 'admin') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const gate = await requirePermission('jadwal', 'delete')
+  if (!gate.ok) return gate.res
 
   try {
     const { id } = await params

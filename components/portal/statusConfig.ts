@@ -6,15 +6,15 @@ export const STATUS_CONFIG: Record<string, {
   label: string; color: string; bg: string; border: string; icon: any; step: number; desc: string;
 }> = {
   verified: {
-    label: 'Sedang Diverifikasi', color: '#1E40AF', bg: '#DBEAFE', border: '#BFDBFE',
+    label: 'Sedang Diverifikasi', color: 'var(--adm-info)', bg: 'var(--adm-info-weak)', border: 'var(--adm-info-border)',
     icon: RefreshCw, step: 2, desc: 'Admin sedang memeriksa berkas dan nomor WhatsApp Anda. Harap tunggu.',
   },
   ditolak: {
-    label: 'Berkas Ditolak', color: '#991B1B', bg: '#FEE2E2', border: '#FECACA',
+    label: 'Berkas Ditolak', color: 'var(--adm-danger)', bg: 'var(--adm-danger-weak)', border: 'var(--adm-danger-border)',
     icon: XCircle, step: 1, desc: 'Admin menolak berkas Anda. Silakan perbaiki dan kirim ulang.',
   },
   diterima_berkas: {
-    label: 'Diterima', color: '#065F46', bg: '#D1FAE5', border: '#A7F3D0',
+    label: 'Diterima', color: 'var(--adm-success)', bg: 'var(--adm-success-weak)', border: 'var(--adm-success-border)',
     icon: CheckCircle, step: 3, desc: 'Selamat! Berkas Anda diterima. Informasi lebih lanjut akan disampaikan melalui WhatsApp.',
   },
 };
@@ -41,11 +41,11 @@ export function teksSelanjutnya(status: string, sudahDaftarUlang?: boolean): str
 }
 
 export const STATUS_BAYAR_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  belum_bayar: { label: 'Belum Bayar', color: '#92400E', bg: '#FEF3C7', border: '#FDE68A' },
-  cicilan_berjalan: { label: 'Cicilan Berjalan', color: '#5B21B6', bg: '#F5F3FF', border: '#DDD6FE' },
-  menunggu_verifikasi: { label: 'Menunggu Verifikasi Admin', color: '#1E40AF', bg: '#DBEAFE', border: '#BFDBFE' },
-  lunas: { label: 'Lunas', color: '#065F46', bg: '#D1FAE5', border: '#A7F3D0' },
-  ditolak: { label: 'Ditolak, Silakan Ulangi', color: '#991B1B', bg: '#FEE2E2', border: '#FECACA' },
+  belum_bayar: { label: 'Belum Bayar', color: 'var(--adm-warning)', bg: 'var(--adm-warning-weak)', border: 'var(--adm-warning-border)' },
+  cicilan_berjalan: { label: 'Cicilan Berjalan', color: 'var(--adm-ungu)', bg: 'var(--adm-ungu-weak)', border: 'var(--adm-ungu)' },
+  menunggu_verifikasi: { label: 'Menunggu Verifikasi Admin', color: 'var(--adm-info)', bg: 'var(--adm-info-weak)', border: 'var(--adm-info-border)' },
+  lunas: { label: 'Lunas', color: 'var(--adm-success)', bg: 'var(--adm-success-weak)', border: 'var(--adm-success-border)' },
+  ditolak: { label: 'Ditolak, Silakan Ulangi', color: 'var(--adm-danger)', bg: 'var(--adm-danger-weak)', border: 'var(--adm-danger-border)' },
 };
 
 // Daftar berkas wajib SPMB — dipakai bersama oleh Dashboard, Pendaftaran, dan

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
-import { createToken } from '@/lib/auth'
+import { createToken, COOKIE_NAME } from '@/lib/auth'
+import { normalizeRole } from '@/lib/permissions'
 import { cookies } from 'next/headers'
 
 const JENJANG_VALID = ['smp', 'sma', 'smk']
@@ -88,16 +89,16 @@ export async function POST(req: Request) {
     const token = await createToken({
       userId: user.id,
       email: user.email,
-      role: user.role as 'user' | 'admin',
+      role: normalizeRole(user.role),
       namaLengkap: user.namaLengkap ?? undefined,
     })
 
     const cookieStore = await cookies()
-    cookieStore.set('token', token, {
+    cookieStore.set(COOKIE_NAME, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: 60 * 60 * 24 * 2,
       path: '/',
     })
 

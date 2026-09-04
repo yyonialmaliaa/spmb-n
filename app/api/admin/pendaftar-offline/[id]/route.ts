@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { requirePermission } from '@/lib/adminSession'
 import { prisma } from '@/lib/db'
 
 const EDITABLE_FIELDS = [
@@ -27,10 +27,8 @@ function pickEditableFields(body: Record<string, unknown>) {
 // Biodata" di Detail Lengkap. Tidak ada field wajib di sini — sama seperti
 // pembuatan awal formulir offline (section B7/B9).
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSession()
-  if (!session || session.role !== 'admin') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const gate = await requirePermission('pendaftar', 'update')
+  if (!gate.ok) return gate.res
 
   try {
     const { id } = await params

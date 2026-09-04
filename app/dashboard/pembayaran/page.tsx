@@ -7,9 +7,9 @@ import { formatRupiah, LABEL_JENIS_TRANSAKSI } from '@/lib/pembayaran-utils';
 import { BANK_TUJUAN } from '@/lib/biaya';
 
 const STATUS_TRANSAKSI: Record<string, { label: string; color: string; bg: string }> = {
-  menunggu_verifikasi: { label: 'Menunggu Verifikasi', color: '#1E40AF', bg: '#DBEAFE' },
-  lunas: { label: 'Terverifikasi', color: '#065F46', bg: '#D1FAE5' },
-  ditolak: { label: 'Ditolak', color: '#991B1B', bg: '#FEE2E2' },
+  menunggu_verifikasi: { label: 'Menunggu Verifikasi', color: 'var(--adm-info)', bg: 'var(--adm-info-weak)' },
+  lunas: { label: 'Terverifikasi', color: 'var(--adm-success)', bg: 'var(--adm-success-weak)' },
+  ditolak: { label: 'Ditolak', color: 'var(--adm-danger)', bg: 'var(--adm-danger-weak)' },
 };
 
 export default function PembayaranPage() {
@@ -108,8 +108,8 @@ function PembayaranContent({ pendaftaran, riwayat, reload }: PortalContext) {
   return (
     <div>
       <div style={{ marginBottom: 18 }}>
-        <h1 className="font-display" style={{ fontSize: 22, color: '#0B2A1C', marginBottom: 2 }}>Pembayaran</h1>
-        <p style={{ color: '#6B7280', fontSize: 13.5 }}>Pusat informasi keuangan pendaftaran Anda.</p>
+        <h1 className="font-display" style={{ fontSize: 22, color: 'var(--adm-text)', marginBottom: 2 }}>Pembayaran</h1>
+        <p style={{ color: 'var(--adm-text-muted)', fontSize: 13.5 }}>Pusat informasi keuangan pendaftaran Anda.</p>
       </div>
 
       {/* Ringkasan keuangan — satu sumber data yang sama dengan admin
@@ -124,38 +124,38 @@ function PembayaranContent({ pendaftaran, riwayat, reload }: PortalContext) {
       </div>
 
       {/* Status keseluruhan */}
-      <div style={{ background: sisaBayar <= 0 && totalTagihan > 0 ? '#F0FDF4' : '#FFFBEB', border: `1px solid ${sisaBayar <= 0 && totalTagihan > 0 ? '#A7F3D0' : '#FDE68A'}`, borderRadius: 12, padding: 16, marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-        <span style={{ fontSize: 13.5, color: sisaBayar <= 0 && totalTagihan > 0 ? '#065F46' : '#92400E', fontWeight: 600 }}>
+      <div style={{ background: sisaBayar <= 0 && totalTagihan > 0 ? 'var(--adm-success-weak)' : 'var(--adm-warning-weak)', border: `1px solid ${sisaBayar <= 0 && totalTagihan > 0 ? 'var(--adm-success-border)' : 'var(--adm-warning-border)'}`, borderRadius: 12, padding: 16, marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+        <span style={{ fontSize: 13.5, color: sisaBayar <= 0 && totalTagihan > 0 ? 'var(--adm-success)' : 'var(--adm-warning)', fontWeight: 600 }}>
           {totalTagihan === 0 ? 'Total tagihan belum tersedia — hubungi admin sekolah.' : sisaBayar <= 0 ? 'Pembayaran Anda sudah lunas.' : `Sisa tagihan yang perlu dibayar: ${formatRupiah(sisaBayar)}`}
         </span>
       </div>
 
       {/* Form bayar/cicilan */}
       {showForm && (
-        <div style={{ background: 'white', borderRadius: 14, padding: 22, border: '1px solid #F0EBE0', marginBottom: 20 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0B2A1C', marginBottom: 16 }}>Bayar / Cicil Sekarang</h3>
+        <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 22, border: '1px solid var(--adm-border)', marginBottom: 20 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 16 }}>Bayar / Cicil Sekarang</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ background: '#F0FDF4', border: '1px solid #A7F3D0', borderRadius: 10, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ background: 'var(--adm-success-weak)', border: '1px solid var(--adm-success-border)', borderRadius: 10, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div>
-                <div style={{ fontSize: 10, color: '#065F46', fontWeight: 700 }}>BANK TUJUAN</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#0B2A1C' }}>{BANK_TUJUAN.bank}</div>
+                <div style={{ fontSize: 10, color: 'var(--adm-success)', fontWeight: 700 }}>BANK TUJUAN</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)' }}>{BANK_TUJUAN.bank}</div>
               </div>
               <div>
-                <div style={{ fontSize: 10, color: '#065F46', fontWeight: 700 }}>NOMOR REKENING</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#0B2A1C', fontFamily: 'monospace' }}>{BANK_TUJUAN.nomorRekening}</div>
+                <div style={{ fontSize: 10, color: 'var(--adm-success)', fontWeight: 700 }}>NOMOR REKENING</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--adm-text)', fontFamily: 'monospace' }}>{BANK_TUJUAN.nomorRekening}</div>
               </div>
               <div>
-                <div style={{ fontSize: 10, color: '#065F46', fontWeight: 700 }}>ATAS NAMA</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#0B2A1C' }}>{BANK_TUJUAN.atasNama}</div>
+                <div style={{ fontSize: 10, color: 'var(--adm-success)', fontWeight: 700 }}>ATAS NAMA</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)' }}>{BANK_TUJUAN.atasNama}</div>
               </div>
-              <p style={{ fontSize: 11.5, color: '#065F46', margin: 0 }}>Boleh dicicil, minimal {formatRupiah(minCicilan)} per pembayaran.</p>
+              <p style={{ fontSize: 11.5, color: 'var(--adm-success)', margin: 0 }}>Boleh dicicil, minimal {formatRupiah(minCicilan)} per pembayaran.</p>
             </div>
 
             <FieldGroup>
               <label style={fieldLabelStyle}>Pilih Metode Pembayaran</label>
               <div style={{ display: 'flex', gap: 10 }}>
                 {(['offline', 'online'] as const).map(m => (
-                  <button key={m} type="button" onClick={() => setMetode(m)} style={{ flex: 1, padding: '10px 14px', borderRadius: 10, border: metode === m ? '2px solid #C8973A' : '1px solid #E5E7EB', background: metode === m ? '#FFFBEB' : 'white', color: metode === m ? '#92400E' : '#374151', fontWeight: 600, fontSize: 13, cursor: 'pointer', textTransform: 'capitalize' }}>
+                  <button key={m} type="button" onClick={() => setMetode(m)} style={{ flex: 1, padding: '10px 14px', borderRadius: 10, border: metode === m ? '2px solid var(--adm-warning)' : '1px solid var(--adm-border)', background: metode === m ? 'var(--adm-warning-weak)' : 'var(--adm-surface)', color: metode === m ? 'var(--adm-warning)' : 'var(--adm-text)', fontWeight: 600, fontSize: 13, cursor: 'pointer', textTransform: 'capitalize' }}>
                     {m === 'offline' ? 'Tunai di Sekolah' : 'Transfer Online'}
                   </button>
                 ))}
@@ -184,7 +184,7 @@ function PembayaranContent({ pendaftaran, riwayat, reload }: PortalContext) {
                 placeholder={`Contoh: ${minRequired.toLocaleString('id-ID')}`}
                 style={inputStyle}
               />
-              <p style={{ fontSize: 11.5, color: '#9CA3AF', marginTop: 4 }}>Sisa tagihan Anda: {formatRupiah(sisaBayar)}. Boleh dibayar bertahap.</p>
+              <p style={{ fontSize: 11.5, color: 'var(--adm-text-faint)', marginTop: 4 }}>Sisa tagihan Anda: {formatRupiah(sisaBayar)}. Boleh dibayar bertahap.</p>
             </FieldGroup>
 
             <FieldGroup>
@@ -209,7 +209,7 @@ function PembayaranContent({ pendaftaran, riwayat, reload }: PortalContext) {
                     style={{ display: 'none' }}
                   />
                 </label>
-                <span style={{ fontSize: 12.5, color: buktiPath && !buktiUploading ? '#059669' : '#6B7280', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ fontSize: 12.5, color: buktiPath && !buktiUploading ? 'var(--adm-success)' : 'var(--adm-text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
                   {buktiUploading
                     ? 'Mengupload...'
                     : buktiPath
@@ -217,11 +217,11 @@ function PembayaranContent({ pendaftaran, riwayat, reload }: PortalContext) {
                       : 'Belum ada file yang dipilih'}
                 </span>
               </div>
-              <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 6 }}>JPG, PNG, atau PDF — maksimal 2MB</p>
+              <p style={{ fontSize: 11, color: 'var(--adm-text-faint)', marginTop: 6 }}>JPG, PNG, atau PDF — maksimal 2MB</p>
             </FieldGroup>
 
             {bayarError && (
-              <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: 10, fontSize: 12, color: '#991B1B', display: 'flex', gap: 8, alignItems: 'center' }}>
+              <div style={{ background: 'var(--adm-danger-weak)', border: '1px solid var(--adm-danger-border)', borderRadius: 8, padding: 10, fontSize: 12, color: 'var(--adm-danger)', display: 'flex', gap: 8, alignItems: 'center' }}>
                 <AlertCircle size={14} /> {bayarError}
               </div>
             )}
@@ -234,46 +234,48 @@ function PembayaranContent({ pendaftaran, riwayat, reload }: PortalContext) {
       )}
 
       {/* Riwayat Transaksi — satu sumber data (pembayaran, alokasi, refund) */}
-      <div style={{ background: 'white', borderRadius: 14, border: '1px solid #F0EBE0', overflow: 'hidden' }}>
-        <div style={{ padding: '14px 20px', borderBottom: '1px solid #F3F4F6' }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0B2A1C', margin: 0 }}>Riwayat Transaksi</h3>
+      <div style={{ background: 'var(--adm-surface)', borderRadius: 14, border: '1px solid var(--adm-border)', overflow: 'hidden' }}>
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--adm-border)' }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--adm-text)', margin: 0 }}>Riwayat Transaksi</h3>
         </div>
         {!riwayat || riwayat.riwayat.length === 0 ? (
-          <div style={{ padding: 36, textAlign: 'center', color: '#9CA3AF', fontSize: 13 }}>Belum ada transaksi</div>
+          <div style={{ padding: 36, textAlign: 'center', color: 'var(--adm-text-faint)', fontSize: 13 }}>Belum ada transaksi</div>
         ) : (
           riwayat.riwayat.map((r: any, i: number) => {
             const isRefund = r.jenis === 'refund';
             const isAlokasi = r.jenis === 'alokasi';
             const sc = isAlokasi && r.status === 'lunas'
-              ? { label: 'Dialokasikan', color: '#3730A3', bg: '#E0E7FF' }
+              ? { label: 'Dialokasikan', color: 'var(--adm-ungu)', bg: 'var(--adm-ungu-weak)' }
               : isRefund && r.status === 'lunas'
-              ? { label: 'Dikembalikan', color: '#991B1B', bg: '#FEE2E2' }
+              ? { label: 'Dikembalikan', color: 'var(--adm-danger)', bg: 'var(--adm-danger-weak)' }
               : (STATUS_TRANSAKSI[r.status] || STATUS_TRANSAKSI['menunggu_verifikasi']);
-            const warna = isRefund ? '#991B1B' : isAlokasi ? '#3730A3' : '#374151';
+            // Warna sudah berupa token tema, jadi dipakai langsung tanpa
+            // pengecekan sentinel string seperti sebelumnya.
+            const warna = isRefund ? 'var(--adm-danger)' : isAlokasi ? 'var(--adm-ungu)' : 'var(--adm-text)';
             return (
-              <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10, padding: '14px 20px', borderTop: i === 0 ? 'none' : '1px solid #F3F4F6' }}>
+              <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10, padding: '14px 20px', borderTop: i === 0 ? 'none' : '1px solid var(--adm-border)' }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 600, color: warna === '#374151' ? '#0B2A1C' : warna }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, color: warna }}>
                     {isRefund
                       ? `${LABEL_JENIS_TRANSAKSI.refund}${r.alasanRefund ? ` — ${r.alasanRefund}` : ''}`
                       : isAlokasi
                       ? `${LABEL_JENIS_TRANSAKSI.alokasi} — ${r.kategoriAlokasi || 'Lainnya'}`
                       : `Cicilan ke-${r.angsuranKe}`}
                   </div>
-                  <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>
+                  <div style={{ fontSize: 12, color: 'var(--adm-text-faint)', marginTop: 2 }}>
                     {new Date(r.tanggalBayar).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                     {!isAlokasi && ` · ${r.metodePembayaran === 'online' ? 'Transfer' : 'Tunai'}${r.bankPengirim ? ` (${r.bankPengirim} a.n. ${r.namaPengirim})` : ''}`}
                     {isAlokasi && r.catatanAdmin && ` · ${r.catatanAdmin}`}
                   </div>
-                  {r.status === 'ditolak' && r.catatanAdmin && <div style={{ fontSize: 12, color: '#DC2626', marginTop: 3 }}>Catatan: {r.catatanAdmin}</div>}
+                  {r.status === 'ditolak' && r.catatanAdmin && <div style={{ fontSize: 12, color: 'var(--adm-danger)', marginTop: 3 }}>Catatan: {r.catatanAdmin}</div>}
                   {r.buktiPembayaran && (
-                    <a href={r.buktiPembayaran} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#C8973A', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                    <a href={r.buktiPembayaran} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--cn-hijau)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
                       Lihat bukti <ExternalLink size={11} />
                     </a>
                   )}
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: warna === '#374151' ? '#0B2A1C' : warna }}>{(isRefund || isAlokasi) ? '- ' : ''}{formatRupiah(r.nominal)}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: warna }}>{(isRefund || isAlokasi) ? '- ' : ''}{formatRupiah(r.nominal)}</div>
                   <span style={{ background: sc.bg, color: sc.color, fontSize: 10.5, fontWeight: 700, padding: '2px 9px', borderRadius: 10, display: 'inline-block', marginTop: 3 }}>{sc.label}</span>
                 </div>
               </div>
@@ -287,12 +289,12 @@ function PembayaranContent({ pendaftaran, riwayat, reload }: PortalContext) {
 
 function StatTile({ label, value, tone, emphasis }: { label: string; value: string; tone?: 'success' | 'warning' | 'info' | 'purple'; emphasis?: boolean }) {
   const map = {
-    success: { bg: '#F0FDF4', color: '#065F46' },
-    warning: { bg: '#FFF7ED', color: '#C2410C' },
-    info: { bg: '#EFF6FF', color: '#1E40AF' },
-    purple: { bg: '#EEF2FF', color: '#3730A3' },
+    success: { bg: 'var(--adm-success-weak)', color: 'var(--adm-success)' },
+    warning: { bg: 'var(--adm-warning-weak)', color: 'var(--adm-warning)' },
+    info: { bg: 'var(--adm-info-weak)', color: 'var(--adm-info)' },
+    purple: { bg: 'var(--adm-ungu-weak)', color: 'var(--adm-ungu)' },
   };
-  const c = tone ? map[tone] : { bg: '#FAFAFA', color: '#0B2A1C' };
+  const c = tone ? map[tone] : { bg: 'var(--adm-surface-alt)', color: 'var(--adm-text)' };
   return (
     <div style={{ background: c.bg, borderRadius: 12, padding: '14px 16px', border: emphasis ? `1.5px solid ${c.color}33` : '1px solid transparent' }}>
       <div style={{ fontSize: 10.5, color: c.color, fontWeight: 700, opacity: 0.85, marginBottom: 4 }}>{label.toUpperCase()}</div>
@@ -305,5 +307,5 @@ function FieldGroup({ children }: { children: React.ReactNode }) {
   return <div>{children}</div>;
 }
 
-const fieldLabelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 8 };
-const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 14px', border: '1.5px solid #D1D5DB', borderRadius: 8, fontSize: 14, fontFamily: 'inherit' };
+const fieldLabelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: 'var(--adm-text)', display: 'block', marginBottom: 8 };
+const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 14px', border: '1.5px solid var(--adm-border-strong)', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', background: 'var(--adm-surface)', color: 'var(--adm-text)' };
