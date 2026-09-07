@@ -32,6 +32,7 @@ import { FIELD_BERKAS, labelStatusPendaftaran } from '@/lib/labels';
 
 interface Persyaratan {
   id: string; jenis: string; nama: string; fieldKey: string | null;
+  jenjang: string;
   wajib: boolean; aktif: boolean; urutan: number;
 }
 
@@ -149,13 +150,31 @@ function VerifikasiInner() {
     }
   };
 
-  const berkasDari = (p: Pendaftar) =>
-    syarat.map(s => ({
+  // Checklist berkas milik SATU pendaftar, jadi persyaratannya harus
+  // persyaratan jenjang pendaftar itu sendiri.
+  //
+  // Ketika admin belum memilih jenjang, /api/admin/persyaratan mengirim baris
+  // untuk KETIGA jenjang. Dulu semuanya dipetakan apa adanya, sehingga tiap
+  // berkas muncul tiga kali (18 baris, bukan 6) — dan yang lebih berbahaya,
+  // hitungan "berkas wajib lengkap" ikut terkali tiga sehingga tidak pernah
+  // bisa terpenuhi. Nama berkas yang sama di tiga jenjang itu pula yang
+  // memicu peringatan duplicate key React.
+  const berkasDari = (p: Pendaftar) => {
+    const sesuaiJenjang = p.jenjang ? syarat.filter(s => s.jenjang === p.jenjang) : [];
+    // Cadangan: pendaftar tanpa jenjang (data lama) tetap dapat checklist —
+    // ambil satu wakil per fieldKey supaya tidak ada berkas ganda.
+    const dipakai = sesuaiJenjang.length > 0
+      ? sesuaiJenjang
+      : syarat.filter((s, i, arr) => arr.findIndex(x => x.fieldKey === s.fieldKey) === i);
+
+    return dipakai.map(s => ({
+      id: s.id,
       nama: s.nama,
       wajib: s.wajib,
       url: (p[s.fieldKey as string] as string | null) || null,
       label: FIELD_BERKAS[s.fieldKey as string] || s.nama,
     }));
+  };
 
   const bolehUbah = can('verifikasi', 'update');
 
@@ -310,7 +329,7 @@ function VerifikasiInner() {
                 <div style={{ display: 'grid', gap: 8 }}>
                   {berkasDari(dipilih).map(b => (
                     <div
-                      key={b.nama}
+                      key={b.id}
                       style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
                         padding: '9px 12px', border: '1px solid var(--adm-border)',

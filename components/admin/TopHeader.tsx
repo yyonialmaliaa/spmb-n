@@ -6,6 +6,7 @@ import { CalendarDays, CalendarRange, ChevronDown, ChevronRight, Check, HelpCirc
 import { NAMA_INSTITUSI, inisial } from '@/lib/labels'
 import { LABEL_ROLE, IDENTITAS_PERAN } from '@/lib/permissions'
 import { TemaToggle } from '@/components/TemaToggle'
+import { NotifikasiBell } from './NotifikasiBell'
 import { useAdmin } from './AdminProvider'
 
 /**
@@ -136,6 +137,7 @@ export function TopHeader({
         <span className="adm-chip" style={{ border: 'none', padding: '2px 0' }}>
           <CalendarDays size={13} /> {hariIni}
         </span>
+        <NotifikasiBell />
         <TemaToggle />
         <Link href="/admin/bantuan" className="adm-chip" style={{ border: 'none', padding: '2px 0', textDecoration: 'none' }}>
           <HelpCircle size={13} /> Bantuan

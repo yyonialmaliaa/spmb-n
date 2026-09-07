@@ -301,3 +301,49 @@ model DokumenPersyaratan {
   @@unique([tahunAjaranId, jenjang, kategori, jenis])
   @@index([tahunAjaranId, jenjang, kategori, aktif])
 }
+
+// ---------------------------------------------------------------------------
+// Notifikasi untuk ADMIN — berbeda dari model `Notifikasi` di atas, yang
+// arahnya admin -> pendaftar dan terikat ke satu pendaftaran.
+//
+// Yang ini arahnya sistem -> admin, dan tujuannya adalah PERAN, bukan orang:
+// sebuah sekolah bisa punya beberapa petugas Front Office, dan pendaftar baru
+// harus terlihat oleh mereka semua. Super Admin melihat seluruh peran.
+//
+// `entitasId` sengaja BUKAN relasi ke Pendaftaran/Pembayaran: notifikasi
+// adalah catatan bahwa sesuatu pernah terjadi, dan menghapus tahun ajaran
+// (yang meng-cascade ke pendaftaran) tidak boleh ikut menghapus jejaknya.
+// ---------------------------------------------------------------------------
+model NotifikasiAdmin {
+  id            String   @id @default(cuid())
+  jenis         String // pendaftar_baru | revisi_masuk | pembayaran_perlu_verifikasi
+  peran         String // peran tujuan; super_admin selalu melihat semuanya
+  judul         String
+  pesan         String
+  tautan        String? // halaman kerja yang dituju saat notifikasi diklik
+  jenjang       String?
+  tahunAjaranId String?
+  entitas       String? // pendaftaran | pembayaran
+  entitasId     String?
+  createdAt     DateTime @default(now())
+
+  dibaca NotifikasiAdminDibaca[]
+
+  @@index([peran, createdAt])
+  @@index([createdAt])
+}
+
+// Status "sudah dibaca" HARUS per pengguna, bukan per notifikasi: satu baris
+// notifikasi dilihat banyak admin, dan yang satu membacanya tidak berarti
+// yang lain sudah.
+model NotifikasiAdminDibaca {
+  id           String   @id @default(cuid())
+  notifikasiId String
+  userId       String
+  dibacaAt     DateTime @default(now())
+
+  notifikasi NotifikasiAdmin @relation(fields: [notifikasiId], references: [id], onDelete: Cascade)
+
+  @@unique([notifikasiId, userId])
+  @@index([userId])
+}

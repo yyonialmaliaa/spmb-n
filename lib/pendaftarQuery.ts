@@ -48,6 +48,50 @@ export function scopePendaftar({
   }
 }
 
+/**
+ * Apakah baris ini draft online — yaitu calon pendaftar yang formulirnya
+ * belum dikirim. Dipakai untuk menyaring di memori ketika satu query harus
+ * melayani dua pertanyaan sekaligus (lihat ringkasan tahun ajaran).
+ */
+export function adalahDraftOnline(p: { status: string; sumberDaftar: string | null }): boolean {
+  return p.status === 'draft' && (p.sumberDaftar || 'online') === 'online'
+}
+
+/**
+ * Klausa `where` untuk halaman UANG: Tagihan, Pembayaran, Transaksi, dan
+ * Laporan Keuangan.
+ *
+ * Sama dengan scopePendaftar(), KECUALI satu hal: draft online yang SUDAH
+ * menyetor uang tetap disertakan.
+ *
+ * Kenapa harus berbeda — dan kenapa ini bukan pelonggaran yang sembarangan:
+ * alur sistem MEWAJIBKAN pendaftar membayar minimal SEBELUM tombol "Kirim
+ * Formulir" bisa ditekan (lihat app/api/pendaftaran/kirim/route.ts). Artinya
+ * SETIAP pendaftar online pasti melewati keadaan "masih draft, tapi uangnya
+ * sudah masuk". Kalau halaman uang ikut memakai aturan pendaftaran, setoran
+ * pertama setiap pendaftar online mustahil terlihat — apalagi di-ACC — oleh
+ * petugas loket, dan uang yang benar-benar sudah diterima sekolah tidak
+ * pernah muncul di laporan keuangan.
+ *
+ * Aturan pengecualian draft online tetap benar untuk PENDAFTARAN: draft yang
+ * ditinggalkan tidak boleh menggelembungkan jumlah pendaftar. Tapi draft yang
+ * sudah menyetor uang bukan draft yang ditinggalkan — uangnya nyata dan wajib
+ * dipertanggungjawabkan.
+ */
+export function scopePendaftarUang({
+  tahunAjaranId,
+  jenjang,
+}: Omit<ScopePendaftar, 'status'>): Prisma.PendaftaranWhereInput {
+  return {
+    tahunAjaranId,
+    ...(jenjang ? { jenjang } : {}),
+    OR: [
+      EXCLUDE_DRAFT_ONLINE,
+      { pembayaranList: { some: {} } },
+    ],
+  }
+}
+
 /** Bentuk statistik yang dipakai bersama oleh dashboard & halaman Pendaftar. */
 export interface StatsPendaftar {
   total: number

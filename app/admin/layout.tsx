@@ -7,6 +7,9 @@ import './admin.css'
 
 export const metadata = {
   title: 'SPMB Admin — Citra Negara',
+  // Deskripsi ditimpa di sini supaya tidak mewarisi milik layout root —
+  // area admin melayani ketiga jenjang sekaligus.
+  description: 'Panel administrasi SPMB Citra Negara.',
 }
 
 // Layout server untuk SELURUH area /admin.

@@ -213,7 +213,7 @@ function AdminHargaInner() {
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                     <thead>
-                      <tr style={{ background: '#FAFAFA' }}>
+                      <tr style={{ background: 'var(--adm-surface-alt)' }}>
                         {jenjang === 'smk' && <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 700, color: 'var(--adm-text)' }}>Jurusan</th>}
                         <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 700, color: 'var(--adm-text)' }}>Kelas / Program</th>
                         <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 700, color: 'var(--adm-text)' }}>Harga</th>
@@ -253,10 +253,10 @@ function AdminHargaInner() {
                             />
                           </td>
                           <td style={{ padding: '8px 16px', textAlign: 'center' }}>
-                            <input type="checkbox" checked={h.aktif} onChange={() => handleToggleAktif(h)} disabled={savingId === h.id} style={{ width: 18, height: 18, accentColor: '#C8973A', cursor: 'pointer' }} />
+                            <input type="checkbox" checked={h.aktif} onChange={() => handleToggleAktif(h)} disabled={savingId === h.id} style={{ width: 18, height: 18, accentColor: 'var(--adm-secondary)', cursor: 'pointer' }} />
                           </td>
                           <td style={{ padding: '8px 16px' }}>
-                            <button onClick={() => handleHapus(h)} disabled={savingId === h.id} title="Hapus" style={{ padding: 8, background: '#FEF2F2', color: '#DC2626', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', opacity: savingId === h.id ? 0.6 : 1 }}>
+                            <button onClick={() => handleHapus(h)} disabled={savingId === h.id} title="Hapus" style={{ padding: 8, background: 'var(--adm-danger-weak)', color: 'var(--adm-danger)', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', opacity: savingId === h.id ? 0.6 : 1 }}>
                               <Trash2 size={14} />
                             </button>
                           </td>
@@ -273,7 +273,7 @@ function AdminHargaInner() {
                 </div>
 
                 {/* Tambah baris baru */}
-                <div style={{ display: 'flex', gap: 8, padding: 16, borderTop: '1px solid var(--adm-border)', flexWrap: 'wrap', background: '#FAFAFA' }}>
+                <div style={{ display: 'flex', gap: 8, padding: 16, borderTop: '1px solid var(--adm-border)', flexWrap: 'wrap', background: 'var(--adm-surface-alt)' }}>
                   {jenjang === 'smk' && (
                     <input value={jurusanBaru} onChange={e => setJurusanBaru(e.target.value)} placeholder="Nama jurusan baru" style={{ ...inputStyle, flex: 2, minWidth: 200 }} />
                   )}

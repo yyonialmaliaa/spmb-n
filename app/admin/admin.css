@@ -310,7 +310,7 @@
   background: var(--adm-text);
   color: var(--adm-text-invert);
 }
-.adm-btn--inverted:hover { background: #1E293B; }
+.adm-btn--inverted:hover { background: var(--adm-primary-hover); }
 
 /* Outlined: netral berbingkai, setara "Outlined" di referensi. */
 .adm-btn--outlined {
@@ -324,9 +324,9 @@
 .adm-btn--accent {
   background: var(--adm-secondary-weak);
   color: var(--adm-secondary);
-  border-color: #C7D2FE;
+  border-color: var(--adm-ungu-weak);
 }
-.adm-btn--accent:hover { background: #E0E7FF; }
+.adm-btn--accent:hover { background: var(--adm-ungu-weak); }
 
 .adm-btn--ghost {
   background: var(--adm-surface);
@@ -339,14 +339,14 @@
   background: var(--adm-success);
   color: var(--adm-text-invert);
 }
-.adm-btn--success:hover { background: #047857; }
+.adm-btn--success:hover { background: var(--adm-secondary-hover); }
 
 .adm-btn--warning {
   background: var(--adm-warning-weak);
   color: var(--adm-warning);
   border-color: var(--adm-warning-border);
 }
-.adm-btn--warning:hover { background: #FEF3C7; }
+.adm-btn--warning:hover { background: var(--adm-warning-weak); }
 
 /* Aksi merusak: outline merah, bukan blok merah penuh — supaya tidak
    menarik mata lebih kuat daripada aksi utama di halaman yang sama. */
@@ -454,7 +454,7 @@
 /* Setiap badge SELALU membawa teks, tidak pernah warna saja — aksesibilitas
    (poin 52): status tidak boleh hanya dibedakan lewat warna. */
 .adm-badge--netral     { background: var(--adm-neutral-weak); color: var(--adm-tertiary); border-color: var(--adm-border); }
-.adm-badge--info       { background: var(--adm-info-weak);    color: var(--adm-info);     border-color: #BAE6FD; }
+.adm-badge--info       { background: var(--adm-info-weak);    color: var(--adm-info);     border-color: var(--adm-info-border); }
 .adm-badge--sukses     { background: var(--adm-success-weak); color: var(--adm-success);  border-color: var(--adm-success-border); }
 .adm-badge--peringatan { background: var(--adm-warning-weak); color: var(--adm-warning);  border-color: var(--adm-warning-border); }
 .adm-badge--bahaya     { background: var(--adm-danger-weak);  color: var(--adm-danger);   border-color: var(--adm-danger-border); }
@@ -471,9 +471,9 @@
   border: 1px solid;
 }
 
-.adm-banner--info    { background: var(--adm-primary-weak); color: #1E40AF; border-color: var(--adm-primary-border); }
-.adm-banner--warning { background: var(--adm-warning-weak); color: #92400E; border-color: var(--adm-warning-border); }
-.adm-banner--danger  { background: var(--adm-danger-weak);  color: #991B1B; border-color: var(--adm-danger-border); }
+.adm-banner--info    { background: var(--adm-primary-weak); color: var(--adm-info); border-color: var(--adm-primary-border); }
+.adm-banner--warning { background: var(--adm-warning-weak); color: var(--adm-warning); border-color: var(--adm-warning-border); }
+.adm-banner--danger  { background: var(--adm-danger-weak);  color: var(--adm-danger); border-color: var(--adm-danger-border); }
 
 /* ---------------------------------------------------------- GRID & MODAL -- */
 

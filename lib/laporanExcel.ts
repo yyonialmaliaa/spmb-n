@@ -9,6 +9,7 @@
 
 import ExcelJS from 'exceljs'
 import { YAYASAN_INFO } from './biaya'
+import { JENJANG_LABEL_FULL } from './labels'
 import type { LaporanData } from './laporanSpmb'
 
 const HIJAU_TUA = 'FF123524'
@@ -87,7 +88,9 @@ export async function buatWorkbookLaporan(data: LaporanData): Promise<ExcelJS.Bu
   }
 
   judulSeksi('INFORMASI LAPORAN')
-  tambahBaris('Nama Sekolah', 'SMK Citra Negara')
+  // Nama sekolah mengikuti jenjang laporannya. Dulu dipatok "SMK Citra
+  // Negara", sehingga laporan SMP dan SMA pun ikut tercetak sebagai SMK.
+  tambahBaris('Nama Sekolah', JENJANG_LABEL_FULL[data.jenjang])
   tambahBaris('Naungan', YAYASAN_INFO.nama)
   tambahBaris('Jenjang', JENJANG_LABEL[data.jenjang])
   tambahBaris('Tahun Ajaran', `${data.tahunAjaran.nama}${data.tahunAjaran.aktif ? ' (Aktif)' : ' (Tidak Aktif)'}`)

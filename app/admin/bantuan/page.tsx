@@ -115,7 +115,7 @@ export default function BantuanPage() {
                     <span
                       style={{
                         width: 22, height: 22, borderRadius: 999, flexShrink: 0,
-                        background: 'var(--adm-primary)', color: '#fff', fontSize: 11,
+                        background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', fontSize: 11,
                         fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}
                     >

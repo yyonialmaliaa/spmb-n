@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { hitungTotalDisetorkan, getMinimalPembayaranAwal, lockTagihanJikaBelum, formatRupiah, HargaTidakDitemukanError } from '@/lib/keuangan'
+import { notifPendaftarBaru } from '@/lib/notifikasiAdmin'
 
 // POST - "Kirim Formulir" (section A2): mengubah draft menjadi status
 // "verified" (masuk ke admin). Ditolak kalau field wajib belum lengkap ATAU
@@ -66,6 +67,16 @@ export async function POST() {
     const updated = await prisma.pendaftaran.update({
       where: { id: pendaftaran.id },
       data: { status: 'verified', asalSekolah, namaOrtu, noOrtu, ttl },
+    })
+
+    // Inilah saat pendaftar online benar-benar masuk antrean kerja admin
+    // (draft -> verified). Sengaja di sini, bukan saat draft dibuat: draft
+    // belum tentu dilanjutkan, dan memang dikecualikan dari semua hitungan.
+    await notifPendaftarBaru({
+      id: updated.id,
+      namaLengkap: updated.namaLengkap,
+      jenjang: updated.jenjang,
+      tahunAjaranId: updated.tahunAjaranId,
     })
 
     return NextResponse.json({ success: true, data: updated })

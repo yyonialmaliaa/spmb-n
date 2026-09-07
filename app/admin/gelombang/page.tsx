@@ -127,7 +127,7 @@ function AdminGelombangInner() {
           <div style={{ flex: 1, minWidth: 140 }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--adm-text)', display: 'flex', alignItems: 'center', gap: 8 }}>
               {g.nama}
-              {g.aktif && <span style={{ background: '#D1FAE5', color: '#065F46', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10 }}>AKTIF</span>}
+              {g.aktif && <span style={{ background: 'var(--adm-success-weak)', color: 'var(--adm-success)', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10 }}>AKTIF</span>}
             </div>
           </div>
 
@@ -170,12 +170,12 @@ function AdminGelombangInner() {
               Aktifkan
             </button>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#065F46', fontSize: 12, fontWeight: 600, padding: '8px 12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--adm-success)', fontSize: 12, fontWeight: 600, padding: '8px 12px' }}>
               <CheckCircle size={14} /> Sedang Berjalan
             </div>
           )}
 
-          <button onClick={() => handleHapus(g)} disabled={savingId === g.id} title="Hapus gelombang" style={{ padding: 8, background: '#FEF2F2', color: '#DC2626', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', opacity: savingId === g.id ? 0.6 : 1 }}>
+          <button onClick={() => handleHapus(g)} disabled={savingId === g.id} title="Hapus gelombang" style={{ padding: 8, background: 'var(--adm-danger-weak)', color: 'var(--adm-danger)', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', opacity: savingId === g.id ? 0.6 : 1 }}>
             <Trash2 size={14} />
           </button>
         </div>
@@ -188,7 +188,7 @@ function AdminGelombangInner() {
       <input
         type="text" value={nama} onChange={e => setNama(e.target.value)}
         placeholder="Nama gelombang baru, mis. Gelombang 4"
-        style={{ flex: 1, padding: '9px 12px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' }}
+        style={{ flex: 1, padding: '9px 12px', border: '1.5px solid var(--adm-border)', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' }}
       />
       <button
         onClick={() => handleTambah(untukAlumni, nama, () => setNama(''), setAdding)}
@@ -219,7 +219,7 @@ function AdminGelombangInner() {
         </p>
 
         {toast && (
-          <div style={{ background: '#D1FAE5', color: '#065F46', padding: '10px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, marginBottom: 16 }}>{toast}</div>
+          <div style={{ background: 'var(--adm-success-weak)', color: 'var(--adm-success)', padding: '10px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, marginBottom: 16 }}>{toast}</div>
         )}
 
         {loading ? (

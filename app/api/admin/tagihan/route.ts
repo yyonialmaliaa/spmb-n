@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { requirePermission, requireJenjang, scopedJenjang } from '@/lib/adminSession'
 import { prisma } from '@/lib/db'
 import { resolveTahunAjaran } from '@/lib/tahunAjaran'
-import { scopePendaftar, isJenjangValid } from '@/lib/pendaftarQuery'
+import { scopePendaftarUang, isJenjangValid } from '@/lib/pendaftarQuery'
 import { hitungRingkasan } from '@/lib/pembayaran-utils'
 
 // GET ?jenjang=&tahunAjaranId=&filter=
@@ -31,7 +31,7 @@ export async function GET(req: Request) {
     if (!tahunAjaran) return NextResponse.json({ data: [], ringkasan: null, tahunAjaran: null })
 
     const rows = await prisma.pendaftaran.findMany({
-      where: scopePendaftar({ tahunAjaranId: tahunAjaran.id, jenjang }),
+      where: scopePendaftarUang({ tahunAjaranId: tahunAjaran.id, jenjang }),
       select: {
         id: true, namaLengkap: true, jenjang: true, jurusan: true, kelas: true,
         hargaPokok: true, gelombang: true, gelombangDiskonNominal: true,

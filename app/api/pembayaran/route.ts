@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { notifPembayaranPerluVerifikasi } from '@/lib/notifikasiAdmin'
 import {
   recalculatePembayaran,
   lockTagihanJikaBelum,
@@ -112,7 +113,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `Minimal pembayaran ${formatRupiah(minRequired)}` }, { status: 400 })
     }
 
-    await prisma.pembayaran.create({
+    const pembayaranBaru = await prisma.pembayaran.create({
       data: {
         pendaftaranId: existing.id,
         angsuranKe,
@@ -126,6 +127,20 @@ export async function POST(req: Request) {
     })
 
     const updated = await recalculatePembayaran(existing.id)
+
+    // Setoran masuk berstatus "menunggu_verifikasi" — inilah pekerjaan yang
+    // menunggu di-ACC petugas loket. Notifikasinya menyusul SETELAH baris
+    // pembayaran tersimpan, supaya tidak pernah ada notifikasi untuk setoran
+    // yang ternyata gagal dicatat.
+    await notifPembayaranPerluVerifikasi({
+      pendaftaranId: existing.id,
+      pembayaranId: pembayaranBaru.id,
+      namaLengkap: existing.namaLengkap,
+      jenjang: existing.jenjang,
+      tahunAjaranId: existing.tahunAjaranId,
+      nominal: nominalNum,
+      angsuranKe,
+    })
 
     return NextResponse.json({ success: true, data: updated })
   } catch (err) {

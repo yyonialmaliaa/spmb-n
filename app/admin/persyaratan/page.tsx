@@ -2,7 +2,7 @@
 
 import { useCallback, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { GripVertical, Info, Plus, Trash2 } from 'lucide-react';
+import { ExternalLink, FileText, GripVertical, Info, Plus, Trash2, Upload } from 'lucide-react';
 import { TopHeader } from '@/components/admin/TopHeader';
 import { useAdmin } from '@/components/admin/AdminProvider';
 import {
@@ -36,6 +36,7 @@ interface Baris {
   aktif: boolean;
   urutan: number;
   url: string | null;
+  namaFile: string | null;
 }
 
 type Kategori = 'pendaftaran' | 'daftar_ulang';
@@ -56,6 +57,7 @@ function PersyaratanInner() {
   const [memproses, setMemproses] = useState(false);
 
   const [form, setForm] = useState({ nama: '', deskripsi: '', fieldKey: '', wajib: true });
+  const [mengunggahId, setMengunggahId] = useState<string | null>(null);
 
   const beriToast = (m: string) => { setToast(m); setTimeout(() => setToast(null), 3000); };
 
@@ -86,6 +88,31 @@ function PersyaratanInner() {
       const e = await res.json().catch(() => null);
       beriToast(e?.error || 'Gagal menyimpan');
       muat();
+    }
+  };
+
+  // Upload berkas template untuk kategori "Dokumen Daftar Ulang" — ini
+  // dokumen yang DIUNDUH pendaftar (tata tertib, surat pernyataan, dst),
+  // beda dari kategori "Berkas Pendaftaran" yang justru DIUNGGAH pendaftar.
+  const handleUpload = async (b: Baris, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { beriToast('Ukuran file maksimal 5MB'); return; }
+    setMengunggahId(b.id);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('fieldName', `persyaratan-${b.id}`);
+      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const d = await res.json();
+      if (!res.ok) { beriToast(d.error || 'Gagal mengunggah file'); return; }
+      await ubah(b, { url: d.path, namaFile: file.name });
+      beriToast('Berkas berhasil diunggah');
+    } catch {
+      beriToast('Gagal mengunggah, coba lagi');
+    } finally {
+      setMengunggahId(null);
+      e.target.value = '';
     }
   };
 
@@ -215,6 +242,7 @@ function PersyaratanInner() {
                         <th style={{ width: 44 }}>No</th>
                         <th>Nama Persyaratan</th>
                         {kategori === 'pendaftaran' && <th>Berkas Terkait</th>}
+                        {kategori === 'daftar_ulang' && <th style={{ width: 220 }}>Berkas</th>}
                         <th style={{ width: 110 }}>Sifat</th>
                         <th style={{ width: 100 }}>Status</th>
                         <th style={{ width: 70, textAlign: 'right' }}>Aksi</th>
@@ -268,6 +296,43 @@ function PersyaratanInner() {
                                   ))}
                                 </select>
                               </PermissionGate>
+                            </td>
+                          )}
+
+                          {kategori === 'daftar_ulang' && (
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                {b.url ? (
+                                  <a
+                                    href={b.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--adm-secondary)', fontWeight: 600, textDecoration: 'none', minWidth: 0, overflow: 'hidden' }}
+                                  >
+                                    <FileText size={13} style={{ flexShrink: 0 }} />
+                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.namaFile || 'Lihat berkas'}</span>
+                                    <ExternalLink size={11} style={{ flexShrink: 0 }} />
+                                  </a>
+                                ) : (
+                                  <span style={{ fontSize: 12, color: 'var(--adm-text-faint)' }}>Belum ada berkas</span>
+                                )}
+                                <PermissionGate resource="persyaratan" action="update">
+                                  <label
+                                    className="adm-btn adm-btn--ghost adm-btn--sm"
+                                    style={{ cursor: mengunggahId === b.id ? 'wait' : 'pointer', flexShrink: 0 }}
+                                  >
+                                    <Upload size={12} />
+                                    {mengunggahId === b.id ? 'Mengunggah…' : b.url ? 'Ganti' : 'Unggah'}
+                                    <input
+                                      type="file"
+                                      accept=".doc,.docx,.pdf"
+                                      onChange={e => handleUpload(b, e)}
+                                      disabled={mengunggahId === b.id}
+                                      style={{ display: 'none' }}
+                                    />
+                                  </label>
+                                </PermissionGate>
+                              </div>
                             </td>
                           )}
 

@@ -3,7 +3,7 @@ import type { Prisma } from '@prisma/client'
 import { requirePermission, requireJenjang, scopedJenjang } from '@/lib/adminSession'
 import { prisma } from '@/lib/db'
 import { resolveTahunAjaran } from '@/lib/tahunAjaran'
-import { scopePendaftar, isJenjangValid } from '@/lib/pendaftarQuery'
+import { scopePendaftarUang, isJenjangValid } from '@/lib/pendaftarQuery'
 
 // GET ?jenjang=&tahunAjaranId=&jenis=&status=
 //
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
       // Transaksi selalu mengikuti pendaftar yang sah pada tahun ajaran &
       // jenjang yang sedang dibuka — memakai aturan scope yang sama dengan
       // seluruh sistem, bukan filter sendiri.
-      pendaftaran: scopePendaftar({ tahunAjaranId: tahunAjaran.id, jenjang }),
+      pendaftaran: scopePendaftarUang({ tahunAjaranId: tahunAjaran.id, jenjang }),
       ...(jenis ? { jenis } : {}),
       ...(status ? { status } : {}),
     }

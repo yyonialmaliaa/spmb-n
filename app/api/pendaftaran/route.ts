@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { notifRevisiMasuk } from '@/lib/notifikasiAdmin'
 
 const JENJANG_VALID = ['smp', 'sma', 'smk']
 
@@ -134,6 +135,17 @@ export async function PUT(req: Request) {
         catatan: null, // reset catatan admin
       },
     })
+
+    // Revisi kembali masuk antrean verifikasi, jadi Front Office perlu tahu —
+    // sama seperti pendaftar baru, hanya kalimatnya yang berbeda.
+    await notifRevisiMasuk({
+      id: updated.id,
+      namaLengkap: updated.namaLengkap,
+      jenjang: updated.jenjang,
+      tahunAjaranId: updated.tahunAjaranId,
+      revisiKe: updated.revisiCount,
+    })
+
     return NextResponse.json({ success: true, data: updated })
   } catch (err) {
     console.error('Revisi error:', err)

@@ -322,13 +322,13 @@ function TambahPendaftarOfflineInner() {
       </header>
 
       <div style={{ maxWidth: 800, margin: '0 auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
-        {error && <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: 12, fontSize: 13, color: '#991B1B' }}>{error}</div>}
-        {success && !error && <div style={{ background: '#F0FDF4', border: '1px solid #A7F3D0', borderRadius: 8, padding: 12, fontSize: 13, color: '#065F46' }}>{success}</div>}
+        {error && <div style={{ background: 'var(--adm-danger-weak)', border: '1px solid var(--adm-danger-border)', borderRadius: 8, padding: 12, fontSize: 13, color: 'var(--adm-danger)' }}>{error}</div>}
+        {success && !error && <div style={{ background: 'var(--adm-success-weak)', border: '1px solid var(--adm-success-border)', borderRadius: 8, padding: 12, fontSize: 13, color: 'var(--adm-success)' }}>{success}</div>}
 
         <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 4 }}>Akun Login Siswa</h3>
           {hasAccount ? (
-            <p style={{ fontSize: 13, color: '#065F46', background: '#F0FDF4', border: '1px solid #A7F3D0', borderRadius: 8, padding: '10px 12px' }}>
+            <p style={{ fontSize: 13, color: 'var(--adm-success)', background: 'var(--adm-success-weak)', border: '1px solid var(--adm-success-border)', borderRadius: 8, padding: '10px 12px' }}>
               ✓ Sudah punya akun login: <strong>{accountEmail}</strong>. Pendaftar bisa login dari rumah untuk melanjutkan formulir ini.
             </p>
           ) : (
@@ -424,7 +424,7 @@ function TambahPendaftarOfflineInner() {
                   <option value="">Pilih...</option>
                   {jurusanOptions.map(j => <option key={j}>{j}</option>)}
                 </select>
-                {hargaOptions.length === 0 && <p style={{ fontSize: 11, color: '#DC2626', marginTop: 4 }}>Belum ada jurusan tersedia — atur di Panel Harga.</p>}
+                {hargaOptions.length === 0 && <p style={{ fontSize: 11, color: 'var(--adm-danger)', marginTop: 4 }}>Belum ada jurusan tersedia — atur di Panel Harga.</p>}
               </div>
             )}
             <div>
@@ -439,7 +439,7 @@ function TambahPendaftarOfflineInner() {
                     <option value="">Pilih...</option>
                     {opts.map(o => <option key={o.kelas} value={o.kelas}>{labelTier(pecahKelasHarga(o.kelas).tier)}</option>)}
                   </select>
-                ) : <p style={{ fontSize: 12, color: '#DC2626' }}>Belum ada harga untuk pilihan ini.</p>;
+                ) : <p style={{ fontSize: 12, color: 'var(--adm-danger)' }}>Belum ada harga untuk pilihan ini.</p>;
               })()}
             </div>
             {jenjang === 'smp' ? (
@@ -461,19 +461,19 @@ function TambahPendaftarOfflineInner() {
         </div>
 
         <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1E40AF', marginBottom: 14 }}>Data Ayah</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-info)', marginBottom: 14 }}>Data Ayah</h3>
           {renderOrtuBlock('Ayah')}
         </div>
 
         <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#BE185D', marginBottom: 14 }}>Data Ibu</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-ungu)', marginBottom: 14 }}>Data Ibu</h3>
           {renderOrtuBlock('Ibu')}
         </div>
 
         <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: punyaWali ? 16 : 0 }}>
-            <input type="checkbox" checked={punyaWali} onChange={e => setPunyaWali(e.target.checked)} style={{ width: 18, height: 18, accentColor: '#C8973A' }} />
-            <span style={{ fontSize: 14, fontWeight: 700, color: '#065F46' }}>Mempunyai Wali?</span>
+            <input type="checkbox" checked={punyaWali} onChange={e => setPunyaWali(e.target.checked)} style={{ width: 18, height: 18, accentColor: 'var(--adm-secondary)' }} />
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-success)' }}>Mempunyai Wali?</span>
           </label>
           {punyaWali && renderOrtuBlock('Wali')}
         </div>
@@ -504,18 +504,18 @@ function TambahPendaftarOfflineInner() {
                     )}
                   </div>
                   {f.path ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F0FDF4', border: '1px solid #A7F3D0', borderRadius: 8, padding: '8px 12px' }}>
-                      <span style={{ fontSize: 12, color: '#065F46', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>✓ {f.file?.name || 'Tersimpan'}</span>
-                      <button onClick={() => removeFile(item.key)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', flexShrink: 0 }}><X size={14} /></button>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--adm-success-weak)', border: '1px solid var(--adm-success-border)', borderRadius: 8, padding: '8px 12px' }}>
+                      <span style={{ fontSize: 12, color: 'var(--adm-success)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>✓ {f.file?.name || 'Tersimpan'}</span>
+                      <button onClick={() => removeFile(item.key)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--adm-danger)', flexShrink: 0 }}><X size={14} /></button>
                     </div>
                   ) : (
-                    <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, border: '1.5px dashed #D1D5DB', borderRadius: 8, padding: '9px 12px', cursor: f.uploading ? 'wait' : 'pointer', fontSize: 12, color: 'var(--adm-text-muted)' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, border: '1.5px dashed var(--adm-border)', borderRadius: 8, padding: '9px 12px', cursor: f.uploading ? 'wait' : 'pointer', fontSize: 12, color: 'var(--adm-text-muted)' }}>
                       {f.uploading ? <Loader size={14} className="animate-spin" /> : <Upload size={14} />}
                       {f.uploading ? 'Mengupload...' : 'Pilih file'}
                       <input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={e => handleFileChange(item.key, e)} disabled={f.uploading} style={{ display: 'none' }} />
                     </label>
                   )}
-                  {f.error && <p style={{ fontSize: 11, color: '#DC2626', marginTop: 4 }}>{f.error}</p>}
+                  {f.error && <p style={{ fontSize: 11, color: 'var(--adm-danger)', marginTop: 4 }}>{f.error}</p>}
                 </div>
               );
             })}

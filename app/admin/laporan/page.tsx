@@ -159,13 +159,13 @@ function PilihJenjangPrompt({ qsOnly }: { qsOnly: string }) {
 
 function TidakAdaTahunAjaran() {
   return (
-    <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 14, padding: 32, textAlign: 'center', maxWidth: 560, margin: '40px auto' }}>
-      <AlertTriangle size={28} color="#B45309" style={{ marginBottom: 12 }} />
-      <h2 style={{ fontSize: 15, fontWeight: 700, color: '#92400E', marginBottom: 6 }}>Belum Ada Tahun Ajaran Aktif</h2>
-      <p style={{ fontSize: 13, color: '#92400E', lineHeight: 1.6, marginBottom: 18 }}>
+    <div style={{ background: 'var(--adm-warning-weak)', border: '1px solid var(--adm-warning-border)', borderRadius: 14, padding: 32, textAlign: 'center', maxWidth: 560, margin: '40px auto' }}>
+      <AlertTriangle size={28} color="var(--adm-warning)" style={{ marginBottom: 12 }} />
+      <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--adm-warning)', marginBottom: 6 }}>Belum Ada Tahun Ajaran Aktif</h2>
+      <p style={{ fontSize: 13, color: 'var(--adm-warning)', lineHeight: 1.6, marginBottom: 18 }}>
         Laporan tidak dapat ditampilkan atau diexport sampai admin mengaktifkan sebuah tahun ajaran.
       </p>
-      <Link href="/admin/tahun-ajaran" style={{ padding: '9px 18px', background: '#92400E', color: 'var(--adm-text-invert)', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+      <Link href="/admin/tahun-ajaran" style={{ padding: '9px 18px', background: 'var(--adm-warning)', color: 'var(--adm-text-invert)', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
         Atur Tahun Ajaran
       </Link>
     </div>
@@ -184,12 +184,12 @@ function LaporanKonten({ data }: { data: LaporanData }) {
       {/* Ringkasan SPMB */}
       <Section title="Ringkasan SPMB">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14 }}>
-          <Kpi label="Total Pendaftar" val={r.total} icon={Users} color="#0A1628" bg="#F8F9FA" />
-          <Kpi label="Sedang Diverifikasi" val={r.sedangDiverifikasi} icon={RefreshCw} color="#1E40AF" bg="#EFF6FF" />
-          <Kpi label="Diterima" val={r.diterima} icon={CheckCircle} color="#059669" bg="#F0FDF4" />
-          <Kpi label="Ditolak" val={r.ditolak} icon={XCircle} color="#DC2626" bg="#FFF1F2" />
-          <Kpi label="Sudah Daftar Ulang" val={r.daftarUlang} icon={ClipboardCheck} color="#065F46" bg="#F0FDF4" />
-          <Kpi label="Masih Diproses" val={r.masihDiproses} icon={AlertTriangle} color="#D97706" bg="#FFFBEB" />
+          <Kpi label="Total Pendaftar" val={r.total} icon={Users} color="var(--adm-text)" bg="var(--adm-surface-alt)" />
+          <Kpi label="Sedang Diverifikasi" val={r.sedangDiverifikasi} icon={RefreshCw} color="var(--adm-info)" bg="var(--adm-info-weak)" />
+          <Kpi label="Diterima" val={r.diterima} icon={CheckCircle} color="var(--adm-success)" bg="var(--adm-success-weak)" />
+          <Kpi label="Ditolak" val={r.ditolak} icon={XCircle} color="var(--adm-danger)" bg="var(--adm-danger-weak)" />
+          <Kpi label="Sudah Daftar Ulang" val={r.daftarUlang} icon={ClipboardCheck} color="var(--adm-success)" bg="var(--adm-success-weak)" />
+          <Kpi label="Masih Diproses" val={r.masihDiproses} icon={AlertTriangle} color="var(--adm-warning)" bg="var(--adm-warning-weak)" />
         </div>
       </Section>
 
@@ -259,7 +259,7 @@ function LaporanKonten({ data }: { data: LaporanData }) {
                 return (
                   <div key={t.periode} style={{ flex: '0 0 auto', minWidth: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>
                     <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 6 }}>{t.jumlah > 0 ? t.jumlah : ''}</span>
-                    <div style={{ width: '100%', maxWidth: 36, height: `${t.jumlah > 0 ? Math.max((t.jumlah / maxTren) * 100, 6) : 3}%`, background: t.jumlah > 0 ? 'linear-gradient(180deg, #C8973A, #A97B26)' : '#F3F4F6', borderRadius: '6px 6px 2px 2px', transition: 'height 0.5s' }} />
+                    <div style={{ width: '100%', maxWidth: 36, height: `${t.jumlah > 0 ? Math.max((t.jumlah / maxTren) * 100, 6) : 3}%`, background: t.jumlah > 0 ? 'linear-gradient(180deg, var(--adm-secondary), var(--adm-secondary-hover))' : 'var(--adm-text-faint)', borderRadius: '6px 6px 2px 2px', transition: 'height 0.5s' }} />
                     <span style={{ fontSize: 10.5, color: 'var(--adm-text-faint)', marginTop: 8, whiteSpace: 'nowrap' }}>{t.periode}</span>
                   </div>
                 );
@@ -267,10 +267,10 @@ function LaporanKonten({ data }: { data: LaporanData }) {
             </div>
             <div style={{ display: 'flex', gap: 20, marginTop: 18, flexWrap: 'wrap' }}>
               {data.trenInsight.ramai && (
-                <InsightPill icon={TrendingUp} color="#059669" bg="#F0FDF4" text={`Paling ramai: ${data.trenInsight.ramai.periode} (${data.trenInsight.ramai.jumlah} pendaftar)`} />
+                <InsightPill icon={TrendingUp} color="var(--adm-success)" bg="var(--adm-success-weak)" text={`Paling ramai: ${data.trenInsight.ramai.periode} (${data.trenInsight.ramai.jumlah} pendaftar)`} />
               )}
               {data.trenInsight.sepi && (
-                <InsightPill icon={TrendingDown} color="#B45309" bg="#FFFBEB" text={`Paling sepi: ${data.trenInsight.sepi.periode} (${data.trenInsight.sepi.jumlah} pendaftar)`} />
+                <InsightPill icon={TrendingDown} color="var(--adm-warning)" bg="var(--adm-warning-weak)" text={`Paling sepi: ${data.trenInsight.sepi.periode} (${data.trenInsight.sepi.jumlah} pendaftar)`} />
               )}
             </div>
           </>
@@ -285,7 +285,7 @@ function LaporanKonten({ data }: { data: LaporanData }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {data.asalSekolah.map(a => (
               <div key={a.label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 4px', borderBottom: '1px solid var(--adm-border)' }}>
-                <span style={{ width: 22, height: 22, borderRadius: '50%', background: a.ranking <= 3 ? '#FFFBEB' : '#F8F9FA', color: a.ranking <= 3 ? '#B45309' : '#9CA3AF', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{a.ranking}</span>
+                <span style={{ width: 22, height: 22, borderRadius: '50%', background: a.ranking <= 3 ? 'var(--adm-warning-weak)' : 'var(--adm-text-faint)', color: a.ranking <= 3 ? 'var(--adm-warning)' : 'var(--adm-text-faint)', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{a.ranking}</span>
                 <span style={{ fontSize: 13, color: 'var(--adm-text)', flex: 1 }}>{a.label}</span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--adm-text)' }}>{a.jumlah}</span>
               </div>
@@ -299,8 +299,8 @@ function LaporanKonten({ data }: { data: LaporanData }) {
         <Section title="Komposisi Jenis Kelamin">
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
             {data.genderKomposisi.map(g => (
-              <div key={g.label} style={{ flex: 1, minWidth: 130, background: g.label === 'Laki-laki' ? '#EFF6FF' : g.label === 'Perempuan' ? '#FDF2F8' : '#F8F9FA', borderRadius: 12, padding: '16px 18px', textAlign: 'center' }}>
-                <div className="font-display" style={{ fontSize: 26, fontWeight: 700, color: g.label === 'Laki-laki' ? '#2563EB' : g.label === 'Perempuan' ? '#DB2777' : '#6B7280' }}>{g.jumlah}</div>
+              <div key={g.label} style={{ flex: 1, minWidth: 130, background: g.label === 'Laki-laki' ? 'var(--adm-info-weak)' : g.label === 'Perempuan' ? 'var(--adm-ungu-weak)' : 'var(--adm-text-faint)', borderRadius: 12, padding: '16px 18px', textAlign: 'center' }}>
+                <div className="font-display" style={{ fontSize: 26, fontWeight: 700, color: g.label === 'Laki-laki' ? 'var(--adm-info)' : g.label === 'Perempuan' ? 'var(--adm-ungu)' : 'var(--adm-text-muted)' }}>{g.jumlah}</div>
                 <div style={{ fontSize: 12, color: 'var(--adm-text-muted)', marginTop: 3 }}>{g.label}</div>
                 <div style={{ fontSize: 11, color: 'var(--adm-text-faint)' }}>{g.persen}%</div>
               </div>
@@ -312,16 +312,16 @@ function LaporanKonten({ data }: { data: LaporanData }) {
       {/* Pembayaran */}
       <Section title="Ringkasan Pembayaran">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14, marginBottom: 18 }}>
-          <Kpi label="Total Tagihan" val={formatRupiah(data.pembayaran.totalTagihan)} icon={DollarSign} color="#0A1628" bg="#F8F9FA" />
-          <Kpi label="Total Pembayaran Masuk" val={formatRupiah(data.pembayaran.totalDibayar)} icon={CheckCircle} color="#059669" bg="#F0FDF4" />
-          {data.pembayaran.totalRefund > 0 && <Kpi label="Dana Dikembalikan" val={formatRupiah(data.pembayaran.totalRefund)} icon={AlertTriangle} color="#B45309" bg="#FFFBEB" />}
+          <Kpi label="Total Tagihan" val={formatRupiah(data.pembayaran.totalTagihan)} icon={DollarSign} color="var(--adm-text)" bg="var(--adm-surface-alt)" />
+          <Kpi label="Total Pembayaran Masuk" val={formatRupiah(data.pembayaran.totalDibayar)} icon={CheckCircle} color="var(--adm-success)" bg="var(--adm-success-weak)" />
+          {data.pembayaran.totalRefund > 0 && <Kpi label="Dana Dikembalikan" val={formatRupiah(data.pembayaran.totalRefund)} icon={AlertTriangle} color="var(--adm-warning)" bg="var(--adm-warning-weak)" />}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {[
-            { label: 'Lunas', val: data.pembayaran.lunas, color: '#059669', bg: '#D1FAE5' },
-            { label: 'Cicilan Berjalan', val: data.pembayaran.cicilan, color: '#7C3AED', bg: '#F5F3FF' },
-            { label: 'Menunggu Verifikasi', val: data.pembayaran.menunggu, color: '#2563EB', bg: '#DBEAFE' },
-            { label: 'Belum Bayar', val: data.pembayaran.belumBayar, color: 'var(--adm-text-faint)', bg: '#F3F4F6' },
+            { label: 'Lunas', val: data.pembayaran.lunas, color: 'var(--adm-success)', bg: 'var(--adm-success-weak)' },
+            { label: 'Cicilan Berjalan', val: data.pembayaran.cicilan, color: 'var(--adm-ungu)', bg: 'var(--adm-ungu-weak)' },
+            { label: 'Menunggu Verifikasi', val: data.pembayaran.menunggu, color: 'var(--adm-info)', bg: 'var(--adm-info-weak)' },
+            { label: 'Belum Bayar', val: data.pembayaran.belumBayar, color: 'var(--adm-text-faint)', bg: 'var(--adm-surface-alt)' },
           ].map(s => (
             <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ background: s.bg, color: s.color, padding: '2px 8px', borderRadius: 8, fontSize: 10.5, fontWeight: 700, minWidth: 140, textAlign: 'center' }}>{s.label}</span>
@@ -352,8 +352,8 @@ function LaporanKonten({ data }: { data: LaporanData }) {
                     <td style={{ padding: '10px 14px', fontWeight: 600, color: 'var(--adm-text)' }}>{g.nama}</td>
                     <td style={{ padding: '10px 14px', color: 'var(--adm-text)' }}>{g.jumlah}</td>
                     <td style={{ padding: '10px 14px', color: 'var(--adm-text-muted)' }}>{g.persen}%</td>
-                    <td style={{ padding: '10px 14px', color: '#1E40AF' }}>{g.verified}</td>
-                    <td style={{ padding: '10px 14px', color: '#059669' }}>{g.diterima}</td>
+                    <td style={{ padding: '10px 14px', color: 'var(--adm-info)' }}>{g.verified}</td>
+                    <td style={{ padding: '10px 14px', color: 'var(--adm-success)' }}>{g.diterima}</td>
                   </tr>
                 ))}
               </tbody>
@@ -378,8 +378,8 @@ function LaporanKonten({ data }: { data: LaporanData }) {
 }
 
 function warnaStatus(status: string) {
-  const map: Record<string, string> = { draft: '#9CA3AF', verified: '#2563EB', diterima_berkas: '#059669', ditolak: '#DC2626' };
-  return map[status] || '#6B7280';
+  const map: Record<string, string> = { draft: 'var(--adm-text-faint)', verified: 'var(--adm-info)', diterima_berkas: 'var(--adm-success)', ditolak: 'var(--adm-danger)' };
+  return map[status] || 'var(--adm-text-muted)';
 }
 
 function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
@@ -415,7 +415,7 @@ function MinatTable({ rows }: { rows: { label: string; jumlah: number; persen: n
             <span style={{ fontSize: 12, color: 'var(--adm-text-muted)' }}>{row.jumlah} ({row.persen}%)</span>
           </div>
           <div style={{ height: 8, background: 'var(--adm-neutral-weak)', borderRadius: 4, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${(row.jumlah / maxVal) * 100}%`, background: 'linear-gradient(90deg, #123524, #C8973A)', borderRadius: 4 }} />
+            <div style={{ height: '100%', width: `${(row.jumlah / maxVal) * 100}%`, background: 'linear-gradient(90deg, var(--adm-primary), var(--adm-secondary))', borderRadius: 4 }} />
           </div>
         </div>
       ))}
@@ -429,9 +429,9 @@ function MinatInsight({ rows, satuan }: { rows: { label: string; jumlah: number;
   const tersedikit = rows[rows.length - 1];
   return (
     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 18 }}>
-      <InsightPill icon={TrendingUp} color="#059669" bg="#F0FDF4" text={`${satuan[0].toUpperCase()}${satuan.slice(1)} paling diminati: ${terbanyak.label} (${terbanyak.jumlah})`} />
+      <InsightPill icon={TrendingUp} color="var(--adm-success)" bg="var(--adm-success-weak)" text={`${satuan[0].toUpperCase()}${satuan.slice(1)} paling diminati: ${terbanyak.label} (${terbanyak.jumlah})`} />
       {rows.length > 1 && (
-        <InsightPill icon={TrendingDown} color="#B45309" bg="#FFFBEB" text={`Paling sedikit diminati: ${tersedikit.label} (${tersedikit.jumlah})`} />
+        <InsightPill icon={TrendingDown} color="var(--adm-warning)" bg="var(--adm-warning-weak)" text={`Paling sedikit diminati: ${tersedikit.label} (${tersedikit.jumlah})`} />
       )}
     </div>
   );

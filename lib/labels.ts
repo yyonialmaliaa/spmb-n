@@ -148,3 +148,46 @@ export const FIELD_BERKAS: Record<string, string> = {
   fileKip: 'KIP / PKH / KKS',
   fileFoto: 'Pas Foto',
 }
+
+// ---------------------------------------------------------------------------
+// Program keahlian (jurusan) — KHUSUS SMK.
+//
+// SMP dan SMA tidak punya jurusan, jadi apa pun yang memakai modul ini wajib
+// memeriksa jenjang lebih dulu (lihat `punyaJurusan`). Sebelumnya palet ini
+// ditulis ulang di halaman Pendaftar dan Dashboard dengan warna yang BERBEDA
+// untuk program yang sama — PPLG biru di satu tempat, ungu di tempat lain.
+//
+// Daftarnya sengaja tetap 6 program yang sudah ada di sistem. Jangan menambah
+// program baru di sini; itu keputusan kurikulum, bukan keputusan tampilan.
+// ---------------------------------------------------------------------------
+
+export type Jurusan = { kode: string; nama: string; warna: string; latar: string }
+
+export const JURUSAN_SMK: Jurusan[] = [
+  { kode: 'PPLG', nama: 'Pengembangan Perangkat Lunak & Gim', warna: 'var(--adm-info)',      latar: 'var(--adm-info-weak)' },
+  { kode: 'TJKT', nama: 'Teknik Jaringan Komputer & Telekomunikasi', warna: 'var(--adm-tertiary)', latar: 'var(--adm-tertiary-weak)' },
+  { kode: 'DKV',  nama: 'Desain Komunikasi Visual',          warna: 'var(--adm-ungu)',       latar: 'var(--adm-ungu-weak)' },
+  { kode: 'MPLB', nama: 'Manajemen Perkantoran & Layanan Bisnis', warna: 'var(--adm-warning)', latar: 'var(--adm-warning-weak)' },
+  { kode: 'BDR',  nama: 'Bisnis Digital & Ritel',            warna: 'var(--adm-danger)',     latar: 'var(--adm-danger-weak)' },
+  { kode: 'PH',   nama: 'Perhotelan',                        warna: 'var(--adm-success)',    latar: 'var(--adm-success-weak)' },
+]
+
+/** Netral untuk pendaftar tanpa jurusan (SMP/SMA) atau kode tak dikenal. */
+export const JURUSAN_NETRAL: Jurusan = {
+  kode: '-', nama: 'Tanpa Program Keahlian',
+  warna: 'var(--adm-text-muted)', latar: 'var(--adm-surface-alt)',
+}
+
+/** Hanya SMK yang memiliki program keahlian. */
+export function punyaJurusan(jenjang: string | null | undefined): boolean {
+  return (jenjang || '').toLowerCase() === 'smk'
+}
+
+/** Cocokkan teks jurusan bebas dari DB ke salah satu program yang terdaftar. */
+export function cariJurusan(nilai: string | null | undefined): Jurusan {
+  const v = (nilai || '').toUpperCase()
+  if (!v) return JURUSAN_NETRAL
+  // Urut dari kode terpanjang supaya "MPLB" tidak keburu cocok dengan "PH".
+  const urut = [...JURUSAN_SMK].sort((a, b) => b.kode.length - a.kode.length)
+  return urut.find(j => v.includes(j.kode)) || { ...JURUSAN_NETRAL, kode: v.slice(0, 4) }
+}

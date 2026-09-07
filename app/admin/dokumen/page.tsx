@@ -80,8 +80,8 @@ export default function AdminDokumenPage() {
               key={t.value}
               onClick={() => setJenjang(t.value)}
               style={{
-                padding: '9px 22px', borderRadius: 10, border: jenjang === t.value ? '2px solid #C8973A' : '1.5px solid #E5E7EB',
-                background: jenjang === t.value ? '#FFFBEB' : 'white', color: jenjang === t.value ? '#92400E' : '#374151',
+                padding: '9px 22px', borderRadius: 10, border: jenjang === t.value ? '2px solid var(--adm-secondary)' : '1.5px solid var(--adm-text-faint)',
+                background: jenjang === t.value ? 'var(--adm-warning-weak)' : 'var(--adm-surface)', color: jenjang === t.value ? 'var(--adm-warning)' : 'var(--adm-text-muted)',
                 fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
               }}
             >
@@ -96,8 +96,8 @@ export default function AdminDokumenPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {list.map(doc => (
               <div key={doc.jenis} style={{ background: 'var(--adm-surface)', borderRadius: 12, padding: 20, border: '1px solid var(--adm-border)', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-                <div style={{ width: 40, height: 40, background: doc.url ? '#F0FDF4' : '#F3F4F6', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <FileText size={18} color={doc.url ? '#059669' : '#9CA3AF'} />
+                <div style={{ width: 40, height: 40, background: doc.url ? 'var(--adm-success-weak)' : 'var(--adm-surface-alt)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <FileText size={18} color={doc.url ? 'var(--adm-success)' : 'var(--adm-text-faint)'} />
                 </div>
                 <div style={{ flex: 1, minWidth: 200 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)' }}>{doc.nama}</div>
@@ -106,7 +106,7 @@ export default function AdminDokumenPage() {
                       {doc.namaFile || 'Lihat file'} <ExternalLink size={11} />
                     </a>
                   ) : (
-                    <div style={{ fontSize: 12, color: '#DC2626', marginTop: 4 }}>Belum ada file diupload untuk jenjang {jenjang.toUpperCase()}</div>
+                    <div style={{ fontSize: 12, color: 'var(--adm-danger)', marginTop: 4 }}>Belum ada file diupload untuk jenjang {jenjang.toUpperCase()}</div>
                   )}
                 </div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: uploadingKey === doc.jenis ? 'wait' : 'pointer', fontFamily: 'inherit' }}>

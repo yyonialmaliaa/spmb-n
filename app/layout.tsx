@@ -14,14 +14,30 @@ const inter = Inter({
   display: 'swap',
 });
 
+// Metadata di sini berlaku untuk SELURUH situs — SPMB, portal pendaftar, dan
+// admin ketiga jenjang. Karena itu penyebutannya tingkat institusi ("Citra
+// Negara"), bukan satu jenjang. Sebelumnya tertulis "SMK Citra Negara",
+// sehingga halaman SMP dan SMA pun ikut terdeskripsikan sebagai SMK.
+// Jenjang yang spesifik disebutkan oleh masing-masing halaman.
 export const metadata: Metadata = {
-  title: 'SMK Citra Negara - Sekolah Menengah Kejuruan Unggulan',
-  description: 'SMK Citra Negara - Mencetak generasi profesional dan berkarakter.',
+  title: 'SPMB Citra Negara - Penerimaan Murid Baru',
+  description: 'Sistem Penerimaan Murid Baru Citra Negara — jenjang SMP, SMA, dan SMK.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id" data-scroll-behavior="smooth" className={inter.variable}>
+    <html
+      lang="id"
+      data-scroll-behavior="smooth"
+      className={inter.variable}
+      // Skrip anti-kedip di bawah mengubah atribut data-tema pada elemen ini
+      // SEBELUM React sempat hydrate (server tidak tahu preferensi tema
+      // pengguna). Tanpa suppressHydrationWarning, React membandingkan HTML
+      // dari server (tanpa data-tema) dengan DOM yang sudah diubah skrip
+      // dan salah menganggapnya sebagai bug — padahal ini memang perilaku
+      // yang disengaja. Ini pola resmi yang sama dipakai library next-themes.
+      suppressHydrationWarning
+    >
       <head>
         {/* Anti-kedip: memasang data-tema sebelum halaman dilukis, sehingga
             pengguna bertema gelap tidak pernah melihat kilatan putih. */}

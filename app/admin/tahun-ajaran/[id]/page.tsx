@@ -141,7 +141,7 @@ export default function LihatDataTahunAjaranPage() {
           </Link>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <h1 style={{ color: 'var(--adm-text-invert)', fontSize: 20, fontWeight: 700 }}>Lihat Kesimpulan — Tahun Ajaran {tahunAjaran.nama}</h1>
-            <span style={{ background: tahunAjaran.aktif ? '#D1FAE5' : 'rgba(255,255,255,0.1)', color: tahunAjaran.aktif ? '#065F46' : 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 10 }}>
+            <span style={{ background: tahunAjaran.aktif ? 'var(--adm-success-weak)' : 'rgba(255,255,255,0.1)', color: tahunAjaran.aktif ? 'var(--adm-success)' : 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 10 }}>
               {tahunAjaran.aktif ? 'AKTIF' : 'TIDAK AKTIF (HISTORIS)'}
             </span>
           </div>
@@ -162,20 +162,20 @@ export default function LihatDataTahunAjaranPage() {
         <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}><Users size={16} color="var(--adm-secondary)" /> Pendaftar</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
-            <div style={statCard('#FAFAFA', '#F0EBE0')}><div style={statLabel}>TOTAL</div><div style={statValue}>{pendaftar.total}</div></div>
-            <div style={statCard('#FAFAFA', '#F0EBE0')}><div style={statLabel}>SMP</div><div style={statValue}>{pendaftar.smp}</div></div>
-            <div style={statCard('#FAFAFA', '#F0EBE0')}><div style={statLabel}>SMA</div><div style={statValue}>{pendaftar.sma}</div></div>
-            <div style={statCard('#FAFAFA', '#F0EBE0')}><div style={statLabel}>SMK</div><div style={statValue}>{pendaftar.smk}</div></div>
-            <div style={statCard('#EFF6FF', '#BFDBFE')}><div style={{ ...statLabel, color: '#1E40AF' }}>ONLINE</div><div style={{ ...statValue, color: '#1E40AF' }}>{pendaftar.online}</div></div>
-            <div style={statCard('#FFF7ED', '#FED7AA')}><div style={{ ...statLabel, color: '#C2410C' }}>OFFLINE</div><div style={{ ...statValue, color: '#C2410C' }}>{pendaftar.offline}</div></div>
+            <div style={statCard('var(--adm-text-faint)', 'var(--adm-text-faint)')}><div style={statLabel}>TOTAL</div><div style={statValue}>{pendaftar.total}</div></div>
+            <div style={statCard('var(--adm-text-faint)', 'var(--adm-text-faint)')}><div style={statLabel}>SMP</div><div style={statValue}>{pendaftar.smp}</div></div>
+            <div style={statCard('var(--adm-text-faint)', 'var(--adm-text-faint)')}><div style={statLabel}>SMA</div><div style={statValue}>{pendaftar.sma}</div></div>
+            <div style={statCard('var(--adm-text-faint)', 'var(--adm-text-faint)')}><div style={statLabel}>SMK</div><div style={statValue}>{pendaftar.smk}</div></div>
+            <div style={statCard('var(--adm-info-weak)', 'var(--adm-info-border)')}><div style={{ ...statLabel, color: 'var(--adm-info)' }}>ONLINE</div><div style={{ ...statValue, color: 'var(--adm-info)' }}>{pendaftar.online}</div></div>
+            <div style={statCard('var(--adm-warning-weak)', 'var(--adm-warning-border)')}><div style={{ ...statLabel, color: 'var(--adm-warning)' }}>OFFLINE</div><div style={{ ...statValue, color: 'var(--adm-warning)' }}>{pendaftar.offline}</div></div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
             {[
-              ['Draft', pendaftar.draft, '#6B7280', '#F3F4F6'],
-              ['Sedang Diverifikasi', pendaftar.verified, '#1E40AF', '#DBEAFE'],
-              ['Terima Berkas', pendaftar.diterima_berkas, '#065F46', '#D1FAE5'],
-              ['Tolak Berkas', pendaftar.ditolak, '#991B1B', '#FEE2E2'],
-              ['Sudah Daftar Ulang', pendaftar.daftarUlang, '#92400E', '#FEF3C7'],
+              ['Draft', pendaftar.draft, 'var(--adm-text-muted)', 'var(--adm-text-faint)'],
+              ['Sedang Diverifikasi', pendaftar.verified, 'var(--adm-info)', 'var(--adm-info-weak)'],
+              ['Terima Berkas', pendaftar.diterima_berkas, 'var(--adm-success)', 'var(--adm-success-weak)'],
+              ['Tolak Berkas', pendaftar.ditolak, 'var(--adm-danger)', 'var(--adm-danger-weak)'],
+              ['Sudah Daftar Ulang', pendaftar.daftarUlang, 'var(--adm-warning)', 'var(--adm-warning-weak)'],
             ].map(([label, val, color, bg]: any) => (
               <span key={label} style={{ background: bg, color, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 10 }}>{label}: {val}</span>
             ))}
@@ -186,12 +186,12 @@ export default function LihatDataTahunAjaranPage() {
         <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}><Wallet size={16} color="var(--adm-secondary)" /> Keuangan</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
-            <div style={statCard('#FAFAFA', '#F0EBE0')}><div style={statLabel}>TOTAL TAGIHAN</div><div style={{ ...statValue, fontSize: 15 }}>{formatRupiah(keuangan.totalTagihan)}</div></div>
-            <div style={statCard('#F0FDF4', '#A7F3D0')}><div style={{ ...statLabel, color: '#059669' }}>TOTAL DIBAYAR</div><div style={{ ...statValue, fontSize: 15, color: '#065F46' }}>{formatRupiah(keuangan.totalDibayar)}</div></div>
-            <div style={statCard('#FFFBEB', '#FDE68A')}><div style={{ ...statLabel, color: '#B45309' }}>SISA PEMBAYARAN</div><div style={{ ...statValue, fontSize: 15, color: '#92400E' }}>{formatRupiah(keuangan.totalSisaBayar)}</div></div>
-            <div style={statCard('#EFF6FF', '#BFDBFE')}><div style={{ ...statLabel, color: '#1E40AF' }}>TOTAL DISKON</div><div style={{ ...statValue, fontSize: 15, color: '#1E40AF' }}>{formatRupiah(keuangan.totalDiskonNominal)}</div></div>
-            <div style={statCard('#FFF7ED', '#FED7AA')}><div style={{ ...statLabel, color: '#C2410C' }}>TOTAL DIKEMBALIKAN</div><div style={{ ...statValue, fontSize: 15, color: '#C2410C' }}>{formatRupiah(keuangan.totalRefund)}</div></div>
-            <div style={statCard('#F5F3FF', '#DDD6FE')}><div style={{ ...statLabel, color: '#5B21B6' }}>CICILAN TERVERIFIKASI</div><div style={{ ...statValue, fontSize: 15, color: '#5B21B6' }}>{keuangan.jumlahCicilanTerverifikasi}</div></div>
+            <div style={statCard('var(--adm-text-faint)', 'var(--adm-text-faint)')}><div style={statLabel}>TOTAL TAGIHAN</div><div style={{ ...statValue, fontSize: 15 }}>{formatRupiah(keuangan.totalTagihan)}</div></div>
+            <div style={statCard('var(--adm-success-weak)', 'var(--adm-success-border)')}><div style={{ ...statLabel, color: 'var(--adm-success)' }}>TOTAL DIBAYAR</div><div style={{ ...statValue, fontSize: 15, color: 'var(--adm-success)' }}>{formatRupiah(keuangan.totalDibayar)}</div></div>
+            <div style={statCard('var(--adm-warning-weak)', 'var(--adm-warning-border)')}><div style={{ ...statLabel, color: 'var(--adm-warning)' }}>SISA PEMBAYARAN</div><div style={{ ...statValue, fontSize: 15, color: 'var(--adm-warning)' }}>{formatRupiah(keuangan.totalSisaBayar)}</div></div>
+            <div style={statCard('var(--adm-info-weak)', 'var(--adm-info-border)')}><div style={{ ...statLabel, color: 'var(--adm-info)' }}>TOTAL DISKON</div><div style={{ ...statValue, fontSize: 15, color: 'var(--adm-info)' }}>{formatRupiah(keuangan.totalDiskonNominal)}</div></div>
+            <div style={statCard('var(--adm-warning-weak)', 'var(--adm-warning-border)')}><div style={{ ...statLabel, color: 'var(--adm-warning)' }}>TOTAL DIKEMBALIKAN</div><div style={{ ...statValue, fontSize: 15, color: 'var(--adm-warning)' }}>{formatRupiah(keuangan.totalRefund)}</div></div>
+            <div style={statCard('var(--adm-ungu-weak)', 'var(--adm-ungu-weak)')}><div style={{ ...statLabel, color: 'var(--adm-ungu)' }}>CICILAN TERVERIFIKASI</div><div style={{ ...statValue, fontSize: 15, color: 'var(--adm-ungu)' }}>{keuangan.jumlahCicilanTerverifikasi}</div></div>
           </div>
         </div>
 
@@ -204,7 +204,7 @@ export default function LihatDataTahunAjaranPage() {
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--adm-secondary)', marginBottom: 6 }}>{j.toUpperCase()} ({harga[j].length} baris)</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 160, overflowY: 'auto' }}>
                   {harga[j].length === 0 ? <p style={{ fontSize: 11, color: 'var(--adm-text-faint)' }}>Belum ada harga</p> : harga[j].map(h => (
-                    <div key={h.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, background: '#FAFAFA', borderRadius: 6, padding: '5px 8px', opacity: h.aktif ? 1 : 0.5 }}>
+                    <div key={h.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, background: 'var(--adm-surface-alt)', borderRadius: 6, padding: '5px 8px', opacity: h.aktif ? 1 : 0.5 }}>
                       <span style={{ color: 'var(--adm-text)' }}>{j === 'smk' ? `${h.jurusan} — ${h.kelas}` : h.kelas}</span>
                       <span style={{ fontWeight: 700, color: 'var(--adm-text)' }}>{formatRupiah(h.nominal)}</span>
                     </div>
@@ -221,7 +221,7 @@ export default function LihatDataTahunAjaranPage() {
           {diskon.length === 0 ? <p style={{ fontSize: 12, color: 'var(--adm-text-faint)' }}>Belum ada diskon untuk tahun ajaran ini.</p> : (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {diskon.map(d => (
-                <span key={d.id} style={{ background: d.aktif ? '#F0FDF4' : '#F3F4F6', color: d.aktif ? '#065F46' : '#9CA3AF', fontSize: 12, fontWeight: 600, padding: '6px 12px', borderRadius: 10, border: `1px solid ${d.aktif ? '#A7F3D0' : '#E5E7EB'}` }}>
+                <span key={d.id} style={{ background: d.aktif ? 'var(--adm-success-weak)' : 'var(--adm-surface-alt)', color: d.aktif ? 'var(--adm-success)' : 'var(--adm-text-faint)', fontSize: 12, fontWeight: 600, padding: '6px 12px', borderRadius: 10, border: `1px solid ${d.aktif ? 'var(--adm-success-border)' : 'var(--adm-text-faint)'}` }}>
                   {d.jenis} ({d.tipeNominal === 'persen' ? `${d.nominal}%` : formatRupiah(d.nominal)})
                 </span>
               ))}
@@ -238,9 +238,9 @@ export default function LihatDataTahunAjaranPage() {
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--adm-secondary)', marginBottom: 6 }}>{j.toUpperCase()}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {gelombang[j].length === 0 ? <p style={{ fontSize: 11, color: 'var(--adm-text-faint)' }}>Belum ada gelombang</p> : gelombang[j].map(g => (
-                    <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, background: '#FAFAFA', borderRadius: 6, padding: '5px 8px' }}>
+                    <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, background: 'var(--adm-surface-alt)', borderRadius: 6, padding: '5px 8px' }}>
                       <span style={{ color: 'var(--adm-text)' }}>{g.nama}{g.untukAlumni ? ' (Alumni)' : ''}</span>
-                      {g.aktif && <span style={{ color: '#065F46', fontWeight: 700 }}>AKTIF</span>}
+                      {g.aktif && <span style={{ color: 'var(--adm-success)', fontWeight: 700 }}>AKTIF</span>}
                     </div>
                   ))}
                 </div>
@@ -254,13 +254,13 @@ export default function LihatDataTahunAjaranPage() {
           <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}><FileText size={16} color="var(--adm-secondary)" /> Ekspor Data</h3>
           <p style={{ fontSize: 12, color: 'var(--adm-text-faint)', marginBottom: 14 }}>Ekspor hanya mengambil data dari tahun ajaran {tahunAjaran.nama} ini.</p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <button onClick={handleExportPendaftar} disabled={!!exporting} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: exporting ? 0.6 : 1 }}>
+            <button onClick={handleExportPendaftar} disabled={!!exporting} className="adm-btn adm-btn--primary adm-btn--sm">
               <Download size={14} /> {exporting === 'pendaftar' ? 'Mengekspor...' : 'Data Pendaftar'}
             </button>
-            <button onClick={handleExportKeuangan} disabled={!!exporting} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: exporting ? 0.6 : 1 }}>
+            <button onClick={handleExportKeuangan} disabled={!!exporting} className="adm-btn adm-btn--primary adm-btn--sm">
               <Download size={14} /> {exporting === 'keuangan' ? 'Mengekspor...' : 'Data Keuangan'}
             </button>
-            <button onClick={handleExportRingkasan} disabled={!!exporting} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: exporting ? 0.6 : 1 }}>
+            <button onClick={handleExportRingkasan} disabled={!!exporting} className="adm-btn adm-btn--primary adm-btn--sm">
               <Download size={14} /> {exporting === 'ringkasan' ? 'Mengekspor...' : 'Ringkasan Keseluruhan'}
             </button>
           </div>

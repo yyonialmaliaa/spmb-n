@@ -1,6 +1,6 @@
 import { prisma } from './db'
 import { resolveTahunAjaran } from './tahunAjaran'
-import { scopePendaftar } from './pendaftarQuery'
+import { scopePendaftarUang } from './pendaftarQuery'
 import { hitungRingkasan } from './pembayaran-utils'
 
 // Laporan Keuangan — kembaran lib/laporanSpmb.ts untuk sisi uang.
@@ -53,7 +53,7 @@ export async function getLaporanKeuangan(
   if (!tahunAjaran) return null
 
   const rows = await prisma.pendaftaran.findMany({
-    where: scopePendaftar({ tahunAjaranId: tahunAjaran.id, jenjang }),
+    where: scopePendaftarUang({ tahunAjaranId: tahunAjaran.id, jenjang }),
     select: {
       jurusan: true,
       kelas: true,

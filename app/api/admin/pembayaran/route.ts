@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requirePermission, requireJenjang, scopedJenjang } from '@/lib/adminSession'
 import { resolveTahunAjaran } from '@/lib/tahunAjaran'
-import { scopePendaftar, isJenjangValid } from '@/lib/pendaftarQuery'
+import { scopePendaftarUang, isJenjangValid } from '@/lib/pendaftarQuery'
 import { prisma } from '@/lib/db'
 import { recalculatePembayaran, hitungRingkasan, lockTagihanJikaBelum, formatRupiah, HargaTidakDitemukanError } from '@/lib/keuangan'
 import { kirimNotifikasi } from '@/lib/notifikasi'
@@ -41,7 +41,7 @@ export async function GET(req: Request) {
 
     const rows = await prisma.pembayaran.findMany({
       where: {
-        pendaftaran: scopePendaftar({ tahunAjaranId: tahunAjaran.id, jenjang }),
+        pendaftaran: scopePendaftarUang({ tahunAjaranId: tahunAjaran.id, jenjang }),
         ...(status === 'semua' ? {} : { status }),
       },
       include: {

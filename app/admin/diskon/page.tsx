@@ -136,7 +136,7 @@ function AdminDiskonInner() {
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
-                    <tr style={{ background: '#FAFAFA' }}>
+                    <tr style={{ background: 'var(--adm-surface-alt)' }}>
                       <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 700, color: 'var(--adm-text)' }}>Jenis Diskon</th>
                       <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 700, color: 'var(--adm-text)' }}>Tipe</th>
                       <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 700, color: 'var(--adm-text)' }}>Nominal</th>
@@ -174,10 +174,10 @@ function AdminDiskonInner() {
                           <span style={{ fontSize: 11, color: 'var(--adm-text-faint)', marginLeft: 6 }}>{d.tipeNominal === 'persen' ? '%' : ''}</span>
                         </td>
                         <td style={{ padding: '8px 16px', textAlign: 'center' }}>
-                          <input type="checkbox" checked={d.aktif} onChange={() => handleToggleAktif(d)} disabled={savingId === d.id} style={{ width: 18, height: 18, accentColor: '#C8973A', cursor: 'pointer' }} />
+                          <input type="checkbox" checked={d.aktif} onChange={() => handleToggleAktif(d)} disabled={savingId === d.id} style={{ width: 18, height: 18, accentColor: 'var(--adm-secondary)', cursor: 'pointer' }} />
                         </td>
                         <td style={{ padding: '8px 16px' }}>
-                          <button onClick={() => handleHapus(d)} disabled={savingId === d.id} title="Hapus" style={{ padding: 8, background: '#FEF2F2', color: '#DC2626', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', opacity: savingId === d.id ? 0.6 : 1 }}>
+                          <button onClick={() => handleHapus(d)} disabled={savingId === d.id} title="Hapus" style={{ padding: 8, background: 'var(--adm-danger-weak)', color: 'var(--adm-danger)', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', opacity: savingId === d.id ? 0.6 : 1 }}>
                             <Trash2 size={14} />
                           </button>
                         </td>
@@ -188,7 +188,7 @@ function AdminDiskonInner() {
               </div>
 
               {/* Tambah diskon baru */}
-              <div style={{ display: 'flex', gap: 8, padding: 16, borderTop: '1px solid var(--adm-border)', flexWrap: 'wrap', background: '#FAFAFA' }}>
+              <div style={{ display: 'flex', gap: 8, padding: 16, borderTop: '1px solid var(--adm-border)', flexWrap: 'wrap', background: 'var(--adm-surface-alt)' }}>
                 <input value={jenisBaru} onChange={e => setJenisBaru(e.target.value)} placeholder="Jenis diskon, mis. Anak Guru/Yayasan" style={{ ...inputStyle, flex: 2, minWidth: 200 }} />
                 <select value={tipeBaru} onChange={e => setTipeBaru(e.target.value as 'rupiah' | 'persen')} style={{ ...inputStyle, minWidth: 100 }}>
                   <option value="rupiah">Rupiah</option>

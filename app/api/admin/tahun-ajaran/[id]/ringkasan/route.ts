@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/adminSession'
-import { scopePendaftar } from '@/lib/pendaftarQuery'
+import { scopePendaftarUang, adalahDraftOnline } from '@/lib/pendaftarQuery'
 import { prisma } from '@/lib/db'
 import { hitungRingkasan } from '@/lib/pembayaran-utils'
 
@@ -21,9 +21,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     // bayar minimal & klik "Kirim Formulir") BUKAN pendaftaran yang sudah
     // masuk — tidak dihitung di ringkasan ini sama sekali. Draft OFFLINE
     // (dibuat admin sendiri lewat "Tambah Pendaftar Offline") tetap dihitung.
-    const [pendaftarList, harga, diskon, gelombang, dokumen] = await Promise.all([
+    const [barisUang, harga, diskon, gelombang, dokumen] = await Promise.all([
       prisma.pendaftaran.findMany({
-        where: scopePendaftar({ tahunAjaranId: id }),
+        where: scopePendaftarUang({ tahunAjaranId: id }),
         include: { pembayaranList: true },
       }),
       prisma.harga.findMany({ where: { tahunAjaranId: id }, orderBy: [{ jenjang: 'asc' }, { jurusan: 'asc' }, { urutan: 'asc' }] }),
@@ -31,6 +31,17 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       prisma.gelombang.findMany({ where: { tahunAjaranId: id }, orderBy: [{ jenjang: 'asc' }, { untukAlumni: 'asc' }, { urutan: 'asc' }] }),
       prisma.dokumenPersyaratan.count({ where: { tahunAjaranId: id } }),
     ])
+
+    // Satu query, dua pertanyaan yang aturannya memang berbeda:
+    //
+    //   pendaftarList -> "berapa pendaftar" : draft online DIKECUALIKAN,
+    //                    supaya angkanya tetap sama dengan Dashboard,
+    //                    halaman Pendaftar, dan Laporan Pendaftaran.
+    //   barisUang     -> "berapa uangnya"   : draft online yang sudah
+    //                    menyetor tetap dihitung, karena uangnya nyata.
+    //
+    // Kalau keduanya dipaksa memakai satu aturan, salah satunya pasti salah.
+    const pendaftarList = barisUang.filter(p => !adalahDraftOnline(p))
 
     const byJenjang = (j: string) => pendaftarList.filter(p => p.jenjang === j).length
 
@@ -51,7 +62,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     // angkanya tidak pernah beda dengan yang dilihat admin/siswa satu-satu.
     let totalTagihan = 0, totalDibayar = 0, totalRefund = 0, totalSisaBayar = 0
     let totalDiskonNominal = 0, jumlahCicilanTerverifikasi = 0, jumlahMenungguVerifikasi = 0
-    for (const p of pendaftarList) {
+    for (const p of barisUang) {
       const tagihan = p.totalTagihan || 0
       const ringkasan = hitungRingkasan(p.pembayaranList, tagihan)
       totalTagihan += tagihan

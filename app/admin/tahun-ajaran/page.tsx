@@ -111,13 +111,13 @@ export default function AdminTahunAjaranPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
             {list.map(t => (
-              <div key={t.id} style={{ background: 'var(--adm-surface)', borderRadius: 12, padding: 20, border: t.aktif ? '2px solid #C8973A' : '1px solid #E5E7EB', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+              <div key={t.id} style={{ background: 'var(--adm-surface)', borderRadius: 12, padding: 20, border: t.aktif ? '2px solid var(--adm-secondary)' : '1px solid var(--adm-text-faint)', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
                 <div style={{ flex: 1, minWidth: 140 }}>
                   {editingId === t.id ? (
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       <input
                         value={editingNama} onChange={e => setEditingNama(e.target.value)} autoFocus
-                        style={{ padding: '6px 10px', border: '1.5px solid #C8973A', borderRadius: 8, fontSize: 14, fontWeight: 700, fontFamily: 'inherit' }}
+                        style={{ padding: '6px 10px', border: '1.5px solid var(--adm-secondary)', borderRadius: 8, fontSize: 14, fontWeight: 700, fontFamily: 'inherit' }}
                       />
                       <button onClick={() => handleSimpanEdit(t)} disabled={savingId === t.id} style={{ padding: '6px 12px', background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Simpan</button>
                       <button onClick={cancelEdit} style={{ padding: '6px 12px', background: 'transparent', color: 'var(--adm-text-muted)', border: '1px solid var(--adm-border)', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Batal</button>
@@ -125,7 +125,7 @@ export default function AdminTahunAjaranPage() {
                   ) : (
                     <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--adm-text)', display: 'flex', alignItems: 'center', gap: 8 }}>
                       {t.nama}
-                      {t.aktif && <span style={{ background: '#D1FAE5', color: '#065F46', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10 }}>AKTIF</span>}
+                      {t.aktif && <span style={{ background: 'var(--adm-success-weak)', color: 'var(--adm-success)', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10 }}>AKTIF</span>}
                       <button onClick={() => startEdit(t)} title="Ubah nama" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--adm-text-faint)', display: 'flex', padding: 2 }}>
                         <Pencil size={13} />
                       </button>
@@ -137,11 +137,11 @@ export default function AdminTahunAjaranPage() {
                   </div>
                 </div>
 
-                <Link href={`/admin/tahun-ajaran/${t.id}`} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: '#EFF6FF', color: '#1E40AF', border: '1px solid #BFDBFE', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+                <Link href={`/admin/tahun-ajaran/${t.id}`} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: 'var(--adm-info-weak)', color: 'var(--adm-info)', border: '1px solid var(--adm-info-border)', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
                   <Eye size={13} /> Lihat Kesimpulan
                 </Link>
 
-                <Link href={`/admin/dashboard?tahunAjaranId=${t.id}`} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: '#FFFBEB', color: '#92400E', border: '1px solid #FDE68A', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+                <Link href={`/admin/dashboard?tahunAjaranId=${t.id}`} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: 'var(--adm-warning-weak)', color: 'var(--adm-warning)', border: '1px solid var(--adm-warning-border)', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
                   <LayoutDashboard size={13} /> Lihat Data
                 </Link>
 
@@ -150,12 +150,12 @@ export default function AdminTahunAjaranPage() {
                     Aktifkan
                   </button>
                 ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#065F46', fontSize: 12, fontWeight: 600, padding: '8px 4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--adm-success)', fontSize: 12, fontWeight: 600, padding: '8px 4px' }}>
                     <CheckCircle size={14} /> Sedang Berjalan
                   </div>
                 )}
 
-                <button onClick={() => handleHapus(t)} disabled={savingId === t.id || t.aktif} title={t.aktif ? 'Tahun ajaran aktif tidak bisa dihapus' : 'Hapus tahun ajaran'} style={{ padding: 8, background: t.aktif ? '#F3F4F6' : '#FEF2F2', color: t.aktif ? '#D1D5DB' : '#DC2626', border: 'none', borderRadius: 8, cursor: t.aktif ? 'not-allowed' : 'pointer', display: 'flex' }}>
+                <button onClick={() => handleHapus(t)} disabled={savingId === t.id || t.aktif} title={t.aktif ? 'Tahun ajaran aktif tidak bisa dihapus' : 'Hapus tahun ajaran'} style={{ padding: 8, background: t.aktif ? 'var(--adm-surface-alt)' : 'var(--adm-danger-weak)', color: t.aktif ? 'var(--adm-text-faint)' : 'var(--adm-danger)', border: 'none', borderRadius: 8, cursor: t.aktif ? 'not-allowed' : 'pointer', display: 'flex' }}>
                   <Trash2 size={14} />
                 </button>
               </div>
@@ -166,7 +166,7 @@ export default function AdminTahunAjaranPage() {
         <div style={{ display: 'flex', gap: 8, background: 'var(--adm-surface)', border: '1px solid var(--adm-border)', borderRadius: 12, padding: 16, flexWrap: 'wrap' }}>
           <input
             value={namaBaru} onChange={e => setNamaBaru(e.target.value)} placeholder="Contoh: 2027/2028"
-            style={{ flex: 1, minWidth: 200, padding: '9px 12px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' }}
+            style={{ flex: 1, minWidth: 200, padding: '9px 12px', border: '1.5px solid var(--adm-border)', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' }}
           />
           <button onClick={handleTambah} disabled={adding} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: adding ? 0.6 : 1 }}>
             <Plus size={14} /> Tambah Tahun Ajaran
