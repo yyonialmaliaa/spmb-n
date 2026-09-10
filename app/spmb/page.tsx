@@ -9,7 +9,6 @@ import { Intro } from '@/components/landing/Intro'
 import { Values } from '@/components/landing/Values'
 import { JenjangStory } from '@/components/landing/JenjangStory'
 import { Experience } from '@/components/landing/Experience'
-import { SMKPrograms } from '@/components/landing/SMKPrograms'
 import { AlurSPMB } from '@/components/landing/AlurSPMB'
 import { JadwalSPMB } from '@/components/landing/JadwalSPMB'
 import { Biaya } from '@/components/landing/Biaya'
@@ -33,20 +32,24 @@ export const dynamic = 'force-dynamic'
 /**
  * Landing page SPMB Citra Negara.
  *
- * Server component: seluruh angka (tahun ajaran, jadwal, harga, persyaratan,
- * program keahlian) sudah ada di HTML pertama, dibaca langsung dari database
- * yang sama dengan yang dikelola admin.
+ * Server component: seluruh angka (tahun ajaran, jadwal, harga, persyaratan)
+ * sudah ada di HTML pertama, dibaca langsung dari database yang sama dengan
+ * yang dikelola admin.
  *
  * SUMBU UTAMANYA MENDATAR di layar lebar — gulir ke bawah memajukan cerita ke
  * kanan, satu bab satu layar. Deretan yang tadinya bergerak mendatar (jenjang,
- * program keahlian, alur) otomatis membalik jadi menurun di dalam babnya,
- * sehingga tidak ada dua gulir mendatar yang saling berebut.
+ * alur) otomatis membalik jadi menurun di dalam babnya, sehingga tidak ada
+ * dua gulir mendatar yang saling berebut.
  *
  * Di ponsel dan bagi pengguna yang meminta gerak dikurangi, seluruhnya kembali
  * menurun seperti halaman biasa.
  *
- * Urutan bab tetap: hero → intro → nilai → jenjang → pengalaman → program SMK
- * → alur → jadwal → biaya → persyaratan → mengapa → penutup → footer.
+ * Urutan bab tetap: hero → intro → nilai → jenjang → pengalaman → alur →
+ * jadwal → biaya → persyaratan → mengapa → penutup → footer. Program keahlian
+ * SMK tidak lagi tampil sebagai bab tersendiri di sini — daftarnya masih bisa
+ * dilihat di halaman detail /spmb/jenjang/smk (yang punya markup sendiri,
+ * tidak lewat komponen SMKPrograms — komponen itu sudah dihapus karena
+ * setelah ini tidak dipakai di mana pun lagi).
  */
 export default async function LandingSPMB() {
   const data = await getDataLanding()
@@ -68,7 +71,6 @@ export default async function LandingSPMB() {
     { kunci: 'jenjang',     nama: 'Jenjang',              lebar: true, id: 'bab-jenjang',
       isi: <JenjangStory daftar={data.jenjang.map(j => ({ jenjang: j.jenjang, singkat: j.singkat, label: j.label }))} /> },
     { kunci: 'pengalaman',  nama: 'Pengalaman',           lebar: true, isi: <Experience /> },
-    { kunci: 'program',     nama: 'Program Keahlian',     lebar: true, isi: <SMKPrograms program={data.programSMK} /> },
     { kunci: 'alur',        nama: 'Alur SPMB',            lebar: true, tinggi: true, isi: <AlurSPMB /> },
     { kunci: 'jadwal',      nama: 'Jadwal',               lebar: true, isi: <JadwalSPMB jenjang={data.jenjang} /> },
     { kunci: 'biaya',       nama: 'Biaya',                lebar: true, isi: <Biaya jenjang={data.jenjang} /> },

@@ -312,18 +312,3 @@ export function useMasuk(ref: React.RefObject<HTMLElement | null>) {
       : (window.innerHeight - k.top) / (window.innerHeight || 1),
   )
 }
-
-/**
- * 0 selagi bagian masih di puncak layar, 1 setelah tergulir sepenuhnya
- * lewat tepi ATAS — SELALU menurun, tidak ikut berbalik ke mendatar seperti
- * `useKeluar`.
- *
- * Dipakai untuk bab yang isinya bertumpuk MENURUN di dalam dirinya sendiri
- * (bab `tinggi`, mis. penutup yang diikuti footer) — gulir di dalam bab itu
- * selalu vertikal walau cerita di LUARnya sedang berjalan mendatar, jadi
- * mengukurnya lewat sumbu `arah` seperti `useKeluar` akan salah membaca
- * gulir mendatar padahal yang sebenarnya bergerak adalah isinya ke atas.
- */
-export function useKeluarBawah(ref: React.RefObject<HTMLElement | null>) {
-  return useProgres(ref, k => -k.top / (k.height || 1))
-}

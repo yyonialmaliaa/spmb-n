@@ -1,16 +1,15 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { TopHeader } from '@/components/admin/TopHeader';
 import { AuditTrail } from '@/components/admin/AuditTrail';
-import { Plus, Trash2, ArrowRight } from 'lucide-react';
+import { EmptyState } from '@/components/admin/ui';
+import { useAdmin } from '@/components/admin/AdminProvider';
+import { JENJANG_SINGKAT } from '@/lib/labels';
+import { Plus, Trash2 } from 'lucide-react';
 
 type HargaRow = { id: string; jenjang: string; jurusan: string; kelas: string; nominal: number; aktif: boolean };
 type Pengaturan = { minimalPembayaranAwal: number; minimalCicilan: number };
-type Jenjang = 'smp' | 'sma' | 'smk';
-
-const JENJANG_LABEL: Record<Jenjang, string> = { smp: 'SMP', sma: 'SMA', smk: 'SMK' };
 
 export default function AdminHargaPage() {
   return (
@@ -22,11 +21,14 @@ export default function AdminHargaPage() {
 
 function AdminHargaInner() {
   const searchParams = useSearchParams();
-  const jenjangParam = searchParams.get('jenjang');
-  // Jenjang HANYA berasal dari URL — SMP/SMA/SMK masing-masing jadi halaman
-  // terkunci sendiri-sendiri, tidak ada tab untuk pindah jenjang di sini.
-  // Kalau belum ada jenjang di URL, tampilkan pemilih jenjang dulu.
-  const jenjang: Jenjang | null = (['smp', 'sma', 'smk'].includes(jenjangParam || '') ? jenjangParam : null) as Jenjang | null;
+  // Jenjang datang dari konteks admin bersama (URL -> scope akun -> bawaan
+  // SMP), BUKAN lagi ditebak sendiri dari URL di sini — sebelumnya, begitu
+  // URL tidak membawa ?jenjang=, halaman ini menampilkan pemilih tiga kartu
+  // sendiri, padahal "Ganti Jenjang" di sidebar sudah menyediakan cara yang
+  // sama persis. SMP/SMA/SMK tetap terpisah (tidak ada tab pindah jenjang
+  // DI DALAM halaman ini), tapi begitu tiba di sini, jenjangnya sudah pasti
+  // terisi — tidak pernah lagi berhenti di layar "pilih dulu".
+  const { jenjang } = useAdmin();
   const tahunAjaranId = searchParams.get('tahunAjaranId') || '';
   const qsOnly = tahunAjaranId ? `?tahunAjaranId=${tahunAjaranId}` : '';
   const qsAmp = tahunAjaranId ? `&tahunAjaranId=${tahunAjaranId}` : '';
@@ -146,7 +148,7 @@ function AdminHargaInner() {
       {toast && <div style={{ position: 'fixed', top: 24, right: 24, background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', padding: '12px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, zIndex: 9999, boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}>{toast}</div>}
 
       <TopHeader
-        judul={`Harga${jenjang ? ` ${JENJANG_LABEL[jenjang]}` : ''}`}
+        judul={`Harga ${JENJANG_SINGKAT[jenjang]}`}
         subjudul="Konfigurasi biaya pendidikan — acuan utama seluruh perhitungan tagihan SPMB."
         remah={[{ label: 'Manajemen' }, { label: 'Harga' }]}
       />
@@ -154,17 +156,14 @@ function AdminHargaInner() {
       <div>
 
         {!jenjang ? (
+          // Jaring pengaman saja — `useAdmin().jenjang` tidak pernah null
+          // (lihat AdminProvider.tsx), tapi kalau suatu saat berubah lagi,
+          // ini menunjuk ke jalan yang benar alih-alih merender tabel kosong.
           <div style={{ maxWidth: 900, margin: '40px auto', padding: '0 24px' }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 6 }}>Pilih Jenjang</h2>
-            <p style={{ fontSize: 13, color: 'var(--adm-text-muted)', marginBottom: 24 }}>Harga SMP, SMA, dan SMK dikelola terpisah — pilih salah satu jenjang untuk mulai mengatur.</p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
-              {(['smp', 'sma', 'smk'] as Jenjang[]).map(j => (
-                <Link key={j} href={`/admin/harga?jenjang=${j}${qsAmp}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6, background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', borderRadius: 14, padding: '22px 20px', textDecoration: 'none' }}>
-                  <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--adm-secondary)' }}>{JENJANG_LABEL[j]}</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, color: 'var(--adm-secondary)' }}>Kelola Harga <ArrowRight size={13} /></span>
-                </Link>
-              ))}
-            </div>
+            <EmptyState
+              judul="Pilih jenjang terlebih dahulu"
+              pesan="Harga diatur terpisah untuk SMP, SMA, dan SMK. Gunakan tombol Ganti Jenjang di sidebar."
+            />
           </div>
         ) : (
         <div style={{ maxWidth: 900, margin: '28px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 28 }}>
@@ -203,7 +202,7 @@ function AdminHargaInner() {
             <p style={{ fontSize: 12, color: 'var(--adm-text-faint)', margin: '0 0 16px' }}>
               {jenjang === 'smk'
                 ? 'SMK: harga diatur per jurusan, kelas masuk (Kelas 10/11), dan program (Reguler/Plus).'
-                : `${JENJANG_LABEL[jenjang]}: tidak ada jurusan — harga diatur per kelas masuk (Kelas ${jenjang === 'smp' ? '7/8' : '10/11'}) dan program (Reguler/Plus).`}
+                : `${JENJANG_SINGKAT[jenjang]}: tidak ada jurusan — harga diatur per kelas masuk (Kelas ${jenjang === 'smp' ? '7/8' : '10/11'}) dan program (Reguler/Plus).`}
             </p>
 
             {loading ? (
