@@ -34,6 +34,11 @@ yarn-error.log*
 .env*
 !.env.example
 
+# Applicant data, backups, and runtime uploads must never enter source control.
+/backup/
+/data/
+/public/uploads/
+
 # vercel
 .vercel
 
