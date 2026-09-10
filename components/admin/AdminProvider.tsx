@@ -40,9 +40,11 @@ interface NilaiAdmin {
   /** Bisa dilihat tapi tidak bisa diubah — pemicu banner "Mode Tampilan". */
   isReadOnly: (resource: Resource) => boolean
 
-  jenjang: Jenjang | null
-  jenjangLabel: string | null
-  jenjangSingkat: string | null
+  /** Tidak pernah null — akun ber-scope memakai scope-nya, sisanya jatuh ke
+   *  bawaan (SMP) kalau URL/path belum menyebutkan yang mana. */
+  jenjang: Jenjang
+  jenjangLabel: string
+  jenjangSingkat: string
   setJenjang: (j: Jenjang) => void
   /** Admin ber-scope tidak boleh berpindah jenjang. */
   bisaGantiJenjang: boolean
@@ -68,6 +70,11 @@ export interface AwalAdmin {
 const JENJANG_SAH = ['smp', 'sma', 'smk']
 const isJenjang = (v: unknown): v is Jenjang =>
   typeof v === 'string' && JENJANG_SAH.includes(v)
+
+/** Dipakai kalau akun bebas memilih jenjang (tidak di-scope) dan URL/path
+ *  belum menyebutkan yang mana — lihat komentar pada resolusi `jenjang`
+ *  di bawah untuk alasannya. */
+const JENJANG_BAWAAN: Jenjang = 'smp'
 
 export function AdminProvider({
   initial,
@@ -99,16 +106,27 @@ export function AdminProvider({
     return aktifTA
   }, [searchParams, tahunAjaranList, aktifTA])
 
-  // Jenjang: query -> segmen path (/admin/dashboard/[jenjang]) -> scope akun.
-  // Cookie sengaja TIDAK dibaca di sini supaya render server dan client tidak
-  // berbeda; ingatan lintas kunjungan ditangani halaman Pilih Jenjang.
-  const jenjang = useMemo<Jenjang | null>(() => {
+  // Jenjang: query -> segmen path (/admin/dashboard/[jenjang]) -> scope akun
+  // -> bawaan. Cookie sengaja TIDAK dibaca di sini supaya render server dan
+  // client tidak berbeda.
+  //
+  // TIDAK LAGI berakhir di `null`: sebelumnya, begitu ketiga sumber di atas
+  // kosong, tiap halaman jenjang-aware (Harga, Persyaratan, Tagihan, dst.)
+  // terpaksa menampilkan layarnya sendiri-sendiri meminta jenjang dipilih
+  // dulu — padahal "Ganti Jenjang" di sidebar (lihat KartuKonteks) hanya
+  // muncul KETIKA jenjang sudah terisi, jadi akun yang baru login dan belum
+  // pernah membuka /admin/dashboard bisa macet tidak punya jalan memilih
+  // sama sekali. Sekarang akun yang bebas memilih (tidak di-scope) langsung
+  // mendapat SMP sebagai bawaan begitu tiba di halaman apa pun — bisa
+  // langsung bekerja, dan tinggal pakai "Ganti Jenjang" di sidebar (yang
+  // sekarang juga selalu tampil) kalau maksudnya jenjang lain.
+  const jenjang = useMemo<Jenjang>(() => {
     const dariQuery = searchParams.get('jenjang')
     if (isJenjang(dariQuery)) return dariQuery
     const dariPath = routeParams?.jenjang
     if (isJenjang(dariPath)) return dariPath
     if (isJenjang(user.scopeJenjang)) return user.scopeJenjang
-    return null
+    return JENJANG_BAWAAN
   }, [searchParams, routeParams, user.scopeJenjang])
 
   const ctx: KonteksAdmin = useMemo(
@@ -151,8 +169,8 @@ export function AdminProvider({
       isReadOnly: r => isReadOnly(user.role, r),
 
       jenjang,
-      jenjangLabel: jenjang ? JENJANG_LABEL_FULL[jenjang] : null,
-      jenjangSingkat: jenjang ? JENJANG_SINGKAT[jenjang] : null,
+      jenjangLabel: JENJANG_LABEL_FULL[jenjang],
+      jenjangSingkat: JENJANG_SINGKAT[jenjang],
       setJenjang,
       bisaGantiJenjang: !user.scopeJenjang,
 

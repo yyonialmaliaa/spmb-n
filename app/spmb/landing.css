@@ -1152,17 +1152,41 @@
   min-height: 100svh;
   display: flex;
   align-items: center;
-  overflow: hidden;
-  background: var(--lp-hijau-gelap);
-  color: #fff;
+  justify-content: center;
+  /* Mengikuti tema situs seperti section lain (putih di mode terang, hijau
+     tua di mode gelap) — BUKAN lagi dipaksa hijau tua terus. Videonya
+     sekarang kartu kecil (lihat .lp-penutup-kartu), jadi warna di
+     SEKELILINGnya harus terang/gelap mengikuti tema, sama seperti bagian
+     lain di halaman ini. Nilai gelapnya tetap identik dengan
+     --lp-hijau-gelap yang lama (keduanya #071f16) — jadi pengguna mode
+     gelap tidak melihat perubahan apa pun. */
+  background: var(--lp-kertas);
+  color: var(--lp-tinta);
   text-align: center;
+}
+/* Kartu video: ukurannya TETAP (tidak lagi menyusut mengikuti gulir).
+   min-height dulu (ponsel, sebelum media query di bawah aktif) supaya teks
+   di dalamnya tidak sempit walau videonya belum berbentuk 16:10 lebar. */
+.lp-penutup-kartu {
+  position: relative;
+  width: min(920px, 92vw);
+  min-height: 26rem;
+  border-radius: 22px;
+  overflow: hidden;
+  /* Warna dasar sebelum poster/video sempat terlukis, supaya tidak sempat
+     berkedip putih polos yang menyatu dengan latar barunya. */
+  background: #10241c;
+  box-shadow: 0 40px 80px -32px rgba(7, 31, 22, 0.45);
+}
+@media (min-width: 640px) {
+  .lp-penutup-kartu {
+    aspect-ratio: 16 / 10;
+    min-height: 0;
+  }
 }
 .lp-penutup-media {
   position: absolute;
   inset: 0;
-  /* Wajib: begitu gulir ke footer membuat top/right/bottom/left menyusut
-     jadi kotak (lihat FinalCTA.tsx), border-radius-nya baru terlihat kalau
-     video/foto di dalamnya ikut terpotong mengikuti sudutnya. */
   overflow: hidden;
 }
 .lp-penutup-media img,
@@ -1177,9 +1201,14 @@
    TEKSNYA (lihat .lp-penutup-judul) dan tombol berlatar padat, bukan
    dengan menggelapkan seluruh foto. */
 .lp-penutup-isi {
-  position: relative;
+  position: absolute;
+  inset: 0;
   z-index: 2;
-  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
 }
 
 /* --- Footer -------------------------------------------------------------- */
@@ -1334,11 +1363,6 @@
   flex: 1 1 0;
   height: 52svh;
 }
-.lp-tumpuk .lp-program {
-  width: auto;
-  flex: 1 1 0;
-  height: 44svh;
-}
 .lp-tumpuk .lp-langkah {
   width: auto;
   flex: 1 1 0;
@@ -1368,9 +1392,6 @@
 .lp-tumpuk .lp-panel-teks {
   font-size: 0.88rem;
   max-width: none;
-}
-.lp-tumpuk .lp-program-nama {
-  font-size: clamp(1rem, 1.3vw, 1.35rem);
 }
 
 /* Ritme vertikal dipadatkan supaya isi bab tidak melampaui tinggi layar. */
