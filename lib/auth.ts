@@ -2,13 +2,14 @@ import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { normalizeRole, type Role } from './permissions';
 
-const SECRET = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || 'smk-citra-negara-secret-2026'
-);
+function getSecret() {
+  const value = process.env.NEXTAUTH_SECRET?.trim();
+  if (!value || value.length < 32) {
+    throw new Error('NEXTAUTH_SECRET must be set to a random value of at least 32 characters');
+  }
+  return new TextEncoder().encode(value);
+}
 
-// Dipakai juga oleh proxy.ts, yang tidak boleh mengimpor modul yang menyentuh
-// prisma atau next/headers.
-export const SECRET_KEY = SECRET;
 export const COOKIE_NAME = 'token';
 
 // 2 hari, bukan 7. Proxy tidak bisa mengakses database, jadi selama token
@@ -29,12 +30,12 @@ export async function createToken(payload: SessionPayload): Promise<string> {
   return await new SignJWT(payload as unknown as Record<string, unknown>)
     .setProtectedHeader({ alg: 'HS256' })
     .setExpirationTime(TOKEN_TTL)
-    .sign(SECRET);
+    .sign(getSecret());
 }
 
 export async function verifyToken(token: string): Promise<SessionPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, SECRET);
+    const { payload } = await jwtVerify(token, getSecret());
     const raw = payload as unknown as SessionPayload;
     // normalizeRole memetakan role lama "admin" -> "super_admin", supaya
     // token yang terbit sebelum migrasi role tetap valid.
