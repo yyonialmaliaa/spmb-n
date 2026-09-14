@@ -26,6 +26,24 @@ export async function POST(req: Request) {
       )
     }
 
+    if (!fieldName || !/^[a-zA-Z0-9_-]{1,80}$/.test(fieldName)) {
+      return NextResponse.json(
+        { error: 'Nama field upload tidak valid' },
+        { status: 400 }
+      )
+    }
+
+    if (
+      !process.env.CLOUDINARY_CLOUD_NAME ||
+      !process.env.CLOUDINARY_API_KEY ||
+      !process.env.CLOUDINARY_API_SECRET
+    ) {
+      return NextResponse.json(
+        { error: 'Penyimpanan dokumen belum dikonfigurasi' },
+        { status: 503 }
+      )
+    }
+
     if (file.size > 2 * 1024 * 1024) {
       return NextResponse.json(
         { error: 'Ukuran file maksimal 2MB' },

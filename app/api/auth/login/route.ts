@@ -1,15 +1,12 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { prisma, seedIfEmpty } from '@/lib/db'
+import { prisma } from '@/lib/db'
 import { createToken, COOKIE_NAME } from '@/lib/auth'
 import { normalizeRole } from '@/lib/permissions'
 import { cookies } from 'next/headers'
 
 export async function POST(req: Request) {
   try {
-    // Buat admin default kalau belum ada
-    await seedIfEmpty()
-
     // Body yang bukan JSON valid adalah kesalahan pengirim (400), bukan
     // kegagalan server (500) — jangan biarkan jatuh ke catch umum di bawah.
     const body = await req.json().catch(() => null)

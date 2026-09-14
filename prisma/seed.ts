@@ -81,10 +81,18 @@ async function main() {
   // string yang sama persis — dipakai sub-addressing (info+peran@...), yang
   // tetap terkirim ke info@citranegara.sch.id pada layanan surel mana pun,
   // tetapi terhitung sebagai identitas login yang berbeda.
+  const requiredSeedPassword = (name: string) => {
+    const value = process.env[name]
+    if (!value || value.length < 12) {
+      throw new Error(`${name} wajib diisi dan minimal 12 karakter saat menjalankan seed`)
+    }
+    return value
+  }
+
   const AKUN_ADMIN: { email: string; password: string; role: string; nama: string }[] = [
-    { email: 'info+superadmin@citranegara.sch.id', password: 'superadmin123', role: 'super_admin',    nama: 'Super Admin' },
-    { email: 'info+spmb@citranegara.sch.id',       password: 'adminspmb123',  role: 'admin_spmb',     nama: 'Admin SPMB (Front Office)' },
-    { email: 'info+loket@citranegara.sch.id',      password: 'adminloket123', role: 'admin_keuangan', nama: 'Admin Keuangan (Loket)' },
+    { email: 'info+superadmin@citranegara.sch.id', password: requiredSeedPassword('SEED_SUPERADMIN_PASSWORD'), role: 'super_admin',    nama: 'Super Admin' },
+    { email: 'info+spmb@citranegara.sch.id',       password: requiredSeedPassword('SEED_SPMB_ADMIN_PASSWORD'),      role: 'admin_spmb',     nama: 'Admin SPMB (Front Office)' },
+    { email: 'info+loket@citranegara.sch.id',      password: requiredSeedPassword('SEED_LOKET_ADMIN_PASSWORD'),     role: 'admin_keuangan', nama: 'Admin Keuangan (Loket)' },
   ]
 
   for (const a of AKUN_ADMIN) {
