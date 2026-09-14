@@ -105,6 +105,10 @@ export const STATUS_PEMBAYARAN: Record<string, Label> = {
   cicilan_berjalan: { teks: 'Cicilan Berjalan', nada: 'info' },
   lunas: { teks: 'Lunas', nada: 'sukses' },
   ditolak: { teks: 'Ditolak', nada: 'bahaya' },
+  // Hasil aksi "Kembalikan Kelebihan Bayar" — lihat recalculatePembayaran
+  // di lib/keuangan.ts. Sengaja bukan 'cicilan_berjalan': uang yang baru
+  // saja dikembalikan bukan cicilan yang masih berjalan.
+  dikembalikan: { teks: 'Dikembalikan', nada: 'peringatan' },
 }
 
 export const STATUS_TRANSAKSI: Record<string, Label> = {

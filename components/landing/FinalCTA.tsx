@@ -13,28 +13,51 @@ const VIDEO_PENUTUP = '/videos/hero.mp4'
 const POSTER_PENUTUP = '/images/voli.jpg'
 
 /**
- * Penutup: kartu video kecil bersudut membulat, bukan lagi foto/video
- * selebar layar.
+ * Penutup: kartu video yang MULAI selebar layar (persis video biasa) lalu
+ * menyusut jadi kartu kecil bersudut membulat begitu babnya tiba — bukan
+ * lagi kartu kecil yang diam dari awal.
  *
- * Sebelumnya videonya baru menyusut jadi kotak SETELAH pengguna menggulir
- * ke arah footer — ternyata itu salah baca referensi: kartunya harus SUDAH
- * kecil begitu bab ini tiba di layar, bukan menunggu gulir tambahan. Jadi
- * ukurannya sekarang TETAP (diatur CSS, lihat .lp-penutup-kartu), dan
- * satu-satunya gerak yang tersisa adalah zoom-in halus di dalam kartu itu
- * sendiri saat bab ini didekati (useMasuk) — persis pola yang sudah dipakai
- * di tempat lain di halaman ini.
+ * Ukuran akhirnya (kecil, bersudut membulat) tetap diatur lewat CSS seperti
+ * sebelumnya (lihat .lp-penutup-kartu), tapi sekarang dibungkus animasi:
+ * kartunya diukur (offsetWidth/Height, TIDAK terpengaruh transform) lalu
+ * di-scale UP sampai menutupi layar penuh saat bab ini baru mulai terlihat,
+ * dan discale turun ke 1 (ukuran alaminya) seiring bab-nya mendekat penuh
+ * (useMasuk 0→1) — jadi terasa seperti video besar yang menyusut jadi
+ * kartu, persis saat pengguna tiba di bagian ini, BUKAN menunggu gulir
+ * tambahan setelah tiba (itu salah baca referensi versi sebelumnya).
+ * Sudut membulatnya ikut diinterpolasi 0→22px selaras dengan skalanya.
  *
- * Latar di SEKELILING kartu sekarang mengikuti tema situs (putih di mode
- * terang, hijau tua di mode gelap) seperti section lain — bukan lagi
- * dipaksa hijau tua terus, karena videonya sudah tidak lagi memenuhi
- * seluruh section.
+ * Latar di SEKELILING kartu mengikuti tema situs (putih di mode terang,
+ * hijau tua di mode gelap) seperti section lain, karena begitu kartunya
+ * sudah mengecil ia tidak lagi memenuhi seluruh section.
  */
 export function FinalCTA({ tahunAjaran }: { tahunAjaran: string | null }) {
   const ref = useRef<HTMLElement | null>(null)
+  const kartuRef = useRef<HTMLDivElement | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const kurangiGerak = useReducedMotion()
   const masuk = useMasuk(ref)
   const [videoGagal, setVideoGagal] = useState(false)
+  // Skala yang dibutuhkan supaya kartu (ukuran alaminya, dari CSS) menutupi
+  // seluruh layar. Diukur dari offsetWidth/Height — bukan
+  // getBoundingClientRect — supaya TIDAK ikut terbaca lebih besar/kecil oleh
+  // transform scale yang sedang kita terapkan sendiri di bawah.
+  const [skalaAwal, setSkalaAwal] = useState(1)
+
+  useEffect(() => {
+    const kartu = kartuRef.current
+    if (!kartu) return
+    const ukur = () => {
+      const { offsetWidth: w, offsetHeight: h } = kartu
+      if (!w || !h) return
+      setSkalaAwal(Math.max(window.innerWidth / w, window.innerHeight / h))
+    }
+    ukur()
+    const ro = new ResizeObserver(ukur)
+    ro.observe(kartu)
+    window.addEventListener('resize', ukur)
+    return () => { ro.disconnect(); window.removeEventListener('resize', ukur) }
+  }, [])
   // Videonya berukuran besar — jangan mulai mengunduhnya sejak halaman
   // dimuat kalau pengunjung belum tentu menggulir sejauh ini. rootMargin
   // 50% membuatnya mulai dimuat SEDIKIT sebelum benar-benar terlihat,
@@ -59,15 +82,24 @@ export function FinalCTA({ tahunAjaran }: { tahunAjaran: string | null }) {
     videoRef.current?.play().catch(() => {})
   }, [pakaiVideo])
 
-  // Zoom-in halus di DALAM kartu (ukuran kartunya sendiri tetap) saat
-  // bab ini didekati — bukan lagi menyusutkan kartunya.
+  // Kartu LUARnya: dari menutupi layar penuh (skalaAwal) menyusut ke ukuran
+  // alaminya (1) begitu bab ini tiba — inilah transisi "video normal jadi
+  // kartu kecil" yang diminta. Sudutnya ikut membulat dari 0 ke 22px.
+  const skalaKartu = kurangiGerak ? 1 : skalaAwal + (1 - skalaAwal) * masuk
+  const radiusKartu = kurangiGerak ? 22 : masuk * 22
+  // Zoom-in halus TAMBAHAN di DALAM kartu (lapisan videonya sendiri) saat
+  // bab ini didekati — efek tekstur kecil di atas transisi ukuran di atas.
   const skala = kurangiGerak ? 1.04 : 1 + masuk * 0.1
   // Teks menyusul gambar: baru mulai terbaca setelah setengah perjalanan.
   const munculTeks = kurangiGerak ? 1 : Math.max(0, Math.min(1, (masuk - 0.45) / 0.4))
 
   return (
     <section ref={ref} className="lp-penutup">
-      <div className="lp-penutup-kartu">
+      <div
+        ref={kartuRef}
+        className="lp-penutup-kartu"
+        style={{ transform: `scale(${skalaKartu})`, borderRadius: `${radiusKartu}px` }}
+      >
         <div className="lp-penutup-media" style={{ transform: `scale(${skala})` }}>
           {pakaiVideo ? (
             <video

@@ -226,6 +226,23 @@ model Pendaftaran {
   updatedAt              DateTime     @updatedAt
   diskonNama             String?
   lastStep               Int?
+  // Nomor resmi "SPMB/0001/SMP/2026-2027/A7K9" — dibuat SEKALI, tepat saat
+  // formulir berhasil dikirim (online: draft->verified di
+  // app/api/pendaftaran/kirim; offline: saat admin membuat datanya), lewat
+  // lib/nomorPendaftaran.ts. null untuk draft yang belum pernah dikirim.
+  // @unique bukan hanya format rapi — itulah yang menegakkan "aman dari
+  // duplikasi" di level database, bukan cuma di kode pembuatnya.
+  noPendaftaran          String?      @unique
+  // Momen yang SAMA dengan noPendaftaran dibuat — dipisah dari createdAt
+  // (yang tercatat saat draft PERTAMA disimpan, bisa hari yang berbeda)
+  // supaya "Pendaftar Hari Ini" di Dashboard menghitung hari FORMULIR
+  // DIKIRIM, bukan hari draft-nya mulai diisi.
+  submittedAt            DateTime?
+  // Dicatat SEKALI, saat statusPembayaran pertama kali menjadi "lunas" —
+  // dipakai untuk statistik "Pelunasan Hari Ini". Tidak ditimpa oleh
+  // pelunasan berikutnya (mis. lunas -> refund sebagian -> lunas lagi tetap
+  // memegang tanggal lunas yang PERTAMA).
+  tanggalLunas           DateTime?
   notifikasiList         Notifikasi[]
   pembayaranList         Pembayaran[]
   diskon                 Diskon?      @relation(fields: [diskonId], references: [id])
@@ -235,6 +252,21 @@ model Pendaftaran {
   user                   User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([tahunAjaranId, jenjang])
+}
+
+// Penghitung urutan pendaftar per (tahun ajaran, jenjang) — tulang punggung
+// noPendaftaran. Satu baris per kombinasi, nilainya HANYA PERNAH bertambah
+// (lihat lib/nomorPendaftaran.ts): increment atomik di level database lewat
+// upsert, jadi aman dari duplikasi walau dua formulir disubmit bersamaan
+// persis di detik yang sama.
+model NomorUrutCounter {
+  id            String   @id @default(cuid())
+  tahunAjaranId String
+  jenjang       String
+  nilaiTerakhir Int      @default(0)
+  updatedAt     DateTime @updatedAt
+
+  @@unique([tahunAjaranId, jenjang])
 }
 
 model Pembayaran {

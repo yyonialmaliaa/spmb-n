@@ -103,6 +103,51 @@ export function JalurMendatar({
       if (!rafId) rafId = requestAnimationFrame(gerak)
     }
 
+    // Kalau datang membawa "#bagian" di URL — mis. dari Navigation di
+    // halaman lain (detail jenjang) yang mengarah balik ke
+    // "/spmb#tentang" — pindah ke bagian itu, sekali saja. Browser sendiri
+    // tidak bisa melompat dengan benar di mode mendatar: semua bab duduk
+    // pada ketinggian yang sama (sticky), jadi lompatan bawaan berbasis
+    // sumbu tegak tidak berpengaruh apa-apa di sana.
+    let sudahLompatHash = false
+    let debounceHash = 0
+    const lompatKeHash = (modeMendatar: boolean) => {
+      if (sudahLompatHash) return
+      const hash = window.location.hash
+      if (!hash) { sudahLompatHash = true; return }
+      const tujuanEl = document.getElementById(hash.slice(1))
+      if (!tujuanEl) { sudahLompatHash = true; return }
+
+      if (!modeMendatar) {
+        tujuanEl.scrollIntoView()
+        sudahLompatHash = true
+        return
+      }
+      // Pengukuran PERTAMA terjadi sebelum React sempat memasang class
+      // `lp-jalur` (state `mendatar` baru berlaku di render berikutnya),
+      // jadi `jarak` di sini masih 0 walau halamannya memang mode mendatar —
+      // belum ada apa pun untuk dituju, jangan tandai selesai dulu.
+      if (jarak <= 0) return
+      // Lebar barisnya masih bisa berubah beberapa saat lagi (gambar, font,
+      // animasi kemunculan bab lain) — tiap kali itu terjadi, ResizeObserver
+      // memanggil ukur() lagi dan fungsi ini ikut terpanggil ulang. Jangan
+      // langsung lompat di panggilan pertama; tunggu sampai tidak ada
+      // perubahan ukuran lagi selama sejenak, baru hitung & pindah sekali.
+      window.clearTimeout(debounceHash)
+      debounceHash = window.setTimeout(() => {
+        const jarakSekarang = Math.max(0, rel.scrollWidth - window.innerWidth)
+        const geser = tujuanEl.getBoundingClientRect().left - rel.getBoundingClientRect().left
+        // `behavior: 'auto'` eksplisit — halaman ini punya
+        // `scroll-behavior: smooth` global, dan lompatan pertama tidak boleh
+        // ikut dianimasikan: gulir asli yang beranimasi akan terus memicu
+        // `jadwalkan()` di atas dengan target yang bergerak, jadi kejaran
+        // transform-nya balapan dengan animasi gulirnya sendiri dan hasil
+        // akhirnya jadi tidak pasti tergantung kapan diukur.
+        window.scrollTo({ top: Math.min(Math.max(geser, 0), jarakSekarang), behavior: 'auto' })
+        sudahLompatHash = true
+      }, 350)
+    }
+
     const ukur = () => {
       const boleh = window.innerWidth >= AMBANG_LEBAR && !kurangiGerak
       setMendatar(boleh)
@@ -112,6 +157,7 @@ export function JalurMendatar({
         kini = tujuan = 0
         setPanjang(0)
         rel.style.transform = ''
+        lompatKeHash(false)
         return
       }
       jarak = Math.max(0, rel.scrollWidth - window.innerWidth)
@@ -120,6 +166,7 @@ export function JalurMendatar({
       // supaya perubahan ukuran jendela tidak terlihat seperti tergelincir.
       kini = tujuan = Math.min(Math.max(window.scrollY, 0), jarak)
       lukis()
+      lompatKeHash(true)
     }
 
     ukur()
@@ -152,6 +199,7 @@ export function JalurMendatar({
 
     return () => {
       if (rafId) cancelAnimationFrame(rafId)
+      window.clearTimeout(debounceHash)
       ro.disconnect()
       window.removeEventListener('resize', ukur)
       window.removeEventListener('scroll', jadwalkan)

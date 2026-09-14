@@ -1,12 +1,18 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { useParams } from 'next/navigation';
 import { Printer } from 'lucide-react';
 import { formatRupiah, YAYASAN_INFO, JENJANG_LABEL, Jenjang } from '@/lib/biaya';
 
-function getRegNo(id: string, date: string) {
-  const d = new Date(date);
-  return `REG-${d.getFullYear()}-${id.slice(0, 5).toUpperCase()}`;
+// Format resmi "SPMB/0001/SMP/2026-2027/A7K9" (lihat lib/nomorPendaftaran.ts)
+// dibuat SEKALI saat formulir dikirim dan disimpan di noPendaftaran — jadi
+// di sini cukup ditampilkan apa adanya. Baris lawas dari sebelum kolom itu
+// ada belum punya nomor resmi; REG-YYYY-XXXXX di bawah murni jaring pengaman
+// supaya kwitansinya tetap tercetak, bukan format baru.
+function getRegNo(data: Pendaftar) {
+  if (data.noPendaftaran) return data.noPendaftaran;
+  const d = new Date(data.createdAt);
+  return `REG-${d.getFullYear()}-${data.id.slice(0, 5).toUpperCase()}`;
 }
 
 // Nama jurusan SMK disimpan lengkap dengan singkatannya di belakang, mis.
@@ -71,6 +77,7 @@ function terbilang(n: number): string {
 type Cicilan = {
   id: string; angsuranKe: number; nominal: number;
   metodePembayaran: string; status: string; tanggalBayar: string;
+  jenis?: string;
 };
 
 type Pendaftar = {
@@ -78,6 +85,7 @@ type Pendaftar = {
   asalSMP?: string; asalSekolah?: string; alamat: string | null;
   gelombang?: string; jenjang?: string; jurusan: string | null; kelas?: string;
   noPribadi?: string; totalTagihan?: number; createdAt: string;
+  noPendaftaran?: string | null;
   pembayaranList: Cicilan[];
 };
 
@@ -100,18 +108,57 @@ export default function KwitansiPage() {
 
   const jenjang = (data.jenjang || 'smk') as Jenjang;
   const totalTagihan = data.totalTagihan || 0;
-  const lunas = data.pembayaranList.filter(c => c.status === 'lunas').sort((a, b) => a.angsuranKe - b.angsuranKe);
+  // Kwitansi adalah BUKTI PEMBAYARAN — hanya transaksi jenis "bayar" yang
+  // muncul di sini. Sebelumnya filter ini tidak memeriksa `jenis` sama
+  // sekali, jadi refund & alokasi (yang statusnya juga "lunas") ikut
+  // tercantum sebagai baris pembayaran DAN ikut DIJUMLAHKAN ke Total
+  // Dibayar — padahal refund seharusnya MENGURANGI, bukan menambah, dan
+  // alokasi bukan transaksi bayar sama sekali.
+  const lunas = data.pembayaranList
+    .filter(c => c.status === 'lunas' && (c.jenis || 'bayar') === 'bayar')
+    .sort((a, b) => a.angsuranKe - b.angsuranKe);
   const totalDibayar = lunas.reduce((s, c) => s + c.nominal, 0);
   const sisaBayar = Math.max(totalTagihan - totalDibayar, 0);
   const tanggalTerakhir = lunas.length > 0 ? lunas[lunas.length - 1].tanggalBayar : data.createdAt;
+
+  // Baris "label : nilai" — DUA per baris berdampingan. Sebelumnya kolonnya
+  // diratakan pakai &nbsp; sejumlah tebakan per label (beda panjang label,
+  // beda jumlah spasi manual), jadi tidak pernah benar-benar sejajar di
+  // segala lebar font. Grid 6 kolom (label-kolon-nilai, dua kali) membuat
+  // browser sendiri yang menghitung lebar kolom label & kolon dari isi
+  // TERLEBARnya — kolonnya otomatis sejajar, tidak peduli "No.Pendaftaran"
+  // jauh lebih panjang dari "Nama".
+  const BARIS: [string, React.ReactNode, string, React.ReactNode][] = [
+    ['No.Pendaftaran', getRegNo(data), 'Gelombang', data.gelombang || '-'],
+    ['Nama', data.namaLengkap, 'Jenjang', `${JENJANG_LABEL[jenjang]}${data.kelas ? ` - ${data.kelas}` : ''}`],
+    ['Jenis Kelamin', data.jenisKelamin,
+      // Jurusan cukup singkatannya saja (mis. "MPLB") — nama lengkapnya
+      // kepanjangan dan bikin kolom ini pecah jadi 2 baris.
+      'Jurusan', jenjang === 'smk' ? jurusanSingkat(data.jurusan) : '-'],
+    ['Asal Sekolah', data.asalSMP || data.asalSekolah || '-', 'No.Hp', data.noPribadi || '-'],
+  ];
 
   return (
     <div style={{ background: 'var(--adm-neutral-weak)', minHeight: '100vh', padding: '32px 16px' }}>
       <style>{`
         @media print {
+          /* size + margin:0 sengaja SATU PAKET: margin nol membuat Chrome/Edge
+             tidak sempat melukis header/footer bawaannya sendiri (judul tab,
+             URL, tanggal, nomor halaman) sama sekali -- ruangnya memang tidak
+             ada. Jarak ke tepi kertas lalu diambil alih penuh oleh padding
+             .kwitansi-sheet sendiri di bawah, bukan oleh margin halaman. */
+          @page { size: A5 portrait; margin: 0; }
           .no-print { display: none !important; }
-          body { background: white !important; }
-          .kwitansi-sheet { box-shadow: none !important; margin: 0 !important; }
+          html, body { background: white !important; margin: 0 !important; }
+          .kwitansi-sheet {
+            box-shadow: none !important;
+            margin: 0 !important;
+            width: 148mm;
+            min-height: 210mm;
+            max-width: none !important;
+            padding: 10mm 9mm !important;
+            font-size: 11.5px;
+          }
         }
       `}</style>
 
@@ -135,19 +182,30 @@ export default function KwitansiPage() {
 
         <h2 style={{ textAlign: 'center', fontSize: 16, textDecoration: 'underline', fontWeight: 700, marginBottom: 18 }}>KWITANSI PEMBAYARAN</h2>
 
-        {/* Data pendaftar */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 24px', fontSize: 12.5, marginBottom: 18 }}>
-          <div>No.Pendaftaran &nbsp;: {getRegNo(data.id, data.createdAt)}</div>
-          <div>Gelombang &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {data.gelombang || '-'}</div>
-          <div>Nama &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {data.namaLengkap}</div>
-          <div>Jenjang &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {JENJANG_LABEL[jenjang]}{data.kelas ? ` - ${data.kelas}` : ''}</div>
-          <div>Jenis Kelamin &nbsp;: {data.jenisKelamin}</div>
-          {/* Jurusan cukup singkatannya saja (mis. "MPLB") — nama lengkapnya
-              kepanjangan dan bikin kolom ini pecah jadi 2 baris. */}
-          <div>Jurusan &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {jenjang === 'smk' ? jurusanSingkat(data.jurusan) : '-'}</div>
-          <div>Asal Sekolah &nbsp;: {data.asalSMP || data.asalSekolah || '-'}</div>
-          <div>No.Hp &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {data.noPribadi || '-'}</div>
-          <div style={{ gridColumn: '1 / -1' }}>Alamat &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {data.alamat}</div>
+        {/* Data pendaftar — enam baris x (label, kolon, nilai) x 2 kolom. */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'max-content max-content minmax(0, 1fr) max-content max-content minmax(0, 1fr)',
+            columnGap: 8,
+            rowGap: 4,
+            fontSize: 12.5,
+            marginBottom: 18,
+          }}
+        >
+          {BARIS.map(([labelKiri, nilaiKiri, labelKanan, nilaiKanan], i) => (
+            <Fragment key={i}>
+              <span style={{ whiteSpace: 'nowrap', paddingRight: 12 }}>{labelKiri}</span>
+              <span>:</span>
+              <span style={{ paddingRight: 20 }}>{nilaiKiri}</span>
+              <span style={{ whiteSpace: 'nowrap', paddingRight: 12 }}>{labelKanan}</span>
+              <span>:</span>
+              <span>{nilaiKanan}</span>
+            </Fragment>
+          ))}
+          <span style={{ whiteSpace: 'nowrap', paddingRight: 12 }}>Alamat</span>
+          <span>:</span>
+          <span style={{ gridColumn: '3 / -1' }}>{data.alamat}</span>
         </div>
 
         {/* Data Pembayaran — semua cicilan yang sudah terverifikasi/lunas */}

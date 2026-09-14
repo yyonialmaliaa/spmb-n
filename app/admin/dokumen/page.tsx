@@ -32,7 +32,7 @@ export default function AdminDokumenPage() {
   const handleUpload = async (doc: Dokumen, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { showToast('❌ Ukuran file maksimal 5MB'); return; }
+    if (file.size > 2 * 1024 * 1024) { showToast('❌ Ukuran file maksimal 2MB'); return; }
     setUploadingKey(doc.jenis);
     try {
       const fd = new FormData();

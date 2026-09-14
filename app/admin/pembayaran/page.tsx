@@ -3,12 +3,12 @@
 import { useCallback, useMemo, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { CheckCircle2, ExternalLink, XCircle } from 'lucide-react';
+import { CheckCircle2, ExternalLink, Lock, XCircle } from 'lucide-react';
 import { TopHeader } from '@/components/admin/TopHeader';
 import { useAdmin } from '@/components/admin/AdminProvider';
 import { useMuatData, ambilJson } from '@/components/admin/useMuatData';
 import {
-  ConfirmModal, EmptyState, ErrorState, PermissionGate, ReadOnlyBanner,
+  ConfirmModal, EmptyState, ErrorState,
   SkeletonTabel, StatCard, StatusBadge, Toast,
 } from '@/components/admin/ui';
 import { JENIS_TRANSAKSI, STATUS_TRANSAKSI } from '@/lib/labels';
@@ -59,7 +59,14 @@ export default function PembayaranPage() {
 
 function PembayaranInner() {
   const searchParams = useSearchParams();
-  const { jenjang, jenjangSingkat } = useAdmin();
+  const { jenjang, jenjangSingkat, role } = useAdmin();
+  // Verifikasi/tolak pembayaran TETAP khusus Admin Keuangan & Super Admin —
+  // walau Admin SPMB sekarang punya izin 'pembayaran':'update' juga (untuk
+  // lolos gerbang "membantu input pembayaran"), PermissionGate berbasis
+  // resource/action saja tidak lagi cukup membedakan dua aksi itu. Dicek
+  // eksplisit lewat role di sini, mencerminkan gerbang eksplisit yang sama
+  // di app/api/admin/pembayaran/[id]/route.ts.
+  const bolehVerifikasi = role === 'admin_keuangan' || role === 'super_admin';
   const tahunAjaranId = searchParams.get('tahunAjaranId') || '';
 
   const [tab, setTab] = useState('menunggu_verifikasi');
@@ -120,10 +127,20 @@ function PembayaranInner() {
       />
 
       <div className="adm-content">
-        <ReadOnlyBanner
-          resource="pembayaran"
-          pesan="Anda dapat melihat seluruh pembayaran. Verifikasi dan penolakan pembayaran hanya dapat dilakukan oleh Admin Keuangan."
-        />
+        {/* Bukan <ReadOnlyBanner resource="pembayaran"> lagi — itu berbasis
+            isReadOnly(resource), yang sekarang SALAH untuk Admin SPMB
+            (mereka punya create+update di resource ini untuk "bantu input
+            pembayaran", jadi isReadOnly sudah bernilai false walau mereka
+            tetap tidak boleh verifikasi/tolak). Dicek langsung dari role. */}
+        {!bolehVerifikasi && (
+          <div className="adm-banner adm-banner--info" style={{ marginBottom: 16 }}>
+            <Lock size={15} style={{ flexShrink: 0, marginTop: 1 }} />
+            <div>
+              <strong>Mode Tampilan.</strong>{' '}
+              Anda dapat melihat seluruh pembayaran dan membantu input pembayaran baru. Verifikasi dan penolakan pembayaran hanya dapat dilakukan oleh Admin Keuangan.
+            </div>
+          </div>
+        )}
 
         {ringkasan && !loading && (
           <div className="adm-grid-stat" style={{ marginBottom: 20 }}>
@@ -213,15 +230,15 @@ function PembayaranInner() {
                                 Bukti <ExternalLink size={12} />
                               </a>
                             )}
-                            {t.status === 'menunggu_verifikasi' && (
-                              <PermissionGate resource="pembayaran" action="update">
+                            {t.status === 'menunggu_verifikasi' && bolehVerifikasi && (
+                              <>
                                 <button className="adm-btn adm-btn--danger adm-btn--sm" onClick={() => { setAksi({ baris: t, jenis: 'tolak' }); setCatatan(''); }}>
                                   <XCircle size={13} />
                                 </button>
                                 <button className="adm-btn adm-btn--success adm-btn--sm" onClick={() => { setAksi({ baris: t, jenis: 'verifikasi' }); setCatatan(''); }}>
                                   <CheckCircle2 size={13} /> Verifikasi
                                 </button>
-                              </PermissionGate>
+                              </>
                             )}
                           </div>
                         </td>

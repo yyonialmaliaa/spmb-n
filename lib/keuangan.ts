@@ -259,19 +259,47 @@ export async function recalculatePembayaran(pendaftaranId: string) {
   const { totalDibayar } = hitungRingkasan(pendaftaran.pembayaranList, totalTagihan)
   const adaMenunggu = pendaftaran.pembayaranList.some(p => p.status === 'menunggu_verifikasi')
 
+  // Transaksi TERBARU yang sudah beres (lunas) di antara "bayar" & "refund"
+  // — dipakai untuk mendeteksi apakah pengembalian dana adalah kejadian
+  // PALING AKHIR pada pendaftar ini. Alokasi SENGAJA tidak ikut di sini:
+  // uangnya tetap di sekolah, itu bukan "uang keluar" seperti refund.
+  const transaksiTerakhir = pendaftaran.pembayaranList
+    .filter(p => p.status === 'lunas' && (p.jenis === 'bayar' || p.jenis === 'refund'))
+    .sort((a, b) => b.tanggalBayar.getTime() - a.tanggalBayar.getTime())[0]
+
   let statusPembayaran: string
-  if (totalTagihan > 0 && totalDibayar >= totalTagihan) {
-    statusPembayaran = 'lunas'
-  } else if (adaMenunggu) {
+  if (adaMenunggu) {
+    // Verifikasi yang tertunda selalu paling mendesak untuk ditindaklanjuti
+    // — tidak boleh tertutupi oleh status "Dikembalikan" dari transaksi lama.
     statusPembayaran = 'menunggu_verifikasi'
+  } else if (transaksiTerakhir?.jenis === 'refund') {
+    // "Kembalikan Kelebihan Bayar" harus menghasilkan status ini, BUKAN
+    // "Cicilan Berjalan" — walau secara nominal bersihnya bisa saja masih
+    // pas sama totalTagihan (refund dibatasi hanya sebesar kelebihan bayar,
+    // lihat validasi di app/api/admin/pembayaran/route.ts), yang BARU SAJA
+    // terjadi tetaplah pengembalian uang, bukan pembayaran/cicilan biasa.
+    // Kalau pendaftar membayar lagi setelah ini, transaksiTerakhir berubah
+    // jadi "bayar" dan statusnya otomatis kembali ke hitungan normal di
+    // bawah — status ini tidak "macet" selamanya.
+    statusPembayaran = 'dikembalikan'
+  } else if (totalTagihan > 0 && totalDibayar >= totalTagihan) {
+    statusPembayaran = 'lunas'
   } else if (totalDibayar > 0) {
     statusPembayaran = 'cicilan_berjalan'
   } else {
     statusPembayaran = 'belum_bayar'
   }
 
+  const data: { statusPembayaran: string; tanggalLunas?: Date } = { statusPembayaran }
+  // Dicatat SEKALI, saat pertama kali sungguh "lunas" — dipakai untuk
+  // statistik "Pelunasan Hari Ini" (lib/pendaftarQuery.ts). Tidak ditimpa
+  // kalau sudah pernah lunas sebelumnya.
+  if (statusPembayaran === 'lunas' && !pendaftaran.tanggalLunas) {
+    data.tanggalLunas = new Date()
+  }
+
   return prisma.pendaftaran.update({
     where: { id: pendaftaranId },
-    data: { statusPembayaran },
+    data,
   })
 }

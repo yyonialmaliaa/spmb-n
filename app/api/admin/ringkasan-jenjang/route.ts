@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/adminSession'
 import { resolveTahunAjaran } from '@/lib/tahunAjaran'
-import { ringkasanPerJenjang, periodeSpmb } from '@/lib/pendaftarQuery'
+import { ringkasanPerJenjang, periodeSpmb, hariIniPerJenjang } from '@/lib/pendaftarQuery'
 import { canAny } from '@/lib/permissions'
 import { prisma } from '@/lib/db'
 
@@ -21,9 +21,10 @@ export async function GET(req: Request) {
       return NextResponse.json({ data: [], tahunAjaran: null })
     }
 
-    const [data, periode, aktivitas] = await Promise.all([
+    const [data, periode, hariIni, aktivitas] = await Promise.all([
       ringkasanPerJenjang(tahunAjaran.id),
       periodeSpmb(tahunAjaran.id),
+      hariIniPerJenjang(tahunAjaran.id),
       // Panel "Aktivitas Terakhir" hanya untuk role yang boleh membaca audit.
       canAny(gate.session.role, 'audit')
         ? prisma.auditLog.findMany({
@@ -40,6 +41,7 @@ export async function GET(req: Request) {
     return NextResponse.json({
       data,
       periode,
+      hariIni,
       aktivitas,
       tahunAjaran: { id: tahunAjaran.id, nama: tahunAjaran.nama, aktif: tahunAjaran.aktif },
     })

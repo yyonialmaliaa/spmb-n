@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/adminSession'
 import { prisma } from '@/lib/db'
 import { resolveTahunAjaran } from '@/lib/tahunAjaran'
+import { buatNomorPendaftaran } from '@/lib/nomorPendaftaran'
 
 const JENJANG_VALID = ['smp', 'sma', 'smk']
 
@@ -48,6 +49,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Tahun ajaran aktif belum diatur, hubungi admin' }, { status: 400 })
     }
 
+    // Offline TIDAK melalui "Kirim Formulir" terpisah (lihat catatan
+    // EXCLUDE_DRAFT_ONLINE di lib/pendaftarQuery.ts: draft offline sudah
+    // dihitung sejak dibuat) — jadi "formulir berhasil dikirim" untuk jalur
+    // ini adalah SAAT INI JUGA, bukan menunggu transisi status nanti.
+    const noPendaftaran = await buatNomorPendaftaran({
+      tahunAjaranId: tahunAjaran.id,
+      tahunAjaranNama: tahunAjaran.nama,
+      jenjang,
+    })
+
     const pendaftaran = await prisma.pendaftaran.create({
       data: {
         tahunAjaranId: tahunAjaran.id,
@@ -56,6 +67,8 @@ export async function POST(req: Request) {
         sumberDaftar: 'offline',
         statusPembayaran: 'belum_bayar',
         waVerified: true, // diinput langsung oleh admin di sekolah, dianggap sudah terverifikasi
+        noPendaftaran,
+        submittedAt: new Date(),
         ...pickEditableFields(body),
       },
     })

@@ -16,6 +16,7 @@ import {
   badgeJenjang, type Jenjang,
 } from '@/lib/labels';
 import { LABEL_ROLE, type Resource } from '@/lib/permissions';
+import { formatRupiah } from '@/lib/pembayaran-utils';
 
 // ============================================================================
 // PILIH JENJANG — pintu masuk setelah login, untuk SEMUA role admin.
@@ -37,6 +38,15 @@ interface RingkasanJenjang {
   sudahDaftarUlang: number;
   jumlahJurusan: number;
   gelombang: { nama: string; tanggalMulai: string | null; tanggalSelesai: string | null } | null;
+}
+
+interface HariIniJenjang {
+  jenjang: Jenjang;
+  pendaftarHariIni: number;
+  pembayaranHariIni: number;
+  nominalPembayaranHariIni: number;
+  angsuranHariIni: number;
+  pelunasanHariIni: number;
 }
 
 interface Aktivitas {
@@ -84,6 +94,7 @@ function PilihJenjangInner() {
       ambilJson<{
         data: RingkasanJenjang[];
         periode: { mulai: string | null; selesai: string | null } | null;
+        hariIni: HariIniJenjang[];
         aktivitas: Aktivitas[];
       }>(`/api/admin/ringkasan-jenjang${qsTa}`, sinyal),
     [qsTa],
@@ -92,6 +103,7 @@ function PilihJenjangInner() {
   const { data: hasil, loading, gagal, muatUlang } = useMuatData(ambil, [qsTa]);
   const data = hasil?.data ?? null;
   const periode = hasil?.periode ?? null;
+  const hariIni = hasil?.hariIni ?? null;
   const aktivitas = hasil?.aktivitas ?? [];
 
   const gelombangBerjalan = data?.find(d => d.gelombang)?.gelombang ?? null;
@@ -211,6 +223,7 @@ function PilihJenjangInner() {
 
           {!loading && !gagal && data && URUTAN.map(j => {
             const r = data.find(x => x.jenjang === j);
+            const h = hariIni?.find(x => x.jenjang === j);
             const Ikon = IKON[j];
             const sampai = tglPendek(r?.gelombang?.tanggalSelesai);
 
@@ -278,6 +291,43 @@ function PilihJenjangInner() {
                   {r?.gelombang
                     ? <span>{r.gelombang.nama}{sampai ? ` · s.d. ${sampai}` : ''}</span>
                     : <span>Belum ada gelombang berjalan</span>}
+                </div>
+
+                {/* Hari Ini — pulsa harian, terpisah dari total kumulatif di
+                    atas supaya "berapa yang terjadi HARI INI" tidak
+                    tenggelam di angka total sejak awal SPMB dibuka. */}
+                <div
+                  style={{
+                    display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px 12px', marginTop: 12,
+                    padding: '12px 14px', background: 'var(--adm-info-weak)',
+                    border: '1px solid var(--adm-info-border)', borderRadius: 'var(--adm-r-md)',
+                  }}
+                >
+                  <div style={{ gridColumn: '1 / -1', fontSize: 10.5, fontWeight: 800, letterSpacing: '0.05em', color: 'var(--adm-info)', textTransform: 'uppercase' }}>
+                    Hari Ini
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--adm-text-muted)' }}>Pendaftar Baru</div>
+                    <div style={{ fontSize: 17, fontWeight: 700, marginTop: 1 }}>{h?.pendaftarHariIni ?? 0}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--adm-text-muted)' }}>Transaksi Bayar</div>
+                    <div style={{ fontSize: 17, fontWeight: 700, marginTop: 1 }}>{h?.pembayaranHariIni ?? 0}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--adm-text-muted)' }}>Angsuran</div>
+                    <div style={{ fontSize: 17, fontWeight: 700, marginTop: 1 }}>{h?.angsuranHariIni ?? 0}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--adm-text-muted)' }}>Pelunasan</div>
+                    <div style={{ fontSize: 17, fontWeight: 700, marginTop: 1, color: 'var(--adm-success)' }}>{h?.pelunasanHariIni ?? 0}</div>
+                  </div>
+                  <div style={{ gridColumn: '1 / -1', paddingTop: 8, borderTop: '1px dashed var(--adm-info-border)' }}>
+                    <div style={{ fontSize: 11, color: 'var(--adm-text-muted)' }}>Nominal Pembayaran Hari Ini</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, marginTop: 1, color: 'var(--adm-info)' }}>
+                      {formatRupiah(h?.nominalPembayaranHariIni ?? 0)}
+                    </div>
+                  </div>
                 </div>
 
                 <Link
@@ -403,7 +453,11 @@ function PilihJenjangInner() {
 
       <footer style={{ borderTop: '1px solid var(--adm-border)', background: 'var(--adm-surface)' }}>
         <div style={{ maxWidth: 1180, margin: '0 auto', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', fontSize: 11.5, color: 'var(--adm-text-muted)' }}>
-          <span>© {new Date().getFullYear()} Yayasan Pendidikan {NAMA_INSTITUSI}. Seluruh hak cipta dilindungi.</span>
+          <span>
+            © {new Date().getFullYear()} {NAMA_INSTITUSI}. All rights reserved.
+            {' '}·{' '}
+            Website developed by Yoni Al&apos;fiani Amalia
+          </span>
           <Link href="/admin/bantuan" style={{ color: 'var(--adm-text-muted)', textDecoration: 'none' }}>
             Bantuan &amp; Panduan Admin
           </Link>

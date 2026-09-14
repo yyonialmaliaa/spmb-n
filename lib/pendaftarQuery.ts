@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client'
 import { prisma } from './db'
+import { rentangHariIniWib } from './tanggal'
 
 // Tulang punggung konsistensi data.
 //
@@ -195,6 +196,93 @@ export async function ringkasanPerJenjang(tahunAjaranId: string): Promise<Ringka
       gelombang: g
         ? { nama: g.nama, tanggalMulai: g.tanggalMulai, tanggalSelesai: g.tanggalSelesai }
         : null,
+    }
+  })
+}
+
+export interface HariIniJenjang {
+  jenjang: Jenjang
+  pendaftarHariIni: number
+  pembayaranHariIni: number
+  nominalPembayaranHariIni: number
+  angsuranHariIni: number
+  pelunasanHariIni: number
+}
+
+export const HARI_INI_KOSONG: Omit<HariIniJenjang, 'jenjang'> = {
+  pendaftarHariIni: 0,
+  pembayaranHariIni: 0,
+  nominalPembayaranHariIni: 0,
+  angsuranHariIni: 0,
+  pelunasanHariIni: 0,
+}
+
+/**
+ * Statistik "Hari Ini" untuk kartu Dashboard (Pilih Jenjang & Dashboard
+ * per-jenjang), per jenjang, di SATU tahun ajaran.
+ *
+ * Batas "hari ini" dihitung di zona WIB lewat rentangHariIniWib() — lihat
+ * catatan di lib/tanggal.ts untuk alasannya (server produksi lazimnya
+ * berjalan di UTC, bukan WIB).
+ *
+ * Definisi tiap angka:
+ *  - pendaftarHariIni  : Pendaftaran.submittedAt jatuh hari ini — "formulir
+ *                        BERHASIL DIKIRIM hari ini", bukan draft yang mulai
+ *                        diisi hari ini (lihat catatan submittedAt di
+ *                        schema.prisma).
+ *  - pembayaranHariIni & nominalPembayaranHariIni
+ *                      : jumlah & total nominal transaksi Pembayaran
+ *                        jenis="bayar" berstatus "lunas" yang TERCATAT
+ *                        (createdAt) hari ini. Refund/alokasi TIDAK
+ *                        dihitung sebagai "pembayaran masuk".
+ *  - pelunasanHariIni  : Pendaftaran.tanggalLunas jatuh hari ini — berapa
+ *                        pendaftar yang baru LUNAS hari ini.
+ *  - angsuranHariIni   : dari pembayaranHariIni, berapa yang BUKAN
+ *                        pembayaran pelunasan (yang tanggalLunas
+ *                        pendaftarnya bukan hari ini) — cicilan yang masih
+ *                        berjalan, bukan yang menuntaskan tagihan.
+ */
+export async function hariIniPerJenjang(tahunAjaranId: string): Promise<HariIniJenjang[]> {
+  const { mulai, selesai } = rentangHariIniWib()
+
+  const [perPendaftarSubmit, pembayaranHariIniRows, perPelunasan] = await Promise.all([
+    prisma.pendaftaran.groupBy({
+      by: ['jenjang'],
+      where: { ...scopePendaftar({ tahunAjaranId }), submittedAt: { gte: mulai, lt: selesai } },
+      _count: { _all: true },
+    }),
+    prisma.pembayaran.findMany({
+      where: {
+        jenis: 'bayar',
+        status: 'lunas',
+        createdAt: { gte: mulai, lt: selesai },
+        pendaftaran: scopePendaftar({ tahunAjaranId }),
+      },
+      select: { nominal: true, pendaftaran: { select: { jenjang: true, tanggalLunas: true } } },
+    }),
+    prisma.pendaftaran.groupBy({
+      by: ['jenjang'],
+      where: { ...scopePendaftar({ tahunAjaranId }), tanggalLunas: { gte: mulai, lt: selesai } },
+      _count: { _all: true },
+    }),
+  ])
+
+  return JENJANG_VALID.map(jenjang => {
+    const bayarJenjang = pembayaranHariIniRows.filter(r => r.pendaftaran.jenjang === jenjang)
+    // Transaksi yang pendaftarnya baru lunas HARI INI juga dianggap
+    // "pelunasan" (bukan angsuran) walau bisa saja ada >1 transaksi hari
+    // itu — yang penting bukan dihitung dua kali sebagai cicilan biasa.
+    const pelunasanTransaksi = bayarJenjang.filter(r => {
+      const tl = r.pendaftaran.tanggalLunas
+      return tl && tl >= mulai && tl < selesai
+    })
+    return {
+      jenjang,
+      pendaftarHariIni: perPendaftarSubmit.find(r => r.jenjang === jenjang)?._count._all ?? 0,
+      pembayaranHariIni: bayarJenjang.length,
+      nominalPembayaranHariIni: bayarJenjang.reduce((n, r) => n + r.nominal, 0),
+      pelunasanHariIni: perPelunasan.find(r => r.jenjang === jenjang)?._count._all ?? 0,
+      angsuranHariIni: bayarJenjang.length - pelunasanTransaksi.length,
     }
   })
 }

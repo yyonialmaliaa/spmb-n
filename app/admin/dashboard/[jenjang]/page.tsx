@@ -2,11 +2,12 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Users, Clock, CheckCircle, XCircle, ChevronRight, RefreshCw, ClipboardCheck } from 'lucide-react';
+import { Users, Clock, CheckCircle, XCircle, ChevronRight, RefreshCw, ClipboardCheck, CalendarClock } from 'lucide-react';
 import { TopHeader } from '@/components/admin/TopHeader';
 import { useAdmin } from '@/components/admin/AdminProvider';
 import { IDENTITAS_PERAN } from '@/lib/permissions';
 import { JENJANG_LABEL_FULL, cariJurusan, punyaJurusan, type Jenjang } from '@/lib/labels';
+import { formatRupiah } from '@/lib/pembayaran-utils';
 
 type Stats = {
   total: number; verified: number;
@@ -19,6 +20,15 @@ type Pendaftaran = {
   id: string; namaLengkap: string | null; jurusan: string | null; jenjang?: string; kelas?: string; asalSMP?: string; asalSekolah?: string;
   status: string; createdAt: string; userEmail?: string;
   statusPembayaran?: string; sudahDaftarUlang?: boolean; sumberDaftar?: string;
+};
+
+type HariIni = {
+  jenjang: string;
+  pendaftarHariIni: number;
+  pembayaranHariIni: number;
+  nominalPembayaranHariIni: number;
+  angsuranHariIni: number;
+  pelunasanHariIni: number;
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -70,6 +80,7 @@ function AdminDashboardJenjangInner() {
   const [stats, setStats] = useState<Stats>({ total: 0, verified: 0, diterima: 0, ditolak: 0, daftar_ulang: 0, menungguPembayaran: 0, online: 0, offline: 0 });
   const [recent, setRecent] = useState<Pendaftaran[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hariIni, setHariIni] = useState<HariIni | null>(null);
 
   useEffect(() => {
     // Penyaringan jenjang kini di server, bukan lagi menyaring seluruh
@@ -81,6 +92,18 @@ function AdminDashboardJenjangInner() {
       setStats(computeStats(rows));
       setRecent(rows.slice(0, 6));
       setLoading(false);
+    });
+  }, [jenjang, tahunAjaranId]);
+
+  // Statistik "Hari Ini" — angka yang sama persis dengan yang tampil di
+  // kartu jenjang ini di halaman Pilih Jenjang (satu fungsi sumbernya,
+  // lib/pendaftarQuery.ts hariIniPerJenjang), supaya tidak ada dua tempat
+  // yang bisa berbeda hitungannya untuk konsep yang sama.
+  useEffect(() => {
+    const qs = tahunAjaranId ? `?tahunAjaranId=${tahunAjaranId}` : '';
+    fetch(`/api/admin/ringkasan-jenjang${qs}`).then(r => r.json()).then(d => {
+      const semua: HariIni[] = d.hariIni || [];
+      setHariIni(semua.find(h => h.jenjang === jenjang) || null);
     });
   }, [jenjang, tahunAjaranId]);
 
@@ -152,6 +175,44 @@ function AdminDashboardJenjangInner() {
                 </div>
               </Link>
             ))}
+          </div>
+
+          {/* Hari Ini — pulsa harian jenjang ini, terpisah dari total
+              kumulatif di kartu-kartu bawah supaya "berapa yang terjadi HARI
+              INI" tidak tenggelam di angka total sejak SPMB dibuka. Angka
+              yang sama persis dengan kartu jenjang ini di halaman Pilih
+              Jenjang — satu fungsi sumbernya (hariIniPerJenjang). */}
+          <div style={{ background: 'var(--adm-info-weak)', border: '1px solid var(--adm-info-border)', borderRadius: 14, padding: '16px 20px', marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+              <CalendarClock size={16} color="var(--adm-info)" />
+              <span style={{ fontSize: 12.5, fontWeight: 800, letterSpacing: '0.04em', color: 'var(--adm-info)', textTransform: 'uppercase' }}>
+                Hari Ini · {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 11.5, color: 'var(--adm-text-muted)' }}>Pendaftar Baru</div>
+                <div className="font-display" style={{ fontSize: 24, fontWeight: 700, marginTop: 2 }}>{hariIni?.pendaftarHariIni ?? 0}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11.5, color: 'var(--adm-text-muted)' }}>Transaksi Pembayaran</div>
+                <div className="font-display" style={{ fontSize: 24, fontWeight: 700, marginTop: 2 }}>{hariIni?.pembayaranHariIni ?? 0}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11.5, color: 'var(--adm-text-muted)' }}>Angsuran</div>
+                <div className="font-display" style={{ fontSize: 24, fontWeight: 700, marginTop: 2 }}>{hariIni?.angsuranHariIni ?? 0}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11.5, color: 'var(--adm-text-muted)' }}>Pelunasan</div>
+                <div className="font-display" style={{ fontSize: 24, fontWeight: 700, marginTop: 2, color: 'var(--adm-success)' }}>{hariIni?.pelunasanHariIni ?? 0}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11.5, color: 'var(--adm-text-muted)' }}>Nominal Pembayaran</div>
+                <div className="font-display" style={{ fontSize: 22, fontWeight: 700, marginTop: 2, color: 'var(--adm-info)' }}>
+                  {formatRupiah(hariIni?.nominalPembayaranHariIni ?? 0)}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Kartu disaring per PERAN: Loket Keuangan tidak perlu corong
@@ -238,6 +299,7 @@ function AdminDashboardJenjangInner() {
                               menunggu_verifikasi: { l: 'Menunggu', c: 'var(--adm-info)' },
                               lunas: { l: 'Lunas', c: 'var(--adm-success)' },
                               ditolak: { l: 'Ditolak', c: 'var(--adm-danger)' },
+                              dikembalikan: { l: 'Dikembalikan', c: 'var(--adm-warning)' },
                             };
                             return <span style={{ fontWeight: 700, color: map[sb]?.c || 'var(--adm-text-faint)', fontSize: 12 }}>{map[sb]?.l || sb}</span>;
                           })()}

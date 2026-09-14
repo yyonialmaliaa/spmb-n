@@ -32,7 +32,7 @@ type LaporanData = {
   trenInsight: { ramai: { periode: string; jumlah: number } | null; sepi: { periode: string; jumlah: number } | null };
   asalSekolah: { label: string; jumlah: number; ranking: number }[];
   genderKomposisi: { label: string; jumlah: number; persen: number }[];
-  pembayaran: { totalTagihan: number; totalDibayar: number; totalRefund: number; totalAlokasi: number; kelebihanBayar: number; lunas: number; cicilan: number; menunggu: number; belumBayar: number; ditolakBayar: number };
+  pembayaran: { totalTagihan: number; totalDibayar: number; totalRefund: number; totalAlokasi: number; kelebihanBayar: number; lunas: number; cicilan: number; menunggu: number; belumBayar: number; ditolakBayar: number; dikembalikan: number };
   gelombang: { nama: string; jumlah: number; persen: number; verified: number; diterima: number }[];
   evaluasi: string[];
 };
@@ -322,6 +322,7 @@ function LaporanKonten({ data }: { data: LaporanData }) {
             { label: 'Cicilan Berjalan', val: data.pembayaran.cicilan, color: 'var(--adm-ungu)', bg: 'var(--adm-ungu-weak)' },
             { label: 'Menunggu Verifikasi', val: data.pembayaran.menunggu, color: 'var(--adm-info)', bg: 'var(--adm-info-weak)' },
             { label: 'Belum Bayar', val: data.pembayaran.belumBayar, color: 'var(--adm-text-faint)', bg: 'var(--adm-surface-alt)' },
+            { label: 'Dikembalikan', val: data.pembayaran.dikembalikan, color: 'var(--adm-warning)', bg: 'var(--adm-warning-weak)' },
           ].map(s => (
             <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ background: s.bg, color: s.color, padding: '2px 8px', borderRadius: 8, fontSize: 10.5, fontWeight: 700, minWidth: 140, textAlign: 'center' }}>{s.label}</span>

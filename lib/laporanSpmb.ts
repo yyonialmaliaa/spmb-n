@@ -162,6 +162,7 @@ export async function getLaporanData(jenjang: JenjangLaporan, tahunAjaranId?: st
     menunggu: rows.filter(r => r.statusPembayaran === 'menunggu_verifikasi').length,
     belumBayar: rows.filter(r => !r.statusPembayaran || r.statusPembayaran === 'belum_bayar').length,
     ditolakBayar: rows.filter(r => r.statusPembayaran === 'ditolak').length,
+    dikembalikan: rows.filter(r => r.statusPembayaran === 'dikembalikan').length,
   }
 
   // ── 9. Performa Gelombang ────────────────────────────────────────────

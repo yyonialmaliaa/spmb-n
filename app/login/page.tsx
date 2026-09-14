@@ -155,7 +155,9 @@ export default function LoginPage() {
         </div>
 
         <p style={{ textAlign: 'center', color: 'var(--adm-text-faint)', fontSize: 11.5, marginTop: 20 }}>
-          © {new Date().getFullYear()} Yayasan Pendidikan {NAMA_INSTITUSI}
+          © {new Date().getFullYear()} {NAMA_INSTITUSI}. All rights reserved.
+          <br />
+          Website developed by Yoni Al&apos;fiani Amalia
         </p>
       </div>
     </div>

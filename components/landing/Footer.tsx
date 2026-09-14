@@ -1,13 +1,16 @@
+'use client'
+
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { YAYASAN_INFO } from '@/lib/biaya'
 
-const TAUTAN = [
-  { href: '#tentang', label: 'Tentang' },
-  { href: '#jenjang', label: 'Jenjang' },
-  { href: '#alur', label: 'Alur SPMB' },
-  { href: '#jadwal', label: 'Jadwal' },
-  { href: '#biaya', label: 'Biaya' },
-  { href: '#persyaratan', label: 'Persyaratan' },
+const BAGIAN = [
+  { id: 'tentang', label: 'Tentang' },
+  { id: 'jenjang', label: 'Jenjang' },
+  { id: 'alur', label: 'Alur SPMB' },
+  { id: 'jadwal', label: 'Jadwal' },
+  { id: 'biaya', label: 'Biaya' },
+  { id: 'persyaratan', label: 'Persyaratan' },
 ]
 
 const JENJANG = [
@@ -17,6 +20,11 @@ const JENJANG = [
 ]
 
 export function Footer({ tahunAjaran }: { tahunAjaran: string | null }) {
+  // Sama seperti Navigation: bagian-bagian ini cuma ada di halaman utama
+  // /spmb, jadi di halaman lain (detail jenjang) tautannya harus balik ke
+  // sana dulu (lihat komentar di Navigation.tsx).
+  const diLandingUtama = usePathname() === '/spmb'
+
   return (
     <footer className="lp-footer">
       <div className="lp-wadah">
@@ -40,7 +48,13 @@ export function Footer({ tahunAjaran }: { tahunAjaran: string | null }) {
               Halaman
             </p>
             <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: '0.65rem', fontSize: '0.92rem' }}>
-              {TAUTAN.map(t => <li key={t.href}><a href={t.href}>{t.label}</a></li>)}
+              {BAGIAN.map(b => (
+                <li key={b.id}>
+                  {diLandingUtama
+                    ? <a href={`#${b.id}`}>{b.label}</a>
+                    : <Link href={`/spmb#${b.id}`} scroll={false}>{b.label}</Link>}
+                </li>
+              ))}
             </ul>
           </nav>
 
@@ -74,7 +88,11 @@ export function Footer({ tahunAjaran }: { tahunAjaran: string | null }) {
             fontSize: '0.82rem',
           }}
         >
-          <span>© {new Date().getFullYear()} Citra Negara. Seluruh hak cipta dilindungi.</span>
+          <span>
+            © {new Date().getFullYear()} Citra Negara. All rights reserved.
+            <br />
+            Website developed by Yoni Al&apos;fiani Amalia
+          </span>
           <span style={{ display: 'flex', gap: '1.4rem' }}>
             <Link href="/login">Masuk</Link>
             <Link href="/register">Daftar</Link>

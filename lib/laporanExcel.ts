@@ -113,6 +113,7 @@ export async function buatWorkbookLaporan(data: LaporanData): Promise<ExcelJS.Bu
   tambahBaris('Cicilan Berjalan', data.pembayaran.cicilan)
   tambahBaris('Menunggu Verifikasi', data.pembayaran.menunggu)
   tambahBaris('Belum Bayar', data.pembayaran.belumBayar)
+  tambahBaris('Dikembalikan', data.pembayaran.dikembalikan)
   tambahBaris('Total Dana Dikembalikan', formatRupiah(data.pembayaran.totalRefund))
   sRingkasan.addRow([])
 
@@ -212,6 +213,7 @@ export async function buatWorkbookLaporan(data: LaporanData): Promise<ExcelJS.Bu
       ['Menunggu Verifikasi', p.menunggu, 0],
       ['Belum Bayar', p.belumBayar, 0],
       ['Ditolak', p.ditolakBayar, 0],
+      ['Dikembalikan', p.dikembalikan, 0],
     ]
     baris.forEach(([label, jumlah, nominal]) => {
       const line = isiBaris(s, [label, jumlah, nominal])

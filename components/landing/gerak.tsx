@@ -18,10 +18,14 @@ import { useArah } from './JalurMendatar'
 // ---------------------------------------------------------------------------
 
 /**
- * Menyalakan kelas `is-tampak` ketika elemen masuk layar.
+ * Menyalakan/mematikan kelas `is-tampak` mengikuti apakah elemen sedang di
+ * layar.
  *
- * IntersectionObserver, bukan listener scroll: browser yang menghitung, jadi
- * tidak ada pekerjaan per-frame di thread utama.
+ * Bolak-balik dengan sengaja: begitu elemen digulir keluar layar, kelasnya
+ * dicopot lagi supaya animasi masuknya bisa terulang saat digulir balik ke
+ * situ (sama seperti gulir maju) — bukan cuma sekali muncul lalu diam
+ * selamanya. IntersectionObserver, bukan listener scroll: browser yang
+ * menghitung, jadi tidak ada pekerjaan per-frame di thread utama.
  */
 export function useTampak<T extends HTMLElement>(ambang = 0.18) {
   const ref = useRef<T | null>(null)
@@ -30,10 +34,8 @@ export function useTampak<T extends HTMLElement>(ambang = 0.18) {
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    // Sekali tampak, biarkan tampak: konten tidak boleh menghilang lagi saat
-    // pengguna menggulir balik.
     const io = new IntersectionObserver(
-      entri => { if (entri[0].isIntersecting) { setTampak(true); io.disconnect() } },
+      entri => setTampak(entri[0].isIntersecting),
       { threshold: ambang, rootMargin: '0px 0px -8% 0px' },
     )
     io.observe(el)

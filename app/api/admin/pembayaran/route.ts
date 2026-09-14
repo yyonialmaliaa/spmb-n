@@ -3,7 +3,10 @@ import { requirePermission, requireJenjang, scopedJenjang } from '@/lib/adminSes
 import { resolveTahunAjaran } from '@/lib/tahunAjaran'
 import { scopePendaftarUang, isJenjangValid } from '@/lib/pendaftarQuery'
 import { prisma } from '@/lib/db'
-import { recalculatePembayaran, hitungRingkasan, lockTagihanJikaBelum, formatRupiah, HargaTidakDitemukanError } from '@/lib/keuangan'
+import {
+  recalculatePembayaran, hitungRingkasan, lockTagihanJikaBelum, formatRupiah,
+  getMinimalPembayaranAwal, getMinimalCicilan, HargaTidakDitemukanError,
+} from '@/lib/keuangan'
 import { kirimNotifikasi } from '@/lib/notifikasi'
 
 // GET - dua mode:
@@ -93,11 +96,26 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const gate = await requirePermission('pembayaran', 'update')
   if (!gate.ok) return gate.res
+  const { session } = gate
 
   try {
     const body = await req.json()
     const { pendaftaranId, nominal, metodePembayaran, buktiPembayaran, catatanAdmin, jenis, alasanRefund, kategoriAlokasi } = body
     const jenisFinal = jenis === 'refund' ? 'refund' : jenis === 'alokasi' ? 'alokasi' : 'bayar'
+
+    // Admin SPMB boleh MEMBANTU INPUT pembayaran ("bayar") sejak sekarang,
+    // tapi mengembalikan atau mengalokasikan kelebihan bayar tetap wewenang
+    // keuangan (admin_keuangan/super_admin) — dua aksi yang sengaja dibuat
+    // TIDAK BISA saling menggantikan walau lewat satu endpoint yang sama.
+    // Dicek eksplisit di sini (bukan lewat matrix permission) karena
+    // 'pembayaran' resource-nya sama untuk ketiga jenis transaksi; hanya
+    // jenis "bayar" yang boleh dibantu Front Office.
+    if (session.role === 'admin_spmb' && jenisFinal !== 'bayar') {
+      return NextResponse.json(
+        { error: 'Admin SPMB tidak dapat memproses pengembalian atau alokasi kelebihan bayar. Hubungi Admin Keuangan.' },
+        { status: 403 },
+      )
+    }
 
     if (!pendaftaranId) return NextResponse.json({ error: 'pendaftaranId wajib diisi' }, { status: 400 })
     const nominalNum = Math.round(Number(nominal) || 0)
@@ -153,6 +171,27 @@ export async function POST(req: Request) {
       if (nominalNum > kelebihanBayar) {
         const labelAksi = jenisFinal === 'refund' ? 'refund' : 'alokasi'
         return NextResponse.json({ error: `Nominal ${labelAksi} tidak boleh melebihi kelebihan bayar (${kelebihanBayar.toLocaleString('id-ID')})` }, { status: 400 })
+      }
+    }
+
+    // Minimal pembayaran — aturan yang SAMA persis dengan yang ditegakkan di
+    // app/api/pembayaran/route.ts (pendaftar bayar sendiri): pembayaran
+    // PERTAMA minimal minimalPembayaranAwal (uang pendaftaran, default
+    // Rp200.000), cicilan berikutnya minimal minimalCicilan (default
+    // Rp100.000) — KECUALI sisa tagihan memang lebih kecil dari itu, supaya
+    // cicilan PENUTUP tidak ikut tertahan gara-gara sisanya tinggal sedikit.
+    // Hanya berlaku untuk "bayar" — refund/alokasi punya batasnya sendiri
+    // (dibatasi maksimal sebesar kelebihan bayar, sudah dicek di atas).
+    if (jenisFinal === 'bayar') {
+      const { totalDibayar } = hitungRingkasan(existing.pembayaranList, existing.totalTagihan || 0)
+      const sisaBayar = Math.max((existing.totalTagihan || 0) - totalDibayar, 0)
+      const angsuranBayarKe = existing.pembayaranList.filter(p => (p.jenis || 'bayar') === 'bayar').length + 1
+      const minimalAwal = await getMinimalPembayaranAwal(existing.tahunAjaranId)
+      const minimalCicilan = await getMinimalCicilan(existing.tahunAjaranId)
+      const minRequiredBase = angsuranBayarKe === 1 ? minimalAwal : minimalCicilan
+      const minRequired = sisaBayar > 0 && sisaBayar < minRequiredBase ? sisaBayar : minRequiredBase
+      if (nominalNum < minRequired) {
+        return NextResponse.json({ error: `Minimal pembayaran ${formatRupiah(minRequired)}` }, { status: 400 })
       }
     }
 

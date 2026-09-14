@@ -3,15 +3,16 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
 
-const TAUTAN = [
-  { href: '#tentang', label: 'Tentang' },
-  { href: '#jenjang', label: 'Jenjang' },
-  { href: '#alur', label: 'SPMB' },
-  { href: '#jadwal', label: 'Jadwal' },
-  { href: '#biaya', label: 'Biaya' },
-  { href: '#persyaratan', label: 'Persyaratan' },
+const BAGIAN = [
+  { id: 'tentang', label: 'Tentang' },
+  { id: 'jenjang', label: 'Jenjang' },
+  { id: 'alur', label: 'SPMB' },
+  { id: 'jadwal', label: 'Jadwal' },
+  { id: 'biaya', label: 'Biaya' },
+  { id: 'persyaratan', label: 'Persyaratan' },
 ]
 
 /**
@@ -28,6 +29,15 @@ const TAUTAN = [
 export function Navigation() {
   const [lengket, setLengket] = useState(false)
   const [menuBuka, setMenuBuka] = useState(false)
+  const pathname = usePathname()
+
+  // Bagian-bagian ini (#tentang, #jenjang, dst.) hanya benar-benar dirender
+  // di halaman utama /spmb — lewat <JalurMendatar>. Di halaman lain (mis.
+  // detail jenjang) id yang sama tidak pernah ada, jadi tautan hash polos
+  // tidak punya tujuan. Di luar /spmb, tautan diarahkan balik ke
+  // "/spmb#bagian" dulu; begitu sampai, efek di <JalurMendatar> yang
+  // memindahkan tampilan ke bagian yang benar.
+  const diLandingUtama = pathname === '/spmb'
 
   useEffect(() => {
     // Ambangnya rendah supaya perubahannya terasa segera setelah bergerak,
@@ -66,7 +76,11 @@ export function Navigation() {
         </Link>
 
         <nav className="lp-nav-tautan" aria-label="Navigasi halaman">
-          {TAUTAN.map(t => <a key={t.href} href={t.href}>{t.label}</a>)}
+          {BAGIAN.map(b => (
+            diLandingUtama
+              ? <a key={b.id} href={`#${b.id}`}>{b.label}</a>
+              : <Link key={b.id} href={`/spmb#${b.id}`} scroll={false}>{b.label}</Link>
+          ))}
         </nav>
 
         <div className="lp-nav-aksi">
@@ -85,8 +99,10 @@ export function Navigation() {
 
       {menuBuka && (
         <nav className="lp-menu" aria-label="Navigasi seluler">
-          {TAUTAN.map(t => (
-            <a key={t.href} href={t.href} onClick={() => setMenuBuka(false)}>{t.label}</a>
+          {BAGIAN.map(b => (
+            diLandingUtama
+              ? <a key={b.id} href={`#${b.id}`} onClick={() => setMenuBuka(false)}>{b.label}</a>
+              : <Link key={b.id} href={`/spmb#${b.id}`} scroll={false} onClick={() => setMenuBuka(false)}>{b.label}</Link>
           ))}
           <Link href="/login" className="lp-menu-masuk" onClick={() => setMenuBuka(false)}>
             Masuk ke Akun

@@ -97,7 +97,7 @@ function PersyaratanInner() {
   const handleUpload = async (b: Baris, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { beriToast('Ukuran file maksimal 5MB'); return; }
+    if (file.size > 2 * 1024 * 1024) { beriToast('Ukuran file maksimal 2MB'); return; }
     setMengunggahId(b.id);
     try {
       const fd = new FormData();

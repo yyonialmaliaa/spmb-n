@@ -19,6 +19,7 @@ const LABEL_BAYAR: Record<string, string> = {
   cicilan_berjalan: 'Cicilan Berjalan',
   lunas: 'Lunas',
   ditolak: 'Ditolak',
+  dikembalikan: 'Dikembalikan',
 }
 
 const rupiah = (n: number) => 'Rp' + n.toLocaleString('id-ID')

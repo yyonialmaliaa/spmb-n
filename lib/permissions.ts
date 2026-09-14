@@ -81,7 +81,24 @@ export const MATRIX: Matrix = {
   },
 
   // Front office: penuh di area SPMB, read-only di area keuangan,
-  // KECUALI harga & diskon yang boleh diedit.
+  // KECUALI harga & diskon yang boleh diedit, dan kini juga BOLEH
+  // membantu input pembayaran + menerapkan diskon yang sudah tersedia
+  // (bukan lagi read-only di dua resource ini).
+  //
+  // 'pembayaran': update' di sini SEMATA-MATA supaya lolos gerbang POST
+  // /api/admin/pembayaran (route itu memakai izin 'update' untuk aksi
+  // "input pembayaran baru" — nama izinnya memang sudah begitu sebelum
+  // perubahan ini, bukan sesuatu yang baru diperkenalkan sekarang). Refund
+  // & alokasi kelebihan bayar TETAP bukan wewenang Front Office walau
+  // secara kasar mereka "punya" izin update pada resource yang sama — route
+  // itu sendiri yang menolak admin_spmb secara eksplisit untuk kedua jenis
+  // transaksi tersebut (lihat komentar di app/api/admin/pembayaran/route.ts).
+  //
+  // 'tagihan': update' di sini KHUSUS untuk field diskonId/hitungUlang
+  // (lihat FIELD_RESOURCE di app/api/admin/pendaftar/[id]/route.ts) — itulah
+  // satu-satunya jalan "menerapkan diskon" ditegakkan di sistem ini. Field
+  // tagihan lain (kalau kelak ada) ikut lolos gerbang yang sama; sejauh ini
+  // memang hanya diskonId/hitungUlang yang ada di baliknya.
   admin_spmb: {
     dashboard: R,
     pendaftar: ['read', 'create', 'update', 'export'],
@@ -92,8 +109,8 @@ export const MATRIX: Matrix = {
     persyaratan: RCUD,
     harga: RCU,
     diskon: RCU,
-    tagihan: R,
-    pembayaran: R,
+    tagihan: RU,
+    pembayaran: RCU,
     transaksi: RX,
     laporan_pendaftaran: RX,
     laporan_keuangan: RX,
@@ -185,7 +202,7 @@ export const LABEL_ROLE: Record<Role, string> = {
 /** Keterangan panjang untuk halaman Pengguna Admin & Bantuan. */
 export const DESKRIPSI_ROLE: Record<Role, string> = {
   super_admin: 'Akses penuh ke seluruh sistem, termasuk tahun ajaran dan pengguna admin.',
-  admin_spmb: 'Front office: kelola pendaftar, verifikasi, jadwal, dan persyaratan. Area keuangan hanya bisa dilihat, kecuali harga dan diskon.',
+  admin_spmb: 'Front office: kelola pendaftar, verifikasi, jadwal, dan persyaratan. Boleh mengatur harga, diskon, membantu input pembayaran, dan menerapkan diskon yang sudah tersedia — tapi tidak bisa mengembalikan atau mengalokasikan kelebihan bayar.',
   admin_keuangan: 'Loket keuangan: kelola tagihan, pembayaran, dan transaksi. Tidak dapat memverifikasi dokumen atau mengubah kelulusan.',
   user: 'Akun pendaftar, tanpa akses panel admin.',
 }

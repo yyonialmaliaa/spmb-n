@@ -7,8 +7,9 @@ import {
 } from 'lucide-react';
 import { JENJANG_LABEL, Jenjang } from '@/lib/biaya';
 import { formatRupiah, hitungRingkasan } from '@/lib/pembayaran-utils';
-import { PermissionGate, ReadOnlyBanner } from '@/components/admin/ui';
+import { PermissionGate } from '@/components/admin/ui';
 import { isAdminRole, normalizeRole } from '@/lib/permissions';
+import { useAdmin } from '@/components/admin/AdminProvider';
 
 type Cicilan = {
   id: string; angsuranKe: number; nominal: number; jenis?: string;
@@ -74,6 +75,7 @@ const STATUS_BAYAR_CONFIG: Record<string, { label: string; color: string; bg: st
   cicilan_berjalan:    { label: 'Cicilan Berjalan',   color: 'var(--adm-ungu)', bg: 'var(--adm-ungu-weak)' },
   lunas:               { label: 'Lunas',              color: 'var(--adm-success)', bg: 'var(--adm-success-weak)' },
   ditolak:             { label: 'Ditolak',            color: 'var(--adm-danger)', bg: 'var(--adm-danger-weak)' },
+  dikembalikan:        { label: 'Dikembalikan',       color: 'var(--adm-warning)', bg: 'var(--adm-warning-weak)' },
 };
 
 const STATUS_CICILAN: Record<string, { label: string; color: string; bg: string }> = {
@@ -88,6 +90,17 @@ export default function DetailPendaftarPage() {
   const router = useRouter();
   const params = useParams();
   const id = (Array.isArray(params.id) ? params.id[0] : params.id) as string;
+  const { role } = useAdmin();
+  // Verifikasi keuangan — menerima/menolak cicilan yang menunggu verifikasi,
+  // mengembalikan dana, dan mengalokasikan kelebihan bayar — TETAP khusus
+  // Admin Keuangan (Loket) & Super Admin. PermissionGate resource=
+  // "pembayaran" action="update" saja tidak lagi cukup untuk ketiganya:
+  // Admin SPMB kini juga punya izin itu, tapi hanya untuk "Bantu Input
+  // Pembayaran" (mencatat pembayaran baru) di bawah — bukan untuk
+  // memverifikasi/menolak/mengembalikan/mengalokasikan. Digerbangi eksplisit
+  // lewat role, sama seperti gerbang eksplisit di app/api/admin/pembayaran/
+  // route.ts dan app/api/admin/pembayaran/[id]/route.ts.
+  const bolehVerifikasiKeuangan = role === 'admin_keuangan' || role === 'super_admin';
 
   const [data, setData] = useState<Pendaftar | null>(null);
   const [loading, setLoading] = useState(true);
@@ -482,12 +495,18 @@ export default function DetailPendaftarPage() {
         {/* ============ TAB KEUANGAN ============ */}
         {tab === 'keuangan' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {/* Front Office memang boleh MELIHAT seluruh data keuangan —
-                yang disembunyikan hanya tombol yang pasti ditolak server. */}
-            <ReadOnlyBanner
-              resource="pembayaran"
-              pesan="Anda dapat melihat rincian tagihan dan riwayat pembayaran. Pencatatan, pengembalian, dan alokasi dana hanya dapat dilakukan oleh Admin Keuangan."
-            />
+            {/* Front Office memang boleh MELIHAT seluruh data keuangan, dan
+                sekarang juga boleh MENCATAT pembayaran baru + menerapkan
+                diskon — yang TIDAK boleh hanya pengembalian & alokasi dana.
+                Bukan <ReadOnlyBanner resource="pembayaran"> lagi: itu
+                berbasis isReadOnly(resource), yang sekarang bernilai false
+                untuk Admin SPMB (mereka punya create+update di resource ini),
+                padahal refund/alokasi tetap harus disembunyikan dari mereka. */}
+            {!bolehVerifikasiKeuangan && (
+              <div className="adm-banner adm-banner--info" style={{ marginBottom: 16 }}>
+                Anda dapat melihat rincian tagihan, mencatat pembayaran baru, dan menerapkan diskon. Pengembalian dan alokasi kelebihan bayar hanya dapat dilakukan oleh Admin Keuangan.
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <Link href={`/admin/kwitansi/${data.id}`} target="_blank" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
                 <Printer size={14} /> Cetak Kwitansi (Semua Pembayaran)
@@ -575,9 +594,18 @@ export default function DetailPendaftarPage() {
 
             {/* Kembalikan kelebihan bayar (pindah jurusan / tidak jadi daftar) —
                 selalu tampil (section B11), tinggal nonaktif kalau memang
-                tidak ada kelebihan bayar untuk dikembalikan. */}
-            <PermissionGate resource="pembayaran" action="update">
-            <div style={{ background: kelebihanBayar > 0 ? 'var(--adm-warning-weak)' : 'var(--adm-text-faint)', border: `1px solid ${kelebihanBayar > 0 ? 'var(--adm-warning-border)' : 'var(--adm-text-faint)'}`, borderRadius: 14, padding: 20 }}>
+                tidak ada kelebihan bayar untuk dikembalikan. BUKAN
+                PermissionGate resource="pembayaran" — Admin SPMB punya izin
+                itu juga sekarang tapi TETAP tidak boleh refund. */}
+            {/* Nonaktif TIDAK berarti "solid abu-abu pekat" — var(--adm-text-faint)
+                dirancang untuk warna TEKS, dipakai sebagai latar penuh
+                malah terlihat seperti kotak yang "kepencet"/rusak. Latar
+                nonaktifnya sekarang var(--adm-neutral-weak) (netral terang,
+                sama seperti panel nonaktif lain di admin) + border tipis
+                var(--adm-border) — abu-abunya tetap terlihat jelas nonaktif,
+                cuma tidak lagi terlihat seperti elemen yang gagal render. */}
+            {bolehVerifikasiKeuangan && (
+            <div style={{ background: kelebihanBayar > 0 ? 'var(--adm-warning-weak)' : 'var(--adm-neutral-weak)', border: `1px solid ${kelebihanBayar > 0 ? 'var(--adm-warning-border)' : 'var(--adm-border)'}`, borderRadius: 14, padding: 20 }}>
               <h3 style={{ fontSize: 14, fontWeight: 700, color: kelebihanBayar > 0 ? 'var(--adm-warning)' : 'var(--adm-text-faint)', marginBottom: 4 }}>↩ Kembalikan Kelebihan Bayar (Dikembalikan)</h3>
               <p style={{ fontSize: 12, color: 'var(--adm-text-muted)', marginBottom: 14 }}>
                 {kelebihanBayar > 0
@@ -635,14 +663,16 @@ export default function DetailPendaftarPage() {
                 </button>
               </fieldset>
             </div>
-            </PermissionGate>
+            )}
 
             {/* Alokasikan kelebihan bayar ke pembayaran sekolah lain — sama
                 seperti refund, selalu tampil (nonaktif kalau tidak ada
                 kelebihan bayar), uangnya TETAP di sekolah cuma dipindah
-                peruntukannya (tidak pernah dianggap cicilan ataupun refund). */}
-            <PermissionGate resource="pembayaran" action="update">
-            <div style={{ background: kelebihanBayar > 0 ? 'var(--adm-ungu-weak)' : 'var(--adm-text-faint)', border: `1px solid ${kelebihanBayar > 0 ? 'var(--adm-ungu-weak)' : 'var(--adm-text-faint)'}`, borderRadius: 14, padding: 20 }}>
+                peruntukannya (tidak pernah dianggap cicilan ataupun refund).
+                BUKAN PermissionGate resource="pembayaran" — sama seperti
+                refund di atas, ini tetap khusus Admin Keuangan/Super Admin. */}
+            {bolehVerifikasiKeuangan && (
+            <div style={{ background: kelebihanBayar > 0 ? 'var(--adm-ungu-weak)' : 'var(--adm-neutral-weak)', border: `1px solid ${kelebihanBayar > 0 ? 'var(--adm-ungu-weak)' : 'var(--adm-border)'}`, borderRadius: 14, padding: 20 }}>
               <h3 style={{ fontSize: 14, fontWeight: 700, color: kelebihanBayar > 0 ? 'var(--adm-ungu)' : 'var(--adm-text-faint)', marginBottom: 4 }}>⇄ Alokasikan Kelebihan Bayar</h3>
               <p style={{ fontSize: 12, color: 'var(--adm-text-muted)', marginBottom: 14 }}>
                 {kelebihanBayar > 0
@@ -684,7 +714,7 @@ export default function DetailPendaftarPage() {
                 </button>
               </fieldset>
             </div>
-            </PermissionGate>
+            )}
 
             {/* Ringkasan keuangan — SATU sumber data (hitungRingkasan atas
                 data.pembayaranList dari server), semua angka SELALU tampil
@@ -708,7 +738,7 @@ export default function DetailPendaftarPage() {
                 <div style={{ ...lbl, color: 'var(--adm-ungu)' }}>TOTAL ALOKASI</div>
                 <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--adm-ungu)' }}>{formatRupiah(totalAlokasi)}</div>
               </div>
-              <div style={{ background: kelebihanBayar > 0 ? 'var(--adm-info-weak)' : 'var(--adm-text-faint)', borderRadius: 12, padding: 16, border: `1px solid ${kelebihanBayar > 0 ? 'var(--adm-info-border)' : 'var(--adm-text-faint)'}` }}>
+              <div style={{ background: kelebihanBayar > 0 ? 'var(--adm-info-weak)' : 'var(--adm-neutral-weak)', borderRadius: 12, padding: 16, border: `1px solid ${kelebihanBayar > 0 ? 'var(--adm-info-border)' : 'var(--adm-border)'}` }}>
                 <div style={{ ...lbl, color: kelebihanBayar > 0 ? 'var(--adm-info)' : 'var(--adm-text-faint)' }}>SALDO/KELEBIHAN TERSEDIA</div>
                 <div style={{ fontSize: 20, fontWeight: 700, color: kelebihanBayar > 0 ? 'var(--adm-info)' : 'var(--adm-text-muted)' }}>{formatRupiah(kelebihanBayar)}</div>
               </div>
@@ -764,7 +794,11 @@ export default function DetailPendaftarPage() {
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                         <span style={{ background: csc.bg, color: csc.color, padding: '4px 12px', borderRadius: 14, fontSize: 11, fontWeight: 700 }}>{csc.label}</span>
-                        {c.status === 'menunggu_verifikasi' && (
+                        {/* Sama seperti antrean di /admin/pembayaran: menerima/
+                            menolak cicilan adalah verifikasi keuangan, khusus
+                            Admin Keuangan & Super Admin — bukan Admin SPMB,
+                            walau mereka boleh MENCATAT cicilan baru di atas. */}
+                        {c.status === 'menunggu_verifikasi' && bolehVerifikasiKeuangan && (
                           <>
                             <button onClick={() => handleVerifikasiCicilan(c, 'lunas')} style={{ padding: '6px 12px', background: 'var(--adm-success)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Verifikasi</button>
                             <button onClick={() => handleVerifikasiCicilan(c, 'ditolak')} style={{ padding: '6px 12px', background: 'var(--adm-danger-weak)', color: 'var(--adm-danger)', border: '1px solid var(--adm-danger-border)', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Tolak</button>

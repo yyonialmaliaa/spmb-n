@@ -193,10 +193,10 @@ export default function Footer() {
           gap: 10,
         }}>
           <p style={{ fontSize: 12, color: 'var(--adm-text-muted)' }}>
-            © 2026 SMK Citra Negara. All rights reserved.
+            © {new Date().getFullYear()} Citra Negara. All rights reserved.
           </p>
           <p style={{ fontSize: 12, color: 'var(--adm-text-muted)' }}>
-            SPMB v1.0 team 5
+            Website developed by Yoni Al&apos;fiani Amalia
           </p>
         </div>
       </div>

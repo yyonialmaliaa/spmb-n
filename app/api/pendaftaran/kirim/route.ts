@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { hitungTotalDisetorkan, getMinimalPembayaranAwal, lockTagihanJikaBelum, formatRupiah, HargaTidakDitemukanError } from '@/lib/keuangan'
 import { notifPendaftarBaru } from '@/lib/notifikasiAdmin'
+import { buatNomorPendaftaran } from '@/lib/nomorPendaftaran'
 
 // POST - "Kirim Formulir" (section A2): mengubah draft menjadi status
 // "verified" (masuk ke admin). Ditolak kalau field wajib belum lengkap ATAU
@@ -17,7 +18,7 @@ export async function POST() {
   try {
     const pendaftaran = await prisma.pendaftaran.findUnique({
       where: { userId: session.userId },
-      include: { pembayaranList: true },
+      include: { pembayaranList: true, tahunAjaran: true },
     })
     if (!pendaftaran) return NextResponse.json({ error: 'Data pendaftaran belum dibuat' }, { status: 404 })
     if (pendaftaran.status !== 'draft') {
@@ -64,9 +65,23 @@ export async function POST() {
     const noOrtu = pendaftaran.noOrtu || pendaftaran.noHpAyah || pendaftaran.noHpIbu || pendaftaran.noHpWali || null
     const ttl = pendaftaran.ttl || `${pendaftaran.tempatLahir || ''}, ${pendaftaran.tanggalLahir || ''}`
 
+    // Nomor resmi dibuat TEPAT DI SINI, sekali seumur hidup pendaftaran ini
+    // — inilah momen "formulir berhasil dikirim" yang dimaksud. Kondisi
+    // `!pendaftaran.noPendaftaran` murni jaga-jaga (status sudah dijaga
+    // ketat 'draft' di atas, jadi endpoint ini semestinya tidak pernah
+    // dipanggil dua kali untuk pendaftaran yang sama) — tapi tidak ada
+    // ruginya tidak menimpa nomor yang entah bagaimana sudah ada.
+    const noPendaftaran =
+      pendaftaran.noPendaftaran ??
+      (await buatNomorPendaftaran({
+        tahunAjaranId: pendaftaran.tahunAjaranId,
+        tahunAjaranNama: pendaftaran.tahunAjaran.nama,
+        jenjang: pendaftaran.jenjang,
+      }))
+
     const updated = await prisma.pendaftaran.update({
       where: { id: pendaftaran.id },
-      data: { status: 'verified', asalSekolah, namaOrtu, noOrtu, ttl },
+      data: { status: 'verified', asalSekolah, namaOrtu, noOrtu, ttl, noPendaftaran, submittedAt: new Date() },
     })
 
     // Inilah saat pendaftar online benar-benar masuk antrean kerja admin

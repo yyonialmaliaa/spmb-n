@@ -14,8 +14,10 @@ const LABEL_STATUS: Record<string, string> = {
 // Route ini menyentuh TIGA area kewenangan yang berbeda dalam satu PUT, jadi
 // satu gerbang permission saja tidak cukup — setiap field harus dipetakan ke
 // area yang benar. Di sinilah aturan "Admin Keuangan TIDAK BOLEH verifikasi
-// dokumen atau mengubah kelulusan" benar-benar ditegakkan, dan sebaliknya
-// "Front Office TIDAK BOLEH mengubah tagihan".
+// dokumen atau mengubah kelulusan" benar-benar ditegakkan. Front Office
+// (admin_spmb) BOLEH menyentuh 'tagihan' — tapi HANYA lewat diskonId/
+// hitungUlang di bawah, yaitu "menerapkan diskon yang sudah tersedia", bukan
+// wewenang keuangan yang lebih luas (lihat lib/permissions.ts).
 const FIELD_RESOURCE: Record<string, Resource> = {
   // Hasil pemeriksaan berkas
   status: 'verifikasi',

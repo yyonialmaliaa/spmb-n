@@ -46,6 +46,7 @@ export const STATUS_BAYAR_CONFIG: Record<string, { label: string; color: string;
   menunggu_verifikasi: { label: 'Menunggu Verifikasi Admin', color: 'var(--adm-info)', bg: 'var(--adm-info-weak)', border: 'var(--adm-info-border)' },
   lunas: { label: 'Lunas', color: 'var(--adm-success)', bg: 'var(--adm-success-weak)', border: 'var(--adm-success-border)' },
   ditolak: { label: 'Ditolak, Silakan Ulangi', color: 'var(--adm-danger)', bg: 'var(--adm-danger-weak)', border: 'var(--adm-danger-border)' },
+  dikembalikan: { label: 'Dana Telah Dikembalikan', color: 'var(--adm-warning)', bg: 'var(--adm-warning-weak)', border: 'var(--adm-warning-border)' },
 };
 
 // Daftar berkas wajib SPMB — dipakai bersama oleh Dashboard, Pendaftaran, dan

@@ -56,6 +56,7 @@ const STATUS_BAYAR_CONFIG: Record<string, { label: string; color: string; bg: st
   menunggu_verifikasi: { label: 'Menunggu Verifikasi',       color: 'var(--adm-info)', bg: 'var(--adm-info-weak)' },
   lunas:               { label: 'Lunas',                     color: 'var(--adm-success)', bg: 'var(--adm-success-weak)' },
   ditolak:             { label: 'Ditolak',                   color: 'var(--adm-danger)', bg: 'var(--adm-danger-weak)' },
+  dikembalikan:        { label: 'Dikembalikan',               color: 'var(--adm-warning)', bg: 'var(--adm-warning-weak)' },
 };
 
 function getInitials(name?: string | null) { const n = name || '?'; return n.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase(); }

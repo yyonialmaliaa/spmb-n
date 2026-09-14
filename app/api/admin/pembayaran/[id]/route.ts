@@ -24,9 +24,24 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 }
 
 // PUT - admin verifikasi (lunas) atau tolak satu cicilan pembayaran
+//
+// KHUSUS Admin Keuangan (Loket) & Super Admin — walau Admin SPMB sekarang
+// punya izin 'pembayaran':'update' juga (dipakai untuk lolos gerbang POST
+// /api/admin/pembayaran saat "membantu input pembayaran", lihat komentar
+// di lib/permissions.ts), MEMVERIFIKASI/MENOLAK bukti bayar yang disetor
+// pendaftar online adalah pekerjaan keuangan yang berbeda dan TETAP bukan
+// wewenang Front Office. Ditolak eksplisit di sini, sama seperti refund/
+// alokasi ditolak eksplisit di app/api/admin/pembayaran/route.ts.
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const gate = await requirePermission('pembayaran', 'update')
   if (!gate.ok) return gate.res
+
+  if (gate.session.role === 'admin_spmb') {
+    return NextResponse.json(
+      { error: 'Admin SPMB tidak dapat memverifikasi pembayaran. Hubungi Admin Keuangan.' },
+      { status: 403 },
+    )
+  }
 
   try {
     const { id } = await params
