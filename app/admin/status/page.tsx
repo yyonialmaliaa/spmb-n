@@ -52,7 +52,7 @@ export default function StatusPage() {
 
 function StatusInner() {
   const searchParams = useSearchParams();
-  const { jenjang, jenjangSingkat } = useAdmin();
+  const { jenjang, jenjangSingkat, href } = useAdmin();
   const tahunAjaranId = searchParams.get('tahunAjaranId') || '';
 
   const [filter, setFilter] = useState('');
@@ -198,7 +198,7 @@ function StatusInner() {
                     return (
                       <tr key={p.id}>
                         <td>
-                          <Link href={`/admin/pendaftar/${p.id}`} style={{ fontWeight: 600, color: 'var(--adm-text)', textDecoration: 'none' }}>
+                          <Link href={href(`/admin/pendaftar/${p.id}`)} style={{ fontWeight: 600, color: 'var(--adm-text)', textDecoration: 'none' }}>
                             {p.namaLengkap || '—'}
                           </Link>
                         </td>
@@ -217,7 +217,7 @@ function StatusInner() {
                             resource="status"
                             action="update"
                             fallback={
-                              <Link href={`/admin/pendaftar/${p.id}`} className="adm-btn adm-btn--ghost adm-btn--sm">
+                              <Link href={href(`/admin/pendaftar/${p.id}`)} className="adm-btn adm-btn--ghost adm-btn--sm">
                                 Lihat Detail
                               </Link>
                             }

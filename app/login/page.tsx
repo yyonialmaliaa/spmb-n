@@ -1,7 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import { isAdminRole, normalizeRole } from '@/lib/permissions';
@@ -9,8 +9,38 @@ import { TemaToggle } from '@/components/TemaToggle';
 import { NAMA_INSTITUSI } from '@/lib/labels';
 import '../admin/admin.css';
 
+/**
+ * Ke mana diarahkan setelah berhasil masuk.
+ *
+ * proxy.ts sudah menyimpan halaman yang TADINYA dituju ke `?next=` ketika
+ * seseorang membuka tautan dalam tanpa sesi — tapi dulu nilai itu diabaikan
+ * di sini, jadi setelah masuk orang selalu dibuang ke dashboard umum, bukan
+ * ke halaman yang ia klik. Dua penjagaan:
+ *
+ *  1. Hanya path internal yang diterima ("/..." dan bukan "//"), supaya
+ *     `?next=` tidak bisa dipakai melempar orang ke situs luar.
+ *  2. Area harus cocok dengan perannya. Mengirim admin ke /dashboard (atau
+ *     pendaftar ke /admin) hanya akan dipantulkan lagi oleh proxy — jadi
+ *     untuk kasus itu pakai beranda perannya sendiri.
+ */
+function tujuanSetelahMasuk(next: string | null, keAdmin: boolean): string {
+  const bawaan = keAdmin ? '/admin/dashboard' : '/dashboard';
+  if (!next || !next.startsWith('/') || next.startsWith('//')) return bawaan;
+  if (next.startsWith('/admin') !== keAdmin) return bawaan;
+  return next;
+}
+
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginInner />
+    </Suspense>
+  );
+}
+
+function LoginInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -34,13 +64,11 @@ export default function LoginPage() {
         return;
       }
 
-      // Ketiga role admin (Super Admin, Admin SPMB, Admin Keuangan) masuk ke
-      // halaman Pilih Jenjang; pendaftar masuk ke portal siswa.
-      if (isAdminRole(normalizeRole(data.user.role))) {
-        router.push('/admin/dashboard');
-      } else {
-        router.push('/dashboard');
-      }
+      // Ketiga role admin (Super Admin, Admin SPMB, Admin Keuangan) pulang ke
+      // halaman Pilih Jenjang; pendaftar ke portal siswa — KECUALI kalau tadi
+      // memang sedang menuju halaman tertentu (?next=), lanjutkan ke sana.
+      const keAdmin = isAdminRole(normalizeRole(data.user.role));
+      router.push(tujuanSetelahMasuk(searchParams.get('next'), keAdmin));
     } catch {
       setError('Terjadi kesalahan jaringan');
     } finally {

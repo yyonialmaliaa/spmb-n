@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { getDataLanding } from '@/lib/landing'
 import { Pembuka } from '@/components/landing/Pembuka'
 import { JalurMendatar, Bab } from '@/components/landing/JalurMendatar'
-import { Kemajuan } from '@/components/landing/Kemajuan'
 import { Navigation } from '@/components/landing/Navigation'
 import { Hero } from '@/components/landing/Hero'
 import { Intro } from '@/components/landing/Intro'
@@ -55,34 +54,32 @@ export default async function LandingSPMB() {
   const data = await getDataLanding()
   const namaTA = data.tahunAjaran?.nama ?? null
 
-  // Satu daftar untuk urutan bab dan isinya — supaya urutan cerita dan
-  // penanda kemajuan mustahil saling meleset.
+  // Satu daftar untuk urutan bab dan isinya.
   const BAB: {
     kunci: string
-    nama: string
     isi: React.ReactNode
     lebar?: boolean
     tinggi?: boolean
     id?: string
   }[] = [
-    { kunci: 'hero',        nama: 'Pembuka',              isi: <Hero tahunAjaran={namaTA} /> },
-    { kunci: 'intro',       nama: 'Tentang',              isi: <Intro /> },
-    { kunci: 'nilai',       nama: 'Yang Kami Pegang',     lebar: true, isi: <Values /> },
-    { kunci: 'jenjang',     nama: 'Jenjang',              lebar: true, id: 'bab-jenjang',
+    { kunci: 'hero',        isi: <Hero tahunAjaran={namaTA} /> },
+    { kunci: 'intro',       isi: <Intro /> },
+    { kunci: 'nilai',       lebar: true, isi: <Values /> },
+    { kunci: 'jenjang',     lebar: true, id: 'bab-jenjang',
       isi: <JenjangStory daftar={data.jenjang.map(j => ({ jenjang: j.jenjang, singkat: j.singkat, label: j.label }))} /> },
-    { kunci: 'pengalaman',  nama: 'Pengalaman',           lebar: true, isi: <Experience /> },
-    { kunci: 'alur',        nama: 'Alur SPMB',            lebar: true, tinggi: true, isi: <AlurSPMB /> },
-    { kunci: 'jadwal',      nama: 'Jadwal',               lebar: true, isi: <JadwalSPMB jenjang={data.jenjang} /> },
-    { kunci: 'biaya',       nama: 'Biaya',                lebar: true, isi: <Biaya jenjang={data.jenjang} /> },
-    { kunci: 'persyaratan', nama: 'Persyaratan',          lebar: true, isi: <Persyaratan jenjang={data.jenjang} /> },
-    { kunci: 'mengapa',     nama: 'Mengapa Citra Negara', isi: <WhyCitraNegara /> },
+    { kunci: 'pengalaman',  lebar: true, isi: <Experience /> },
+    { kunci: 'alur',        lebar: true, tinggi: true, isi: <AlurSPMB /> },
+    { kunci: 'jadwal',      lebar: true, isi: <JadwalSPMB jenjang={data.jenjang} /> },
+    { kunci: 'biaya',       lebar: true, isi: <Biaya jenjang={data.jenjang} /> },
+    { kunci: 'persyaratan', lebar: true, isi: <Persyaratan jenjang={data.jenjang} /> },
+    { kunci: 'mengapa',     isi: <WhyCitraNegara /> },
     // Penutup dan footer SATU bab, bukan dua. Sebelumnya footer punya bab
     // sendiri, sehingga di mode mendatar ia terasa sebagai "layar kosong"
     // yang berdiri sendirian setelah CTA. Digabung + ditandai `tinggi`
     // (pola yang sama dipakai Alur SPMB), footer sekarang menyusul CTA di
     // dalam bab yang sama — dicapai dengan menggulir sedikit lagi, bukan
     // dengan berpindah ke "chapter" baru.
-    { kunci: 'penutup', nama: 'Daftar Sekarang', lebar: true, tinggi: true,
+    { kunci: 'penutup', lebar: true, tinggi: true,
       isi: (
         <>
           <FinalCTA tahunAjaran={namaTA} />
@@ -91,8 +88,6 @@ export default async function LandingSPMB() {
       ) },
   ]
 
-  const NAMA_BAB = BAB.map(b => b.nama)
-
   return (
     <div className="lp-root">
       {/* Penanda anti-kedip tirai (data-pembuka) dipasang skrip di
@@ -100,10 +95,7 @@ export default async function LandingSPMB() {
       <Pembuka />
       <Navigation />
 
-      {/* Penanda kemajuan dikirim lewat prop `lapisan`, BUKAN sebagai anak —
-          agar tidak ikut tergeser bersama jalur. Nama babnya harus urut sama
-          persis dengan urutan <Bab> di bawah. */}
-      <JalurMendatar lapisan={<Kemajuan bab={NAMA_BAB} />}>
+      <JalurMendatar>
         {BAB.map(b => (
           <Bab
             key={b.kunci}

@@ -80,7 +80,7 @@ export default function PilihJenjangPage() {
 function PilihJenjangInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, tahunAjaran, tahunAjaranList, isHistoris, canAny, can } = useAdmin();
+  const { user, tahunAjaran, tahunAjaranList, isHistoris, canAny, can, href } = useAdmin();
 
   // Proxy mengarahkan ke sini dengan ?ditolak=<resource> ketika role ini tidak
   // punya akses ke section yang dibuka — supaya admin mendapat penjelasan,
@@ -162,8 +162,11 @@ function PilihJenjangInner() {
                   ? `${tglPendek(periode.mulai)} – ${tglPendek(periode.selesai)}`
                   : 'Belum diatur'}
               </div>
+              {/* href() supaya jenjang + tahun ajaran yang sedang dibuka ikut
+                  terbawa — Jadwal SPMB datanya per jenjang, jadi tanpa ini
+                  admin mendarat di jenjang bawaan tanpa sadar. */}
               <Link
-                href="/admin/gelombang"
+                href={href('/admin/gelombang')}
                 style={{ fontSize: 12, color: 'var(--adm-primary)', fontWeight: 600, textDecoration: 'none', display: 'inline-block', marginTop: 6 }}
               >
                 Atur Jadwal SPMB →

@@ -27,6 +27,7 @@ export type Session = { userId: string; email: string; role: string; namaLengkap
 
 export type Pendaftaran = {
   id: string; namaLengkap: string; jurusan: string; jenjang?: string; kelas?: string;
+  noPendaftaran?: string | null;
   asalSD?: string; asalSMP?: string; asalSekolah?: string; gelombang?: string;
   status: string; nilaiSeleksi?: number;
   catatan?: string; alasanPenolakan?: string;

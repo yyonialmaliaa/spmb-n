@@ -58,8 +58,12 @@ function TambahPendaftarOfflineInner() {
 
   const [pendaftaranId, setPendaftaranId] = useState<string | null>(idParam);
   const [jenjang, setJenjang] = useState<Jenjang>(() => {
-    const p = (searchParams.get('jenjang') || 'smk').toLowerCase();
-    return (['smp', 'sma', 'smk'].includes(p) ? p : 'smk') as Jenjang;
+    // 'smp' sebagai bawaan terakhir — sama dengan bawaan konteks admin
+    // (AdminProvider) — supaya kalau suatu saat halaman ini dibuka tanpa
+    // ?jenjang= sama sekali, nilainya tidak berselisih dengan yang
+    // ditampilkan sidebar.
+    const p = (searchParams.get('jenjang') || 'smp').toLowerCase();
+    return (['smp', 'sma', 'smk'].includes(p) ? p : 'smp') as Jenjang;
   });
   const isSMK = jenjang === 'smk';
 
@@ -85,6 +89,16 @@ function TambahPendaftarOfflineInner() {
       if (!d.data) { setLoadingData(false); return; }
       const rec = d.data;
       setJenjang((['smp', 'sma', 'smk'].includes(rec.jenjang) ? rec.jenjang : 'smk') as Jenjang);
+      // Sama seperti /admin/pendaftar/[id]: rute ini tidak punya segmen
+      // jenjang, jadi konteks sidebar (AdminProvider) hanya tahu lewat query
+      // "?jenjang=". Kalau tautan yang membawa admin ke sini lupa
+      // menyertakannya, tempelkan sekarang dari jenjang RECORD yang
+      // sebenarnya, supaya sidebar tidak diam-diam jatuh ke bawaan.
+      if (rec.jenjang && searchParams.get('jenjang') !== rec.jenjang) {
+        const sp = new URLSearchParams(searchParams.toString())
+        sp.set('jenjang', rec.jenjang)
+        router.replace(`/admin/pendaftar/tambah?${sp.toString()}`)
+      }
       setForm(f => {
         const next = { ...f };
         for (const key of Object.keys(INITIAL_FORM)) {

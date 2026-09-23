@@ -38,7 +38,13 @@ function DokumenContent({ pendaftaran }: PortalContext) {
 
   // Ke mana tombol "Lengkapi" mengarah — pakai alur yang SUDAH ADA, bukan
   // upload baru di halaman ini: draft -> lanjutkan formulir, ditolak -> revisi.
-  const lengkapiHref = pendaftaran.status === 'ditolak' ? '/spmb/revisi' : pendaftaran.status === 'draft' ? '/spmb/daftar' : null;
+  // Jenjang ikut dibawa ke formulir supaya langsung terbuka pada jenjang
+  // pendaftar ini (bukan jenjang bawaan lebih dulu).
+  const lengkapiHref = pendaftaran.status === 'ditolak'
+    ? '/spmb/revisi'
+    : pendaftaran.status === 'draft'
+      ? `/spmb/daftar?jenjang=${pendaftaran.jenjang || 'smk'}`
+      : null;
 
   return (
     <div style={{ maxWidth: 760, margin: '0 auto' }}>

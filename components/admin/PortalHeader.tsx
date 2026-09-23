@@ -30,7 +30,9 @@ export function PortalHeader({ badge }: { badge?: string }) {
   return (
     <header className="adm-portal-head">
       <div className="adm-portal-inner">
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 11, textDecoration: 'none', color: 'inherit' }}>
+        {/* Sama seperti Sidebar: merek mengarah ke beranda ADMIN, bukan ke
+            situs publik. */}
+        <Link href="/admin/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 11, textDecoration: 'none', color: 'inherit' }}>
           <span className="adm-logo-kotak">{inisial(NAMA_INSTITUSI, 'CN')}</span>
           <span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>

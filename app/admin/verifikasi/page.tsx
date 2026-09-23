@@ -50,6 +50,7 @@ interface Pendaftar {
   waVerified?: boolean;
   createdAt: string;
   userEmail?: string | null;
+  noPendaftaran?: string | null;
   [k: string]: unknown;
 }
 
@@ -61,8 +62,12 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'ditolak', label: 'Ditolak / Perlu Perbaikan' },
 ];
 
-function noPendaftaran(id: string, tgl: string) {
-  return `REG-${new Date(tgl).getFullYear()}-${id.slice(0, 5).toUpperCase()}`;
+// Format resmi "SPMB/0001/SMP/2026-2027/A7K9" (lihat lib/nomorPendaftaran.ts)
+// dibuat sekali saat formulir dikirim dan disimpan di kolom noPendaftaran —
+// cukup ditampilkan apa adanya. Baris lawas dari sebelum kolom itu ada belum
+// punya nomor resmi; REG-YYYY-XXXXX murni jaring pengaman, bukan format baru.
+function nomorTampil(p: Pendaftar) {
+  return p.noPendaftaran || `REG-${new Date(p.createdAt).getFullYear()}-${p.id.slice(0, 5).toUpperCase()}`;
 }
 
 export default function VerifikasiPage() {
@@ -71,7 +76,7 @@ export default function VerifikasiPage() {
 
 function VerifikasiInner() {
   const searchParams = useSearchParams();
-  const { jenjang, jenjangSingkat, can } = useAdmin();
+  const { jenjang, jenjangSingkat, can, href } = useAdmin();
   const tahunAjaranId = searchParams.get('tahunAjaranId') || '';
 
   const [tab, setTab] = useState<Tab>('verified');
@@ -265,7 +270,7 @@ function VerifikasiInner() {
                           </div>
                         </td>
                         <td style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>
-                          {noPendaftaran(p.id, p.createdAt)}
+                          {nomorTampil(p)}
                         </td>
                         <td>
                           {wajib.length === 0 ? (
@@ -309,7 +314,7 @@ function VerifikasiInner() {
               <div>
                 <div className="adm-card-title">{dipilih.namaLengkap || 'Pendaftar'}</div>
                 <div style={{ fontSize: 11.5, color: 'var(--adm-text-muted)', marginTop: 2 }}>
-                  {noPendaftaran(dipilih.id, dipilih.createdAt)}
+                  {nomorTampil(dipilih)}
                   {dipilih.jurusan ? ` · ${dipilih.jurusan}` : ''}
                 </div>
               </div>
@@ -323,7 +328,7 @@ function VerifikasiInner() {
               {berkasDari(dipilih).length === 0 ? (
                 <p style={{ fontSize: 13, color: 'var(--adm-text-muted)' }}>
                   Persyaratan berkas untuk jenjang ini belum diatur.{' '}
-                  <Link href="/admin/persyaratan" style={{ color: 'var(--adm-primary)' }}>Atur sekarang →</Link>
+                  <Link href={href('/admin/persyaratan')} style={{ color: 'var(--adm-primary)' }}>Atur sekarang →</Link>
                 </p>
               ) : (
                 <div style={{ display: 'grid', gap: 8 }}>
@@ -365,7 +370,7 @@ function VerifikasiInner() {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '12px 20px', borderTop: '1px solid var(--adm-border)', background: 'var(--adm-surface-alt)' }}>
-              <Link href={`/admin/pendaftar/${dipilih.id}`} className="adm-btn adm-btn--ghost adm-btn--sm">
+              <Link href={href(`/admin/pendaftar/${dipilih.id}`, { jenjang: dipilih.jenjang || jenjang })} className="adm-btn adm-btn--ghost adm-btn--sm">
                 Buka Detail Lengkap
               </Link>
               <PermissionGate

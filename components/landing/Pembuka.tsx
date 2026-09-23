@@ -51,9 +51,8 @@ import { useReducedMotion } from 'framer-motion'
 //
 // Konten halaman tetap utuh di HTML sejak awal — ini hanya lapisan di atasnya,
 // jadi mesin pencari dan pembaca layar tidak pernah menunggu animasi. Bisa
-// dilewati kapan saja: tekan tombol apa pun, klik, gulir, atau tombol
-// "Lewati". Pengguna yang meminta gerak dikurangi tidak melihatnya sama
-// sekali (diatur di landing.css).
+// dilewati kapan saja: tekan tombol apa pun, klik, atau gulir. Pengguna yang
+// meminta gerak dikurangi tidak melihatnya sama sekali (diatur di landing.css).
 // ---------------------------------------------------------------------------
 
 /** Lama tirai bertahan sebelum terangkat sendiri. */
@@ -314,15 +313,6 @@ export function Pembuka() {
 
       <span className="lp-pembuka-garis" />
       <span className="lp-pembuka-tahun">Penerimaan Murid Baru</span>
-
-      <button
-        type="button"
-        className="lp-pembuka-lewati"
-        onClick={() => setPergi(true)}
-        tabIndex={-1}
-      >
-        Lewati
-      </button>
     </div>
   )
 }

@@ -62,7 +62,7 @@ export default function TagihanPage() {
 
 function TagihanInner() {
   const searchParams = useSearchParams();
-  const { jenjang, jenjangSingkat } = useAdmin();
+  const { jenjang, jenjangSingkat, href } = useAdmin();
   const tahunAjaranId = searchParams.get('tahunAjaranId') || '';
 
   const [filter, setFilter] = useState('');
@@ -187,7 +187,7 @@ function TagihanInner() {
                       <tr key={r.id}>
                         <td style={{ color: 'var(--adm-text-faint)', fontSize: 12 }}>{String(i + 1).padStart(2, '0')}</td>
                         <td>
-                          <Link href={`/admin/pendaftar/${r.id}`} style={{ fontWeight: 600, color: 'var(--adm-text)', textDecoration: 'none' }}>
+                          <Link href={href(`/admin/pendaftar/${r.id}`)} style={{ fontWeight: 600, color: 'var(--adm-text)', textDecoration: 'none' }}>
                             {r.namaLengkap || '—'}
                           </Link>
                           <div style={{ fontSize: 11.5, color: 'var(--adm-text-muted)' }}>

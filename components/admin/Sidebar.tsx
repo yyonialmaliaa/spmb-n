@@ -215,7 +215,10 @@ export function Sidebar({ terbuka, onTutup }: { terbuka: boolean; onTutup: () =>
     <aside className={`adm-sidebar${terbuka ? ' is-open' : ''}`}>
       <div className="adm-sidebar-head">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <Link href="/" className="adm-brand">
+          {/* Merek mengarah ke BERANDA ADMIN (Pilih Jenjang), bukan ke situs
+              publik: admin yang sedang bekerja di panel tidak boleh terlempar
+              keluar hanya karena mengklik logo. */}
+          <Link href="/admin/dashboard" className="adm-brand">
             <span
               style={{
                 width: 32, height: 32, borderRadius: 'var(--adm-r-md)',

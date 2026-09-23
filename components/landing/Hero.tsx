@@ -116,11 +116,6 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
           </div>
         </div>
       </div>
-
-      <div className="lp-gulir-petunjuk" aria-hidden="true" style={{ opacity: pudar }}>
-        <span>Scroll</span>
-        <span className="lp-gulir-garis" />
-      </div>
     </section>
   )
 }

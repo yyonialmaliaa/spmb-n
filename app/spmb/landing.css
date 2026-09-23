@@ -490,41 +490,6 @@
   margin-top: 2.4rem;
 }
 
-.lp-gulir-petunjuk {
-  position: absolute;
-  bottom: 1.6rem;
-  right: clamp(1.25rem, 5vw, 4rem);
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.75);
-}
-.lp-gulir-garis {
-  display: block;
-  width: 1px;
-  height: 44px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), transparent);
-  animation: lp-turun 2.1s ease-in-out infinite;
-}
-@keyframes lp-turun {
-  0%,
-  100% {
-    transform: scaleY(0.35);
-    transform-origin: top;
-    opacity: 0.4;
-  }
-  50% {
-    transform: scaleY(1);
-    transform-origin: top;
-    opacity: 1;
-  }
-}
-
 /* --- Panel horizontal (jenjang, program, alur) ---------------------------- */
 
 .lp-lorong {
@@ -1265,9 +1230,6 @@
   .lp-baris > span {
     transform: none !important;
   }
-  .lp-gulir-garis {
-    animation: none;
-  }
 }
 
 /* ===========================================================================
@@ -1559,8 +1521,7 @@
   pointer-events: none;
 }
 .lp-pembuka.is-pergi .lp-pembuka-garis,
-.lp-pembuka.is-pergi .lp-pembuka-tahun,
-.lp-pembuka.is-pergi .lp-pembuka-lewati {
+.lp-pembuka.is-pergi .lp-pembuka-tahun {
   opacity: 0;
   transition: opacity 0.45s ease;
 }
@@ -1718,131 +1679,8 @@
   }
 }
 
-.lp-pembuka-lewati {
-  position: absolute;
-  bottom: 2rem;
-  font-family: var(--lp-sans);
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--lp-tinta-samar);
-  background: none;
-  border: none;
-  cursor: pointer;
-  animation: lp-tahun-muncul 0.6s ease 1.15s both;
-  transition: color var(--lp-cepat);
-}
-.lp-pembuka-lewati:hover {
-  color: var(--lp-tinta);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .lp-pembuka {
-    display: none;
-  }
-}
-
-/* ===========================================================================
-   PENANDA KEMAJUAN — hanya di mode mendatar.
-   =========================================================================== */
-
-.lp-kemajuan {
-  position: fixed;
-  left: clamp(1.25rem, 5vw, 4rem);
-  right: clamp(1.25rem, 5vw, 4rem);
-  bottom: 1.15rem;
-  z-index: 90;
-  display: flex;
-  align-items: center;
-  gap: clamp(0.75rem, 2vw, 1.5rem);
-  pointer-events: none;
-  color: var(--lp-tinta);
-}
-.lp-kemajuan > * {
-  pointer-events: auto;
-}
-
-.lp-kemajuan-label {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.7rem;
-  padding: 0.3rem 0.85rem;
-  border-radius: 999px;
-  background: var(--lp-kertas-hangat);
-  color: var(--lp-tinta);
-}
-
-.lp-kemajuan-nomor {
-  font-family: var(--lp-serif);
-  font-size: 0.95rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-.lp-kemajuan-total {
-  opacity: 0.45;
-}
-
-.lp-kemajuan-nama {
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  opacity: 0.75;
-  white-space: nowrap;
-  min-width: 8.5rem;
-}
-
-.lp-kemajuan-rel {
-  flex: 1 1 auto;
-  height: 1px;
-  /* Abu netral, bukan currentColor: rel ini membentang melewati sambungan
-     terang/gelap, jadi ia harus terlihat di kedua nada sekaligus. */
-  background: rgba(128, 138, 132, 0.45);
-  position: relative;
-  overflow: hidden;
-}
-.lp-kemajuan-isi {
-  display: block;
-  height: 100%;
-  background: currentColor;
-  transform-origin: left center;
-  will-change: transform;
-}
-
-.lp-kemajuan-titik {
-  display: flex;
-  gap: 0.42rem;
-}
-.lp-titik {
-  width: 6px;
-  height: 6px;
-  padding: 0;
-  border: none;
-  border-radius: 999px;
-  background: currentColor;
-  opacity: 0.3;
-  cursor: pointer;
-  transition:
-    background var(--lp-cepat),
-    transform var(--lp-cepat);
-}
-.lp-titik:hover {
-  opacity: 0.7;
-  transform: scale(1.35);
-}
-.lp-titik.is-kini {
-  opacity: 1;
-  transform: scale(1.35);
-}
-.lp-titik:focus-visible {
-  outline: 2px solid var(--lp-emas);
-  outline-offset: 3px;
-}
-
-@media (max-width: 1023px) {
-  .lp-kemajuan {
     display: none;
   }
 }

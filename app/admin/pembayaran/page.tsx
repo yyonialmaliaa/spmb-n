@@ -59,7 +59,7 @@ export default function PembayaranPage() {
 
 function PembayaranInner() {
   const searchParams = useSearchParams();
-  const { jenjang, jenjangSingkat, role } = useAdmin();
+  const { jenjang, jenjangSingkat, role, href } = useAdmin();
   // Verifikasi/tolak pembayaran TETAP khusus Admin Keuangan & Super Admin —
   // walau Admin SPMB sekarang punya izin 'pembayaran':'update' juga (untuk
   // lolos gerbang "membantu input pembayaran"), PermissionGate berbasis
@@ -197,7 +197,7 @@ function PembayaranInner() {
                     return (
                       <tr key={t.id}>
                         <td>
-                          <Link href={`/admin/pendaftar/${t.pendaftaranId}`} style={{ fontWeight: 600, color: 'var(--adm-text)', textDecoration: 'none' }}>
+                          <Link href={href(`/admin/pendaftar/${t.pendaftaranId}`)} style={{ fontWeight: 600, color: 'var(--adm-text)', textDecoration: 'none' }}>
                             {t.nama || '—'}
                           </Link>
                           <div style={{ fontSize: 11.5, color: 'var(--adm-text-muted)' }}>

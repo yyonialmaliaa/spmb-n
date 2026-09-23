@@ -2,17 +2,19 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, Upload, FileText, ExternalLink } from 'lucide-react';
+import { useAdmin } from '@/components/admin/AdminProvider';
 
 type Dokumen = { id: string; jenjang: string; jenis: string; nama: string; url?: string; namaFile?: string };
 
-const JENJANG_TABS: { value: 'smp' | 'sma' | 'smk'; label: string }[] = [
-  { value: 'smp', label: 'SMP' },
-  { value: 'sma', label: 'SMA' },
-  { value: 'smk', label: 'SMK' },
-];
-
 export default function AdminDokumenPage() {
-  const [jenjang, setJenjang] = useState<'smp' | 'sma' | 'smk'>('smp');
+  // Jenjang datang dari konteks admin bersama (URL -> scope akun -> bawaan),
+  // BUKAN lagi tab pilihan sendiri di halaman ini. Sebelumnya halaman ini
+  // selalu mulai di tab SMP terlepas dari konteks yang sedang dibuka admin —
+  // klik "Dokumen" di sidebar saat sedang di SMA tetap mendarat di SMP. Tab
+  // jenjang di sini duplikat dari "Ganti Jenjang" yang sudah ada di sidebar;
+  // sekarang keduanya memakai satu sumber yang sama supaya tidak pernah
+  // saling selisih (pola yang sama dipakai Harga, Persyaratan, dst.).
+  const { jenjang } = useAdmin();
   const [list, setList] = useState<Dokumen[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploadingKey, setUploadingKey] = useState('');
@@ -73,21 +75,10 @@ export default function AdminDokumenPage() {
           Isi dokumen berbeda-beda untuk tiap jenjang, jadi upload terpisah per jenjang di bawah ini. Setelah diupload, dokumen otomatis muncul di dashboard siswa <strong>jenjang yang sama</strong> yang sudah diterima (Terima Berkas), untuk didownload, diisi/ditandatangani, lalu dibawa ke sekolah.
         </p>
 
-        {/* Tab jenjang */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-          {JENJANG_TABS.map(t => (
-            <button
-              key={t.value}
-              onClick={() => setJenjang(t.value)}
-              style={{
-                padding: '9px 22px', borderRadius: 10, border: jenjang === t.value ? '2px solid var(--adm-secondary)' : '1.5px solid var(--adm-text-faint)',
-                background: jenjang === t.value ? 'var(--adm-warning-weak)' : 'var(--adm-surface)', color: jenjang === t.value ? 'var(--adm-warning)' : 'var(--adm-text-muted)',
-                fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
+        {/* Jenjang sekarang ikut konteks bersama (lihat "Ganti Jenjang" di
+            sidebar) — bukan lagi tab pilihan sendiri di halaman ini. */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 10, border: '1.5px solid var(--adm-secondary)', background: 'var(--adm-warning-weak)', color: 'var(--adm-warning)', fontWeight: 700, fontSize: 13, marginBottom: 24 }}>
+          {jenjang.toUpperCase()}
         </div>
 
         {loading ? (

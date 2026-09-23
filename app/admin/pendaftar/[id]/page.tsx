@@ -1,15 +1,18 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ChevronLeft, User, Wallet, Printer, ExternalLink, Pencil,
+  ShieldCheck, CheckCircle2, XCircle, RotateCcw, FileText,
+  MessageCircle, KeyRound, ClipboardCheck, X as XIcon,
 } from 'lucide-react';
 import { JENJANG_LABEL, Jenjang } from '@/lib/biaya';
 import { formatRupiah, hitungRingkasan } from '@/lib/pembayaran-utils';
 import { PermissionGate } from '@/components/admin/ui';
 import { isAdminRole, normalizeRole } from '@/lib/permissions';
 import { useAdmin } from '@/components/admin/AdminProvider';
+import { FIELD_BERKAS } from '@/lib/labels';
 
 type Cicilan = {
   id: string; angsuranKe: number; nominal: number; jenis?: string;
@@ -56,10 +59,30 @@ type Pendaftar = {
   totalTagihanLocked?: boolean;
   breakdown?: { hargaPokok: number; hargaTersedia: boolean; gelombangDiskonNominal: number; gelombangNama: string | null; diskonNominal: number; diskonNama: string | null; totalTagihan: number; locked: boolean } | null;
   sudahDaftarUlang?: boolean;
+  tanggalDaftarUlang?: string;
+  catatanDaftarUlang?: string;
+  revisiCount?: number;
+  alasanPenolakan?: string;
+  pesanPengumuman?: string;
+  noPendaftaran?: string | null;
+  validasiBerkas?: Record<string, { status: 'valid' | 'revisi'; catatan?: string }> | null;
 
   createdAt: string;
+  tahunAjaranId?: string;
   user?: { email: string };
+  userId?: string;
   pembayaranList: Cicilan[];
+};
+
+type Persyaratan = {
+  id: string; nama: string; fieldKey: string | null; jenjang: string;
+  wajib: boolean; aktif: boolean;
+};
+
+/** Satu baris di checklist: gabungan persyaratan + berkas yang diupload + status validasi admin. */
+type BarisBerkas = {
+  fieldKey: string; label: string; wajib: boolean; url: string | null;
+  status: 'valid' | 'revisi' | null; catatan?: string;
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -89,8 +112,9 @@ type Diskon = { id: string; jenis: string; tipeNominal: string; nominal: number;
 export default function DetailPendaftarPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const id = (Array.isArray(params.id) ? params.id[0] : params.id) as string;
-  const { role } = useAdmin();
+  const { role, href, can, tahunAjaranId } = useAdmin();
   // Verifikasi keuangan — menerima/menolak cicilan yang menunggu verifikasi,
   // mengembalikan dana, dan mengalokasikan kelebihan bayar — TETAP khusus
   // Admin Keuangan (Loket) & Super Admin. PermissionGate resource=
@@ -101,11 +125,24 @@ export default function DetailPendaftarPage() {
   // lewat role, sama seperti gerbang eksplisit di app/api/admin/pembayaran/
   // route.ts dan app/api/admin/pembayaran/[id]/route.ts.
   const bolehVerifikasiKeuangan = role === 'admin_keuangan' || role === 'super_admin';
+  // Pemeriksaan berkas & kelulusan (tab Verifikasi) — Admin Keuangan memang
+  // tidak diberi izin 'verifikasi' di lib/permissions.ts ("tidak dapat
+  // memverifikasi dokumen atau mengubah kelulusan"), jadi cukup pakai can()
+  // yang sama seperti /admin/verifikasi, bukan gerbang role manual baru.
+  const bolehVerifikasi = can('verifikasi', 'update');
+  const bolehHapus = can('pendaftar', 'delete');
 
   const [data, setData] = useState<Pendaftar | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'biodata' | 'keuangan'>('biodata');
+  const [tab, setTab] = useState<'verifikasi' | 'biodata' | 'keuangan'>('verifikasi');
   const [toast, setToast] = useState('');
+  const [persyaratan, setPersyaratan] = useState<Persyaratan[]>([]);
+  // Modal konfirmasi 2-langkah untuk ubah status kelulusan — sama seperti
+  // pola yang sudah ada (pilih status dulu, isi pesan/alasan, baru kirim),
+  // supaya siswa tidak pernah menerima notifikasi status tanpa admin sempat
+  // menuliskan pesannya.
+  const [statusModal, setStatusModal] = useState<{ status: 'diterima_berkas' | 'ditolak'; alasan: string; pesan: string } | null>(null);
+  const [savingStatus, setSavingStatus] = useState(false);
   const [formBayar, setFormBayar] = useState({ nominal: '', metode: '', bukti: '', uploading: false });
   const [savingBayar, setSavingBayar] = useState(false);
   const [formRefund, setFormRefund] = useState({ nominal: '', metode: '', bukti: '', alasan: '', alasanLainnya: '', uploading: false });
@@ -121,6 +158,22 @@ export default function DetailPendaftarPage() {
       setData(d.data || null);
       setSelectedDiskonId(d.data?.diskonId || '');
       setLoading(false);
+
+      // Rute ini ('/admin/pendaftar/[id]') tidak punya segmen jenjang, jadi
+      // AdminProvider (yang mengatur konteks Sidebar) HANYA tahu jenjangnya
+      // lewat query "?jenjang=". Kalau tautan yang membawa admin ke sini lupa
+      // menyertakannya, konteks sidebar diam-diam jatuh ke bawaan (SMP) —
+      // itulah bug "buka SMA, klik apa saja, tiba-tiba pindah ke SMP" yang
+      // dilaporkan. Begitu data pendaftar (dan jenjang aslinya) diketahui,
+      // tempelkan ke URL lewat replace (bukan push, supaya tidak menambah
+      // riwayat baru) — bukan cuma memperbaiki tautan DI HALAMAN ini, tapi
+      // seluruh sidebar yang membaca konteks yang sama.
+      const jenjangRekam = d.data?.jenjang
+      if (jenjangRekam && searchParams.get('jenjang') !== jenjangRekam) {
+        const sp = new URLSearchParams(searchParams.toString())
+        sp.set('jenjang', jenjangRekam)
+        router.replace(`/admin/pendaftar/${id}?${sp.toString()}`)
+      }
     });
   };
 
@@ -132,7 +185,190 @@ export default function DetailPendaftarPage() {
     fetch('/api/admin/diskon').then(r => r.json()).then(d => setDiskonList(d.data || []));
   }, [id]);
 
+  // Daftar persyaratan berkas untuk checklist tab Verifikasi — dari tahun
+  // ajaran & jenjang PENDAFTAR INI SENDIRI (bukan konteks admin yang sedang
+  // dibuka), supaya tetap benar walau admin sedang melihat tahun ajaran lain.
+  useEffect(() => {
+    if (!data?.jenjang || !data?.tahunAjaranId) return;
+    const qs = new URLSearchParams({ kategori: 'pendaftaran', jenjang: data.jenjang, tahunAjaranId: data.tahunAjaranId });
+    fetch(`/api/admin/persyaratan?${qs}`).then(r => r.json()).then(d => setPersyaratan((d.data || []).filter((s: Persyaratan) => s.aktif && s.fieldKey))).catch(() => setPersyaratan([]));
+  }, [data?.jenjang, data?.tahunAjaranId]);
+
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
+
+  // Gabungan persyaratan (nama, wajib) + berkas yang sudah diupload (url) +
+  // status pemeriksaan admin (validasiBerkas) — satu daftar siap-tampil
+  // untuk checklist di tab Verifikasi.
+  const checklistBerkas = (): BarisBerkas[] => {
+    if (!data) return [];
+    const daftar = persyaratan.length > 0
+      ? persyaratan
+      // Cadangan: persyaratan belum diatur admin untuk jenjang ini — pakai
+      // FIELD_BERKAS bawaan supaya checklist tidak kosong total.
+      : Object.keys(FIELD_BERKAS).map(fk => ({ id: fk, nama: FIELD_BERKAS[fk], fieldKey: fk, jenjang: data.jenjang || '', wajib: true, aktif: true }));
+    return daftar
+      .filter(s => s.fieldKey)
+      .map(s => {
+        const fieldKey = s.fieldKey as string;
+        const v = data.validasiBerkas?.[fieldKey];
+        return {
+          fieldKey,
+          label: FIELD_BERKAS[fieldKey] || s.nama,
+          wajib: s.wajib,
+          url: (data as unknown as Record<string, string | null>)[fieldKey] ?? null,
+          status: v?.status ?? null,
+          catatan: v?.catatan,
+        };
+      });
+  };
+
+  // Tandai satu berkas Valid / Perlu Revisi / bersihkan tandanya (✕).
+  const handleUbahValidasi = async (fieldKey: string, status: 'valid' | 'revisi' | null) => {
+    let catatan: string | undefined;
+    if (status === 'revisi') {
+      const c = prompt('Apa yang perlu diperbaiki pada berkas ini?');
+      if (c === null) return;
+      if (!c.trim()) { showToast('❌ Catatan revisi wajib diisi'); return; }
+      catatan = c.trim();
+    }
+    const res = await fetch(`/api/admin/pendaftar/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ validasiBerkas: { [fieldKey]: status === null ? null : { status, catatan } } }),
+    });
+    if (res.ok) { load(); } else { showToast('❌ Gagal menyimpan'); }
+  };
+
+  // Tombol besar "Setujui Semua (Valid)" — bulk tandai seluruh checklist
+  // Valid, lalu lanjut ke modal status "Terima Berkas" supaya admin tetap
+  // sempat menuliskan pesan selamat untuk siswa sebelum benar-benar dikirim
+  // (pola yang sama dengan tombol status lain — tidak ada status yang
+  // berubah/notifikasi terkirim tanpa admin sempat melihat pesannya dulu).
+  const handleSetujuiSemua = async () => {
+    if (!data) return;
+    const checklist = checklistBerkas();
+    if (!confirm('Tandai SEMUA berkas sebagai Valid, lalu lanjut ke penerimaan berkas?')) return;
+    const validasiBaru: Record<string, { status: 'valid' }> = {};
+    for (const b of checklist) validasiBaru[b.fieldKey] = { status: 'valid' };
+    const res = await fetch(`/api/admin/pendaftar/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ validasiBerkas: validasiBaru }),
+    });
+    if (!res.ok) { showToast('❌ Gagal menyimpan checklist'); return; }
+    load();
+    setStatusModal({ status: 'diterima_berkas', alasan: '', pesan: data.pesanPengumuman || 'Selamat! Berkas Anda dinyatakan lengkap dan diterima. Silakan tunggu informasi daftar ulang selanjutnya.' });
+  };
+
+  const handleTolakBerkas = () => {
+    setStatusModal({ status: 'ditolak', alasan: data?.alasanPenolakan || '', pesan: '' });
+  };
+
+  // "Minta Revisi" — rangkum catatan dari berkas yang sudah ditandai "Perlu
+  // Revisi" jadi satu draf alasan penolakan (tetap bisa diedit admin sebelum
+  // dikirim), supaya admin tidak perlu mengetik ulang apa yang sudah dicatat
+  // per-dokumen di checklist.
+  const handleMintaRevisi = () => {
+    const perluRevisi = checklistBerkas().filter(b => b.status === 'revisi');
+    const draf = perluRevisi.length > 0
+      ? perluRevisi.map(b => `• ${b.label}: ${b.catatan || 'perlu diperbaiki'}`).join('\n')
+      : '';
+    if (perluRevisi.length === 0) {
+      showToast('ℹ️ Tandai dulu berkas mana yang "Perlu Revisi" di checklist di bawah');
+    }
+    setStatusModal({ status: 'ditolak', alasan: draf, pesan: '' });
+  };
+
+  const handleKirimStatus = async () => {
+    if (!statusModal) return;
+    if (statusModal.status === 'ditolak' && !statusModal.alasan.trim()) {
+      showToast('❌ Alasan penolakan wajib diisi'); return;
+    }
+    setSavingStatus(true);
+    try {
+      const res = await fetch(`/api/admin/pendaftar/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(
+          statusModal.status === 'ditolak'
+            ? { status: 'ditolak', alasanPenolakan: statusModal.alasan.trim() }
+            : { status: 'diterima_berkas', pesanPengumuman: statusModal.pesan.trim() },
+        ),
+      });
+      if (res.ok) {
+        showToast(statusModal.status === 'ditolak' ? '↩ Berkas ditolak, siswa diberi tahu' : '✅ Berkas diterima, siswa diberi tahu');
+        setStatusModal(null);
+        load();
+      } else {
+        const d = await res.json().catch(() => ({}));
+        showToast(`❌ ${d.error || 'Gagal menyimpan'}`);
+      }
+    } finally {
+      setSavingStatus(false);
+    }
+  };
+
+  const handleKonfirmasiDaftarUlang = async () => {
+    if (!confirm('Konfirmasi bahwa siswa ini sudah melakukan daftar ulang?')) return;
+    const res = await fetch(`/api/admin/pendaftar/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sudahDaftarUlang: true }),
+    });
+    if (res.ok) { showToast('✅ Daftar ulang dikonfirmasi'); load(); } else { showToast('❌ Gagal menyimpan'); }
+  };
+
+  // Verifikasi WhatsApp (dicek manual admin, bukan otomatis)
+  const handleToggleWa = async () => {
+    if (!data) return;
+    const res = await fetch(`/api/admin/pendaftar/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ waVerified: !data.waVerified }),
+    });
+    if (res.ok) {
+      const d = await res.json();
+      showToast(d.data.waVerified ? '✅ No. WhatsApp ditandai terverifikasi' : 'No. WhatsApp dibatalkan verifikasinya');
+      load();
+    }
+  };
+
+  // Reset password akun siswa (untuk yang lupa email/password)
+  const handleResetPassword = async () => {
+    if (!data?.userId) { showToast('❌ Data akun tidak ditemukan'); return; }
+    const pwBaru = prompt(`Masukkan password baru untuk ${data.namaLengkap} (${data.user?.email || '-'}), minimal 8 karakter:`);
+    if (!pwBaru) return;
+    if (pwBaru.length < 8) { showToast('❌ Password minimal 8 karakter'); return; }
+    if (!confirm(`Reset password akun ${data.user?.email} menjadi password baru ini?`)) return;
+
+    const res = await fetch('/api/admin/reset-password', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: data.userId, passwordBaru: pwBaru }),
+    });
+    const d = await res.json();
+    if (res.ok) {
+      alert(`✅ Password berhasil direset!\n\nEmail: ${d.email}\nPassword baru: ${pwBaru}\n\nSampaikan info ini ke siswa melalui WhatsApp.`);
+    } else {
+      showToast(`❌ ${d.error || 'Gagal reset password'}`);
+    }
+  };
+
+  // Hapus permanen data pendaftar ini — dulu ada di modal "Detail" pada
+  // daftar Pendaftar, dipindah ke sini karena "Detail" sekarang langsung ke
+  // halaman ini (bukan modal lagi). Khusus yang punya izin pendaftar:delete
+  // (super_admin), sama seperti sebelumnya lewat DELETE /api/admin/pendaftar/[id].
+  const handleHapusData = async () => {
+    if (!data) return;
+    if (!confirm(`Yakin ingin menghapus data pendaftar "${data.namaLengkap}"? Tindakan ini tidak bisa dibatalkan.`)) return;
+    const res = await fetch(`/api/admin/pendaftar/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      showToast('🗑 Data dihapus');
+      router.push(href('/admin/pendaftar', { jenjang: data.jenjang }));
+    } else {
+      showToast('❌ Gagal menghapus data');
+    }
+  };
 
   const handleTerapkanDiskon = async () => {
     if (!data) return;
@@ -376,12 +612,13 @@ export default function DetailPendaftarPage() {
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 20, borderBottom: '1px solid var(--adm-border)' }}>
           {[
+            { k: 'verifikasi', label: 'Verifikasi', icon: ShieldCheck },
             { k: 'biodata', label: 'Biodata', icon: User },
             { k: 'keuangan', label: 'Keuangan', icon: Wallet },
           ].map(t => (
             <button
               key={t.k}
-              onClick={() => setTab(t.k as 'biodata' | 'keuangan')}
+              onClick={() => setTab(t.k as 'verifikasi' | 'biodata' | 'keuangan')}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: 'none',
                 border: 'none', borderBottom: tab === t.k ? '2px solid var(--adm-secondary)' : '2px solid transparent',
@@ -393,12 +630,223 @@ export default function DetailPendaftarPage() {
           ))}
         </div>
 
+        {/* ============ TAB VERIFIKASI ============ */}
+        {tab === 'verifikasi' && (() => {
+          const checklist = checklistBerkas();
+          const wajibList = checklist.filter(b => b.wajib);
+          const validCount = wajibList.filter(b => b.status === 'valid').length;
+          // Sekali berkas diterima, tombol Terima/Tolak (dan tiga aksi cepat
+          // di atas) dikunci abu-abu — satu-satunya langkah yang tersisa
+          // adalah Konfirmasi Daftar Ulang, supaya admin tidak bisa keliru
+          // bolak-balik status setelah keputusan dijatuhkan.
+          const statusFinal = data.status === 'diterima_berkas';
+          const badgeValidasi = (status: 'valid' | 'revisi' | null, adaBerkas: boolean) => {
+            if (!adaBerkas) return { teks: 'Belum diupload', color: 'var(--adm-text-faint)', bg: 'var(--adm-surface-alt)' };
+            if (status === 'valid') return { teks: 'Valid ✓', color: 'var(--adm-success)', bg: 'var(--adm-success-weak)' };
+            if (status === 'revisi') return { teks: 'Perlu Revisi ⚠', color: 'var(--adm-warning)', bg: 'var(--adm-warning-weak)' };
+            return { teks: 'Belum ditinjau', color: 'var(--adm-text-muted)', bg: 'var(--adm-surface-alt)' };
+          };
+
+          return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {/* Profil ringkas + tiga aksi cepat */}
+            <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 18, border: '1px solid var(--adm-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
+              <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+                <div style={{ width: 52, height: 52, borderRadius: 12, background: 'var(--adm-primary-weak)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: 'var(--adm-primary)', flexShrink: 0 }}>
+                  {(data.namaLengkap || '?').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()}
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--adm-text)' }}>{data.namaLengkap}</span>
+                    <span style={{ background: sc.bg, color: sc.color, padding: '2px 10px', borderRadius: 10, fontSize: 11, fontWeight: 700 }}>{sc.label}</span>
+                    {(data.revisiCount || 0) > 0 && (
+                      <span style={{ fontSize: 11, color: 'var(--adm-info)', background: 'var(--adm-info-weak)', padding: '2px 8px', borderRadius: 10, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                        <RotateCcw size={11} /> Revisi ke-{data.revisiCount}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--adm-text-muted)', marginTop: 3 }}>
+                    {data.noPendaftaran && <>#{data.noPendaftaran} · </>}
+                    {JENJANG_LABEL[jenjang]}{jenjang === 'smk' && data.jurusan ? ` — ${data.jurusan}` : ''}
+                    {data.gelombang && <> · Jalur: {data.gelombang}</>}
+                    {data.noPribadi && <> · 📱 {data.noPribadi}</>}
+                  </div>
+                </div>
+              </div>
+
+              {bolehVerifikasi && (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button onClick={handleTolakBerkas} disabled={statusFinal} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', background: 'var(--adm-danger-weak)', color: 'var(--adm-danger)', border: '1px solid var(--adm-danger-border)', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: statusFinal ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: statusFinal ? 0.5 : 1 }}>
+                    <XCircle size={14} /> Tolak
+                  </button>
+                  <button onClick={handleMintaRevisi} disabled={statusFinal} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', background: 'var(--adm-warning-weak)', color: 'var(--adm-warning)', border: '1px solid var(--adm-warning-border)', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: statusFinal ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: statusFinal ? 0.5 : 1 }}>
+                    <RotateCcw size={14} /> Minta Revisi
+                  </button>
+                  <button onClick={handleSetujuiSemua} disabled={statusFinal} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', background: 'var(--adm-success)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: statusFinal ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: statusFinal ? 0.6 : 1 }}>
+                    <CheckCircle2 size={14} /> Setujui Semua (Valid)
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: 20, alignItems: 'start' }}>
+              {/* LEFT — Checklist berkas */}
+              <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)', display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <ClipboardCheck size={16} /> Checklist Berkas &amp; Validasi Dokumen
+                  </h3>
+                  {wajibList.length > 0 && (
+                    <span style={{ fontSize: 11.5, fontWeight: 700, color: validCount === wajibList.length ? 'var(--adm-success)' : 'var(--adm-warning)', background: validCount === wajibList.length ? 'var(--adm-success-weak)' : 'var(--adm-warning-weak)', padding: '4px 10px', borderRadius: 10 }}>
+                      Progress: {validCount} / {wajibList.length} Valid
+                    </span>
+                  )}
+                </div>
+
+                {checklist.length === 0 ? (
+                  <p style={{ fontSize: 13, color: 'var(--adm-text-muted)' }}>
+                    Persyaratan berkas untuk jenjang ini belum diatur.{' '}
+                    <Link href={href('/admin/persyaratan')} style={{ color: 'var(--adm-primary)' }}>Atur sekarang →</Link>
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {checklist.map(b => {
+                      const badge = badgeValidasi(b.status, !!b.url);
+                      return (
+                        <div key={b.fieldKey} style={{ border: '1px solid var(--adm-border)', borderRadius: 10, background: 'var(--adm-surface-alt)', padding: '10px 12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+                              <FileText size={16} color="var(--adm-text-faint)" style={{ flexShrink: 0 }} />
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: 13, fontWeight: 650, color: 'var(--adm-text)' }}>
+                                  {b.label}{!b.wajib && <span style={{ fontWeight: 400, color: 'var(--adm-text-faint)' }}> (opsional)</span>}
+                                </div>
+                                {b.url && (
+                                  <a href={b.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11.5, color: 'var(--adm-secondary)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                    Lihat Berkas <ExternalLink size={10} />
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                              <span style={{ background: badge.bg, color: badge.color, padding: '3px 10px', borderRadius: 10, fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{badge.teks}</span>
+                              {bolehVerifikasi && b.url && !statusFinal && (
+                                <div style={{ display: 'flex', gap: 4 }}>
+                                  <button onClick={() => handleUbahValidasi(b.fieldKey, 'valid')} style={{ padding: '5px 9px', background: b.status === 'valid' ? 'var(--adm-success)' : 'var(--adm-success-weak)', color: b.status === 'valid' ? 'var(--adm-text-invert)' : 'var(--adm-success)', border: 'none', borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Valid ✓</button>
+                                  <button onClick={() => handleUbahValidasi(b.fieldKey, 'revisi')} style={{ padding: '5px 9px', background: b.status === 'revisi' ? 'var(--adm-warning)' : 'var(--adm-warning-weak)', color: b.status === 'revisi' ? 'var(--adm-text-invert)' : 'var(--adm-warning)', border: 'none', borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Revisi ⚠</button>
+                                  {b.status && (
+                                    <button onClick={() => handleUbahValidasi(b.fieldKey, null)} aria-label="Bersihkan tanda" style={{ padding: '5px 7px', background: 'var(--adm-neutral-weak)', color: 'var(--adm-text-muted)', border: '1px solid var(--adm-border)', borderRadius: 7, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                                      <XIcon size={11} />
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          {b.status === 'revisi' && b.catatan && (
+                            <div style={{ fontSize: 11.5, color: 'var(--adm-warning)', marginTop: 6, paddingLeft: 25 }}>
+                              {b.catatan}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {data.alasanPenolakan && (
+                  <div style={{ marginTop: 14, background: 'var(--adm-danger-weak)', border: '1px solid var(--adm-danger-border)', borderRadius: 10, padding: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--adm-danger)', marginBottom: 2 }}>Alasan penolakan terakhir dikirim ke siswa:</div>
+                    <div style={{ fontSize: 12, color: 'var(--adm-danger)', whiteSpace: 'pre-wrap' }}>{data.alasanPenolakan}</div>
+                  </div>
+                )}
+              </div>
+
+              {/* RIGHT — Panel Verifikasi */}
+              <div style={{ position: 'sticky', top: 20, background: 'var(--adm-surface)', borderRadius: 14, padding: 16, border: '1px solid var(--adm-border)' }}>
+                <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 12 }}>Panel Verifikasi</h4>
+
+                <div style={{ background: sc.bg, borderRadius: 8, padding: '9px 12px', marginBottom: 14 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: sc.color, marginBottom: 2 }}>STATUS SAAT INI</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: sc.color }}>{sc.label}</div>
+                </div>
+
+                {/* Verifikasi WhatsApp (manual, bukan email) */}
+                <div style={{ background: data.waVerified ? 'var(--adm-success-weak)' : 'var(--adm-warning-weak)', border: `1px solid ${data.waVerified ? 'var(--adm-success-border)' : 'var(--adm-warning-border)'}`, borderRadius: 8, padding: 10, marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: data.waVerified ? 'var(--adm-success)' : 'var(--adm-warning)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <MessageCircle size={13} /> No. WhatsApp: {data.noPribadi || '-'}
+                  </div>
+                  <p style={{ fontSize: 11, color: 'var(--adm-text-muted)', marginBottom: 8 }}>Hubungi nomor ini via WhatsApp untuk memastikan aktif &amp; benar milik pendaftar.</p>
+                  <button onClick={handleToggleWa} style={{ width: '100%', padding: '7px 10px', background: data.waVerified ? 'var(--adm-success-weak)' : 'var(--adm-text)', border: 'none', borderRadius: 8, color: data.waVerified ? 'var(--adm-success)' : 'var(--adm-text-invert)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    {data.waVerified ? '✓ WhatsApp Terverifikasi (klik batalkan)' : 'Tandai WhatsApp Terverifikasi'}
+                  </button>
+                </div>
+
+                {/* Reset Password Akun */}
+                <div style={{ background: 'var(--adm-ungu-weak)', border: '1px solid var(--adm-ungu-weak)', borderRadius: 8, padding: 10, marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--adm-ungu)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <KeyRound size={13} /> Akun Login: {data.user?.email || '-'}
+                  </div>
+                  <p style={{ fontSize: 11, color: 'var(--adm-text-muted)', marginBottom: 8 }}>Kalau siswa lupa email/password, reset di sini lalu sampaikan info barunya via WhatsApp.</p>
+                  <button onClick={handleResetPassword} style={{ width: '100%', padding: '7px 10px', background: 'var(--adm-ungu)', border: 'none', borderRadius: 8, color: 'var(--adm-text-invert)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    Reset Password Akun
+                  </button>
+                </div>
+
+                <button onClick={() => setTab('keuangan')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', padding: '9px 10px', background: 'var(--adm-primary)', borderRadius: 8, color: 'var(--adm-text-invert)', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: 'inherit', marginBottom: 12 }}>
+                  <Wallet size={13} /> Lihat Detail Lengkap &amp; Keuangan
+                </button>
+
+                {bolehVerifikasi && (
+                  <>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 8 }}>UBAH STATUS</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <button
+                        onClick={() => setStatusModal({ status: 'diterima_berkas', alasan: '', pesan: data.pesanPengumuman || '' })}
+                        disabled={statusFinal}
+                        style={{ width: '100%', padding: '8px 10px', background: 'var(--adm-success-weak)', border: '1px solid var(--adm-success-border)', borderRadius: 8, color: 'var(--adm-success)', fontSize: 12, fontWeight: 600, cursor: statusFinal ? 'not-allowed' : 'pointer', fontFamily: 'inherit', textAlign: 'left', opacity: statusFinal ? 0.5 : 1 }}>
+                        {statusFinal ? '✓ Terima Berkas (sudah)' : 'Terima Berkas'}
+                      </button>
+                      <button
+                        onClick={handleTolakBerkas}
+                        disabled={statusFinal}
+                        style={{ width: '100%', padding: '8px 10px', background: 'var(--adm-danger-weak)', border: '1px solid var(--adm-danger-border)', borderRadius: 8, color: 'var(--adm-danger)', fontSize: 12, fontWeight: 600, cursor: statusFinal ? 'not-allowed' : 'pointer', fontFamily: 'inherit', textAlign: 'left', opacity: statusFinal ? 0.5 : 1 }}>
+                        Tolak Berkas
+                      </button>
+
+                      {/* Konfirmasi Daftar Ulang — SENGAJA baru muncul & bisa
+                          dipencet setelah Terima Berkas, dan jadi langkah
+                          TERAKHIR (tidak ada lagi setelah ini). */}
+                      {statusFinal && (
+                        <button
+                          onClick={() => data.sudahDaftarUlang ? undefined : handleKonfirmasiDaftarUlang()}
+                          disabled={data.sudahDaftarUlang}
+                          style={{ width: '100%', padding: '8px 10px', background: 'var(--adm-success-weak)', border: '1px solid var(--adm-success-border)', borderRadius: 8, color: 'var(--adm-success)', fontSize: 12, fontWeight: 700, cursor: data.sudahDaftarUlang ? 'not-allowed' : 'pointer', fontFamily: 'inherit', textAlign: 'left', opacity: data.sudahDaftarUlang ? 0.7 : 1 }}>
+                          {data.sudahDaftarUlang ? '✓ Daftar Ulang Sudah Dikonfirmasi' : '📋 Konfirmasi Daftar Ulang'}
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {bolehHapus && (
+                  <button onClick={handleHapusData} style={{ width: '100%', marginTop: 14, background: 'var(--adm-danger-weak)', color: 'var(--adm-danger)', border: '1px solid var(--adm-danger-border)', borderRadius: 8, padding: '8px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                    🗑 Hapus Data
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+          );
+        })()}
+
         {/* ============ TAB BIODATA ============ */}
         {tab === 'biodata' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             {/* Semua formulir (online maupun offline) bisa dikoreksi/dilengkapi
                 lagi dari sini — bukan cuma draft offline. */}
-            <Link href={`/admin/pendaftar/tambah?id=${data.id}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: 'var(--adm-secondary)', borderRadius: 10, color: 'var(--adm-text-invert)', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+            <Link href={href('/admin/pendaftar/tambah', { id: data.id, jenjang })} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', background: 'var(--adm-secondary)', borderRadius: 10, color: 'var(--adm-text-invert)', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
               <Pencil size={15} /> Edit Formulir
             </Link>
             <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
@@ -520,7 +968,7 @@ export default function DetailPendaftarPage() {
                 <div style={{ background: 'var(--adm-danger-weak)', border: '1px solid var(--adm-danger-border)', borderRadius: 10, padding: 14, marginBottom: 16, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                   <span style={{ fontSize: 16 }}>⚠️</span>
                   <p style={{ fontSize: 12, color: 'var(--adm-danger)', lineHeight: 1.6, margin: 0 }}>
-                    Harga untuk {JENJANG_LABEL[jenjang]}{jenjang === 'smk' ? ` — ${data.jurusan}` : ''} ({data.kelas || 'REGULER'}) belum diatur di Panel Harga. Total tagihan TIDAK dapat dihitung sampai admin mengatur harganya di <Link href="/admin/harga" style={{ color: 'var(--adm-danger)', fontWeight: 700 }}>Panel Harga</Link>.
+                    Harga untuk {JENJANG_LABEL[jenjang]}{jenjang === 'smk' ? ` — ${data.jurusan}` : ''} ({data.kelas || 'REGULER'}) belum diatur di Panel Harga. Total tagihan TIDAK dapat dihitung sampai admin mengatur harganya di <Link href={href('/admin/harga', { jenjang })} style={{ color: 'var(--adm-danger)', fontWeight: 700 }}>Panel Harga</Link>.
                   </p>
                 </div>
               )}
@@ -813,6 +1261,58 @@ export default function DetailPendaftarPage() {
           </div>
         )}
       </div>
+
+      {/* Modal konfirmasi status — 2 langkah (pilih status dulu, lalu di
+          sinilah pesan/alasannya ditulis) supaya siswa tidak pernah menerima
+          notifikasi tanpa admin sempat melihat/menyunting pesannya. */}
+      {statusModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => !savingStatus && setStatusModal(null)}>
+          <div style={{ background: 'var(--adm-surface)', borderRadius: 16, width: '100%', maxWidth: 480, maxHeight: '88vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--adm-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--adm-text)' }}>
+                {statusModal.status === 'ditolak' ? 'Tolak Berkas' : 'Terima Berkas'} — {data.namaLengkap}
+              </h3>
+              <button onClick={() => setStatusModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--adm-text-faint)' }}><XIcon size={18} /></button>
+            </div>
+            <div style={{ padding: '18px 20px' }}>
+              {statusModal.status === 'ditolak' ? (
+                <div style={{ background: 'var(--adm-warning-weak)', borderRadius: 10, padding: 14, border: '1px solid var(--adm-warning-border)' }}>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--adm-warning)', display: 'block', marginBottom: 8 }}>Alasan penolakan (dikirim ke siswa) *</label>
+                  <textarea
+                    autoFocus
+                    style={{ width: '100%', minHeight: 120, padding: '9px 12px', border: '1.5px solid var(--adm-border-strong)', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'vertical' }}
+                    value={statusModal.alasan}
+                    onChange={e => setStatusModal(m => m && { ...m, alasan: e.target.value })}
+                    placeholder="Contoh: Scan Kartu Keluarga tidak terbaca, mohon unggah ulang."
+                  />
+                </div>
+              ) : (
+                <div style={{ background: 'var(--adm-success-weak)', borderRadius: 10, padding: 14, border: '1px solid var(--adm-success-border)' }}>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--adm-success)', display: 'block', marginBottom: 8 }}>Pesan untuk siswa (tampil di dashboard)</label>
+                  <textarea
+                    autoFocus
+                    style={{ width: '100%', minHeight: 120, padding: '9px 12px', border: '1.5px solid var(--adm-border-strong)', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'vertical' }}
+                    value={statusModal.pesan}
+                    onChange={e => setStatusModal(m => m && { ...m, pesan: e.target.value })}
+                    placeholder="Selamat! Berkas Anda diterima. Silakan tunggu informasi daftar ulang..."
+                  />
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 8, padding: '14px 20px', borderTop: '1px solid var(--adm-border)' }}>
+              <button onClick={() => setStatusModal(null)} disabled={savingStatus} style={{ flex: 1, padding: '10px', background: 'var(--adm-neutral-weak)', border: '1px solid var(--adm-border)', borderRadius: 8, color: 'var(--adm-text)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Batal
+              </button>
+              <button
+                onClick={handleKirimStatus}
+                disabled={savingStatus}
+                style={{ flex: 1, padding: '10px', background: statusModal.status === 'ditolak' ? 'var(--adm-danger)' : 'var(--adm-success)', border: 'none', borderRadius: 8, color: 'var(--adm-text-invert)', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: savingStatus ? 0.7 : 1 }}>
+                {savingStatus ? 'Mengirim...' : 'Simpan & Kirim'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

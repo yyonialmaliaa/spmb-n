@@ -67,7 +67,7 @@ export default function TransaksiPage() {
 
 function TransaksiInner() {
   const searchParams = useSearchParams();
-  const { jenjang, jenjangSingkat } = useAdmin();
+  const { jenjang, jenjangSingkat, href } = useAdmin();
   const tahunAjaranId = searchParams.get('tahunAjaranId') || '';
 
   const [jenis, setJenis] = useState('');
@@ -103,7 +103,7 @@ function TransaksiInner() {
         aksi={
           <PermissionGate resource="laporan_keuangan" action="export">
             <Link
-              href={`/admin/laporan/keuangan${jenjang ? `?jenjang=${jenjang}` : ''}`}
+              href={href('/admin/laporan/keuangan')}
               className="adm-btn adm-btn--ghost adm-btn--sm"
             >
               Buka Laporan Keuangan
@@ -190,7 +190,7 @@ function TransaksiInner() {
                         <tr key={t.id}>
                           <td style={{ color: 'var(--adm-text-faint)', fontSize: 12 }}>{String(i + 1).padStart(2, '0')}</td>
                           <td>
-                            <Link href={`/admin/pendaftar/${t.pendaftaranId}`} style={{ fontWeight: 600, color: 'var(--adm-text)', textDecoration: 'none' }}>
+                            <Link href={href(`/admin/pendaftar/${t.pendaftaranId}`)} style={{ fontWeight: 600, color: 'var(--adm-text)', textDecoration: 'none' }}>
                               {t.nama || '—'}
                             </Link>
                             <div style={{ fontSize: 11.5, color: 'var(--adm-text-muted)' }}>{t.jenjang.toUpperCase()}</div>

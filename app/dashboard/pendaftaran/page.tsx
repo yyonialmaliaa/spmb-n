@@ -7,9 +7,14 @@ import PortalShell, { PortalContext } from '@/components/portal/PortalShell';
 import { STATUS_CONFIG, TAHAPAN, teksSelanjutnya } from '@/components/portal/statusConfig';
 import { JENJANG_LABEL, Jenjang } from '@/lib/biaya';
 
-function getRegNo(id: string, date: string) {
-  const d = new Date(date);
-  return `REG-${d.getFullYear()}-${id.slice(0, 5).toUpperCase()}`;
+// Format resmi "SPMB/0001/SMP/2026-2027/A7K9" (lihat lib/nomorPendaftaran.ts)
+// dibuat sekali saat formulir dikirim dan disimpan di noPendaftaran — harus
+// SAMA dengan yang dilihat admin (lihat PendaftarView.tsx/verifikasi/page.tsx),
+// jadi cukup ditampilkan apa adanya di sini juga. Baris lawas dari sebelum
+// kolom itu ada belum punya nomor resmi; REG-YYYY-XXXXX murni jaring
+// pengaman, bukan format baru.
+function getRegNo(p: { id: string; createdAt: string; noPendaftaran?: string | null }) {
+  return p.noPendaftaran || `REG-${new Date(p.createdAt).getFullYear()}-${p.id.slice(0, 5).toUpperCase()}`;
 }
 
 export default function PendaftaranPage() {
@@ -66,7 +71,10 @@ function PendaftaranContent({ pendaftaran }: PortalContext) {
             <p style={{ fontSize: 13.5, color: 'var(--adm-text-muted)', lineHeight: 1.7, marginBottom: 16 }}>
               Formulir Anda tersimpan sebagai draft dan belum masuk ke admin. Lengkapi data & berkas, lalu selesaikan pembayaran untuk dapat mengirim formulir.
             </p>
-            <Link href="/spmb/daftar" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13.5 }}>
+            {/* Jenjang ikut dibawa supaya formulir langsung terbuka pada
+                jenjang pendaftar ini — tanpa itu formulir sempat memakai
+                jenjang bawaan dulu sebelum menimpanya dari data draft. */}
+            <Link href={`/spmb/daftar?jenjang=${jenjang}`} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13.5 }}>
               <Edit3 size={15} /> Lanjutkan Formulir
             </Link>
           </div>
@@ -126,7 +134,7 @@ function PendaftaranContent({ pendaftaran }: PortalContext) {
       <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 24, border: '1px solid var(--adm-border)' }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 16 }}>Data Pendaftaran</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
-          <DataField label="No. Pendaftaran" value={getRegNo(pendaftaran.id, pendaftaran.createdAt)} />
+          <DataField label="No. Pendaftaran" value={getRegNo(pendaftaran)} />
           <DataField label="Jenjang" value={`${JENJANG_LABEL[jenjang]}${pendaftaran.kelas ? ' - ' + pendaftaran.kelas : ''}`} />
           {jenjang === 'smk' && <DataField label="Jurusan" value={pendaftaran.jurusan || '-'} />}
           <DataField label="Gelombang" value={pendaftaran.gelombang || '-'} />
@@ -139,7 +147,7 @@ function PendaftaranContent({ pendaftaran }: PortalContext) {
       <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 24, border: '1px solid var(--adm-border)' }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 8 }}>Bukti Pendaftaran</h3>
         <p style={{ fontSize: 13, color: 'var(--adm-text-muted)', lineHeight: 1.6, marginBottom: 12 }}>
-          Nomor pendaftaran Anda adalah <strong style={{ color: 'var(--adm-text)' }}>{getRegNo(pendaftaran.id, pendaftaran.createdAt)}</strong>. Simpan nomor ini sebagai bukti Anda telah mendaftar.
+          Nomor pendaftaran Anda adalah <strong style={{ color: 'var(--adm-text)' }}>{getRegNo(pendaftaran)}</strong>. Simpan nomor ini sebagai bukti Anda telah mendaftar.
         </p>
         <Link href="/dashboard/dokumen" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: 'var(--adm-secondary)', textDecoration: 'none', background: 'var(--adm-secondary-weak)', padding: '9px 16px', borderRadius: 8 }}>
           Lihat Status Berkas Terupload

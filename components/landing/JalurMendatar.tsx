@@ -80,8 +80,37 @@ export function JalurMendatar({
     // sekaligus) tanpa membuat halaman terasa melayang atau tertinggal.
     const KEJAR = 0.14
 
+    // Bab "tinggi" (Alur SPMB, Penutup+Footer) punya overflow-y:auto sendiri
+    // supaya isinya yang lebih panjang dari satu layar bisa digulir menurun.
+    // Tapi itu berarti begitu SEBAGIAN kecil bab itu sudah kelihatan di
+    // layar (sementara geser mendatarnya masih dikejar KEJAR, belum
+    // benar-benar tiba), roda mouse yang lewat di atas potongan yang sudah
+    // tampak itu langsung digulir bab itu SENDIRI — scrollY dokumen (yang
+    // menggerakkan translateX) berhenti bertambah, dan geser mendatarnya
+    // macet setengah jalan sementara isinya (mis. footer) sudah mulai
+    // tergulir. Itulah "footer muncul sebelum mentok ke samping" yang
+    // dilaporkan. Diperbaiki dengan MENGUNCI overflow-y bab tinggi manapun
+    // (jadi 'hidden') selama bab itu belum PERSIS mengisi penuh layar, dan
+    // baru melepaskannya ('auto' lewat CSS bawaan) begitu geserannya tiba.
+    //
+    // Dicek terhadap `tujuan` (posisi gulir SEBENARNYA saat ini), BUKAN
+    // `kini` (posisi VISUAL yang sengaja dikejar pelan-pelan supaya halus).
+    // Kalau dicek dari `kini`, begitu gulir dokumen sudah mentok (scrollY
+    // tidak bisa maju lagi), kuncinya baru lepas beberapa bingkai KEMUDIAN —
+    // menunggu animasi kejarnya benar-benar tiba — dan selama jeda itu roda
+    // mouse terasa tidak berbuat apa-apa sama sekali (scrollY sudah mentok,
+    // bab masih terkunci): persis rasa "macet, harus dipaksa dulu" yang
+    // dilaporkan. `tujuan` diperbarui SAAT ITU JUGA setiap event 'scroll',
+    // jadi kuncinya lepas secepat gerakan gulir itu sendiri — transisi
+    // visualnya (kini mengejar tujuan) tetap jalan halus seperti biasa,
+    // hanya KUNCINYA yang tidak lagi ikut menunggu animasi itu selesai.
+    let babTinggi: { el: HTMLElement; kiri: number }[] = []
+
     const lukis = () => {
       rel.style.transform = `translate3d(${-kini}px, 0, 0)`
+      for (const { el, kiri } of babTinggi) {
+        el.style.overflowY = Math.abs(kiri - tujuan) < 1 ? '' : 'hidden'
+      }
     }
 
     const gerak = () => {
@@ -157,11 +186,20 @@ export function JalurMendatar({
         kini = tujuan = 0
         setPanjang(0)
         rel.style.transform = ''
+        // Mode menurun (ponsel/gerak dikurangi): bab tinggi ikut alur
+        // dokumen biasa, jangan pernah terkunci.
+        for (const { el } of babTinggi) el.style.overflowY = ''
         lompatKeHash(false)
         return
       }
       jarak = Math.max(0, rel.scrollWidth - window.innerWidth)
       setPanjang(jarak)
+      // offsetLeft (bukan getBoundingClientRect) sengaja dipakai: itu posisi
+      // tata letak murni, tidak terpengaruh transform translateX yang sedang
+      // berjalan di rel — jadi tetap benar diukur kapan pun, termasuk saat
+      // rel sedang bergeser.
+      babTinggi = Array.from(rel.querySelectorAll<HTMLElement>('.lp-bab--tinggi'))
+        .map(el => ({ el, kiri: el.offsetLeft }))
       // Saat mengukur ulang, posisinya diselaraskan seketika — bukan dikejar,
       // supaya perubahan ukuran jendela tidak terlihat seperti tergelincir.
       kini = tujuan = Math.min(Math.max(window.scrollY, 0), jarak)

@@ -2,14 +2,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Search, X, Save, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, X, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TopHeader } from '@/components/admin/TopHeader';
 import { PermissionGate, ReadOnlyBanner } from '@/components/admin/ui';
 import { hitungRingkasan } from '@/lib/pembayaran-utils';
 import { JENJANG_LABEL_FULL, JURUSAN_SMK, cariJurusan, punyaJurusan, type Jenjang } from '@/lib/labels';
 
 type Pendaftaran = {
-  id: string; namaLengkap: string | null; namaPanggilan?: string;
+  id: string; namaLengkap: string | null; namaPanggilan?: string; noPendaftaran?: string | null;
   tempatLahir?: string; tanggalLahir?: string; ttl?: string;
   jenisKelamin: string | null; agama: string | null; anakKe?: string;
   alamat: string | null; rt?: string; rw?: string;
@@ -60,7 +60,11 @@ const STATUS_BAYAR_CONFIG: Record<string, { label: string; color: string; bg: st
 };
 
 function getInitials(name?: string | null) { const n = name || '?'; return n.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase(); }
-function getRegNo(id: string, date: string) { const d = new Date(date); return `REG-${d.getFullYear()}-${id.slice(0, 5).toUpperCase()}`; }
+// Format resmi "SPMB/0001/SMP/2026-2027/A7K9" (lihat lib/nomorPendaftaran.ts)
+// dibuat sekali saat formulir dikirim dan disimpan di noPendaftaran — cukup
+// ditampilkan apa adanya. Baris lawas dari sebelum kolom itu ada belum
+// punya nomor resmi; REG-YYYY-XXXXX murni jaring pengaman, bukan format baru.
+function getRegNo(p: Pendaftaran) { return p.noPendaftaran || `REG-${new Date(p.createdAt).getFullYear()}-${p.id.slice(0, 5).toUpperCase()}`; }
 
 const ITEMS_PER_PAGE = 10;
 
@@ -117,15 +121,6 @@ export function PendaftarView({ sumberTetap }: PropPendaftarView) {
   const [filterJurusan, setFilterJurusan] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<Pendaftaran | null>(null);
-  const [editModal, setEditModal] = useState(false);
-  const [editForm, setEditForm] = useState({
-    status: '', catatan: '',
-    alasanPenolakan: '', waVerified: false,
-    statusPembayaran: '', catatanPembayaran: '',
-    pesanPengumuman: '', catatanDaftarUlang: '',
-  });
-  const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
 
   useEffect(() => {
@@ -142,88 +137,7 @@ export function PendaftarView({ sumberTetap }: PropPendaftarView) {
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
-  const openEdit = (p: Pendaftaran, defaultStatus?: string) => {
-    setSelected(p);
-    setEditForm({
-      status: defaultStatus || p.status,
-      catatan: p.catatan || '',
-      alasanPenolakan: p.alasanPenolakan || '',
-      waVerified: p.waVerified || false,
-      statusPembayaran: p.statusPembayaran || 'belum_bayar',
-      catatanPembayaran: p.catatanPembayaran || '',
-      pesanPengumuman: p.pesanPengumuman || '',
-      catatanDaftarUlang: p.catatanDaftarUlang || '',
-    });
-    setEditModal(true);
-  };
-
-  const handleSave = async () => {
-    if (!selected) return;
-    setSaving(true);
-    const res = await fetch(`/api/admin/pendaftar/${selected.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        status: editForm.status,
-        catatan: editForm.catatan,
-        alasanPenolakan: editForm.alasanPenolakan,
-        waVerified: editForm.waVerified,
-        statusPembayaran: editForm.statusPembayaran || undefined,
-        catatanPembayaran: editForm.catatanPembayaran,
-        pesanPengumuman: editForm.pesanPengumuman,
-        catatanDaftarUlang: editForm.catatanDaftarUlang,
-      }),
-    });
-    if (res.ok) { setEditModal(false); setSelected(null); loadData(); showToast('✅ Data berhasil diperbarui'); }
-    setSaving(false);
-  };
-
-  // Konfirmasi daftar ulang langsung
-  const handleKonfirmasiDaftarUlang = async (id: string) => {
-    if (!confirm('Konfirmasi bahwa siswa ini sudah melakukan daftar ulang offline?')) return;
-    const res = await fetch(`/api/admin/pendaftar/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sudahDaftarUlang: true }),
-    });
-    if (res.ok) { loadData(); setSelected(null); showToast('✅ Daftar ulang dikonfirmasi'); }
-  };
-
   // Toggle verifikasi WhatsApp (cek manual admin)
-  const handleToggleWa = async (p: Pendaftaran) => {
-    const res = await fetch(`/api/admin/pendaftar/${p.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ waVerified: !p.waVerified }),
-    });
-    if (res.ok) {
-      const d = await res.json();
-      setSelected(d.data);
-      loadData();
-      showToast(d.data.waVerified ? '✅ No. WhatsApp ditandai terverifikasi' : 'No. WhatsApp dibatalkan verifikasinya');
-    }
-  };
-
-  // Reset password akun siswa (untuk yang lupa email/password)
-  const handleResetPassword = async (p: Pendaftaran) => {
-    if (!p.userId) { showToast('❌ Data akun tidak ditemukan'); return; }
-    const pwBaru = prompt(`Masukkan password baru untuk ${p.namaLengkap} (${p.userEmail || '-'}), minimal 8 karakter:`);
-    if (!pwBaru) return;
-    if (pwBaru.length < 8) { showToast('❌ Password minimal 8 karakter'); return; }
-    if (!confirm(`Reset password akun ${p.userEmail} menjadi password baru ini?`)) return;
-
-    const res = await fetch('/api/admin/reset-password', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: p.userId, passwordBaru: pwBaru }),
-    });
-    const d = await res.json();
-    if (res.ok) {
-      alert(`✅ Password berhasil direset!\n\nEmail: ${d.email}\nPassword baru: ${pwBaru}\n\nSampaikan info ini ke siswa melalui WhatsApp.`);
-    } else {
-      showToast(`❌ ${d.error || 'Gagal reset password'}`);
-    }
-  };
   const handleExportExcel = () => {
     const headers = [
       'No', 'Sumber Daftar', 'Status Verifikasi', 'Status Pembayaran', 'Email Akun',
@@ -299,12 +213,6 @@ export function PendaftarView({ sumberTetap }: PropPendaftarView) {
     a.click();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Yakin ingin menghapus data ini?')) return;
-    const res = await fetch(`/api/admin/pendaftar/${id}`, { method: 'DELETE' });
-    if (res.ok) { loadData(); setSelected(null); showToast('🗑 Data dihapus'); }
-  };
-
  
 
   const filtered = data.filter(p =>
@@ -324,20 +232,25 @@ export function PendaftarView({ sumberTetap }: PropPendaftarView) {
   // dipatok ke satu jenjang: SMP Citra Negara / SMA Citra Negara / SMK Citra
   // Negara — atau "Citra Negara" saja bila belum ada jenjang terpilih.
   const namaJenjang = jenjang ? JENJANG_LABEL_FULL[jenjang as Jenjang] : 'Semua Jenjang';
-  const judulHalaman = sumberTetap
-    ? `Pendaftar ${sumberTetap === 'online' ? 'Online' : 'Offline'} ${namaJenjang}`
+  // Judul, subjudul, breadcrumb, dan tab di bawah SEMUA harus mengikuti
+  // `sumber` (filter yang BENAR-BENAR aktif — sudah menggabungkan rute
+  // /online /offline maupun ?sumber= lama), bukan `sumberTetap` (cuma
+  // rute) sendirian. Sebelumnya keempatnya cuma cek `sumberTetap`, jadi
+  // saat mendarat di "/admin/pendaftar?sumber=offline" (mis. tombol
+  // "Kembali" dari form Tambah Pendaftar Offline) daftarnya sudah benar
+  // tersaring offline saja, tapi judul/tab masih bilang "Semua Pendaftar"
+  // — kelihatan seperti dua alur yang tidak nyambung padahal datanya sudah
+  // benar.
+  const judulHalaman = sumber
+    ? `Pendaftar ${sumber === 'online' ? 'Online' : 'Offline'} ${namaJenjang}`
     : `Pendaftar ${namaJenjang}`;
-  const subjudulHalaman = sumberTetap === 'online'
+  const subjudulHalaman = sumber === 'online'
     ? 'Pendaftar yang mengisi formulir sendiri melalui portal SPMB.'
-    : sumberTetap === 'offline'
+    : sumber === 'offline'
       ? 'Pendaftar yang didaftarkan langsung oleh admin di loket.'
       : 'Kelola data pendaftaran peserta didik baru.';
   /** Potongan nama berkas ekspor, supaya sumbernya terbaca dari nama file. */
   const slugEkspor = `${jenjang || 'semua'}${sumber ? `-${sumber}` : ''}`;
-
-  const inp: React.CSSProperties = { width: '100%', padding: '9px 12px', border: '1.5px solid var(--adm-border-strong)', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: 'var(--adm-surface)', outline: 'none' };
-  const showAlasan      = editForm.status === 'ditolak';
-  const showPengumuman  = editForm.status === 'diterima_berkas';
 
   return (
     <>
@@ -347,7 +260,7 @@ export function PendaftarView({ sumberTetap }: PropPendaftarView) {
         <TopHeader
           judul={judulHalaman}
           subjudul={subjudulHalaman}
-          remah={[{ label: 'Pendaftaran' }, { label: 'Pendaftar' }, ...(sumberTetap ? [{ label: sumberTetap === 'online' ? 'Online' : 'Offline' }] : [])]}
+          remah={[{ label: 'Pendaftaran' }, { label: 'Pendaftar' }, ...(sumber ? [{ label: sumber === 'online' ? 'Online' : 'Offline' }] : [])]}
           aksi={
             <>
               <PermissionGate resource="pendaftar" action="export">
@@ -389,7 +302,7 @@ export function PendaftarView({ sumberTetap }: PropPendaftarView) {
               { ke: '/online', label: 'Online' },
               { ke: '/offline', label: 'Offline' },
             ] as const).map(t => {
-              const iniAktif = (sumberTetap || '') === t.ke.replace('/', '');
+              const iniAktif = sumber === t.ke.replace('/', '');
               return (
                 <Link
                   key={t.label}
@@ -482,7 +395,7 @@ export function PendaftarView({ sumberTetap }: PropPendaftarView) {
                                   <div style={{ width: 32, height: 32, borderRadius: '50%', background: jur.latar, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: jur.warna, flexShrink: 0 }}>{getInitials(p.namaLengkap)}</div>
                                   <div>
                                     <div style={{ fontWeight: 600, color: 'var(--adm-text)', fontSize: 13 }}>{p.namaLengkap}</div>
-                                    <div style={{ fontSize: 10, color: 'var(--adm-text-faint)' }}>{getRegNo(p.id, p.createdAt)}</div>
+                                    <div style={{ fontSize: 10, color: 'var(--adm-text-faint)' }}>{getRegNo(p)}</div>
                                     {(p.revisiCount || 0) > 0 && <div style={{ fontSize: 9, color: 'var(--adm-warning)', fontWeight: 600 }}>Revisi {p.revisiCount}x</div>}
                                   </div>
                                 </div>
@@ -509,7 +422,12 @@ export function PendaftarView({ sumberTetap }: PropPendaftarView) {
                                 </div>
                               </td>
                               <td style={{ padding: '11px 14px' }}>
-                                <button onClick={() => { setSelected(p); setEditModal(false); }} className="adm-btn adm-btn--primary adm-btn--sm">Detail</button>
+                                {/* Langsung ke halaman Detail (tab Verifikasi
+                                    di depan) — bukan lagi modal di halaman
+                                    ini. Modal lama sudah dilipat jadi tab
+                                    Verifikasi di sana, jadi "Detail" di sini
+                                    tidak lagi menduplikasi tampilan yang sama. */}
+                                <Link href={`/admin/pendaftar/${p.id}?jenjang=${p.jenjang || jenjang}${qs}`} className="adm-btn adm-btn--primary adm-btn--sm">Detail</Link>
                               </td>
                             </tr>
                           );
@@ -535,265 +453,6 @@ export function PendaftarView({ sumberTetap }: PropPendaftarView) {
         </main>
       </div>
 
-      {/* DETAIL MODAL */}
-      {selected && !editModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setSelected(null)}>
-          <div style={{ background: 'var(--adm-bg)', borderRadius: 20, width: '100%', maxWidth: 820, maxHeight: '90vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
-            <div style={{ background: 'var(--adm-surface)', padding: '16px 22px', borderBottom: '1px solid var(--adm-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 1, borderRadius: '20px 20px 0 0' }}>
-              <div>
-                <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--adm-text)' }}>Detail Pendaftar — {getRegNo(selected.id, selected.createdAt)}</h3>
-                <p style={{ fontSize: 11, color: 'var(--adm-text-faint)' }}>Dashboard › Verifikasi › Detail</p>
-              </div>
-              <button onClick={() => setSelected(null)} style={{ background: 'var(--adm-neutral-weak)', border: 'none', borderRadius: 8, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><X size={15} /></button>
-            </div>
-
-            <div className="detail-grid" style={{ padding: 18, display: 'grid', gridTemplateColumns: '1fr 240px', gap: 16 }}>
-              {/* LEFT */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {/* Profil */}
-                <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 18, border: '1px solid var(--adm-border)' }}>
-                  <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 14 }}>
-                    <div style={{ width: 56, height: 56, borderRadius: 12, background: cariJurusan(selected.jurusan).latar, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 800, color: cariJurusan(selected.jurusan).warna }}>{getInitials(selected.namaLengkap)}</div>
-                    <div>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--adm-text)' }}>{selected.namaLengkap}</div>
-                      {punyaJurusan(selected.jenjang) && <div style={{ fontSize: 12, color: 'var(--adm-text-muted)', marginBottom: 2 }}>{selected.jurusan}</div>}
-                      {selected.userEmail && (
-                        <div style={{ fontSize: 11, color: 'var(--adm-text-muted)', marginBottom: 7 }}>
-                           {selected.userEmail}
-                        </div>
-                      )}
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        {(() => { const sc = STATUS_CONFIG[selected.status] || STATUS_CONFIG['verified']; return <span style={{ background: sc.bg, color: sc.color, padding: '2px 10px', borderRadius: 10, fontSize: 11, fontWeight: 700 }}>{sc.label}</span>; })()}
-                        {(selected.revisiCount || 0) > 0 && <span style={{ fontSize: 11, color: 'var(--adm-warning)', background: 'var(--adm-warning-weak)', padding: '2px 8px', borderRadius: 10, fontWeight: 600 }}>Revisi {selected.revisiCount}x</span>}
-                        {selected.sudahDaftarUlang && <span style={{ fontSize: 11, color: 'var(--adm-success)', background: 'var(--adm-success-weak)', padding: '2px 8px', borderRadius: 10, fontWeight: 600 }}>Daftar Ulang ✓</span>}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                    {[
-                      ['TTL', selected.ttl || `${selected.tempatLahir || '-'}, ${selected.tanggalLahir || '-'}`],
-                      ['Jenis Kelamin', selected.jenisKelamin], ['Agama', selected.agama],
-                      ['NIK', selected.nik || '-'], ['NISN', selected.nisn || '-'],
-                      ['No. WhatsApp', `${selected.noPribadi || '-'}${selected.noPribadi ? (selected.waVerified ? '  ✓ Terverifikasi' : '  ⏳ Belum diverifikasi') : ''}`],
-                      ['Alamat', `${selected.alamat}${selected.rt ? `, RT ${selected.rt}/RW ${selected.rw}` : ''}`],
-                      ['Kec/Kab', `${selected.kecamatan || '-'}, ${selected.kabupaten || '-'}`],
-                    ].map(([l, v]) => (
-                      <div key={l} style={{ background: 'var(--adm-surface-alt)', borderRadius: 8, padding: '7px 10px' }}>
-                        <div style={{ fontSize: 10, color: 'var(--adm-text-faint)', fontWeight: 600, marginBottom: 2 }}>{l}</div>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--adm-text)' }}>{v || '-'}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Akademik */}
-                <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 16, border: '1px solid var(--adm-border)' }}>
-                  <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 10 }}>📚 Data Akademik</h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                    {[['Jenjang', (selected.jenjang || 'smk').toUpperCase()], ['Sumber Daftar', (selected.sumberDaftar || 'online') === 'online' ? 'Online' : 'Offline'], ...(punyaJurusan(selected.jenjang) ? [['Jurusan', selected.jurusan]] : []), ['Asal SMP', selected.asalSMP || selected.asalSekolah || '-'], ['Asal SD', selected.asalSD || '-'], ['NISN', selected.nisn || '-']].map(([l, v]) => (
-                      <div key={l} style={{ background: 'var(--adm-surface-alt)', borderRadius: 8, padding: '7px 10px' }}>
-                        <div style={{ fontSize: 10, color: 'var(--adm-text-faint)', fontWeight: 600, marginBottom: 2 }}>{l}</div>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--adm-text)' }}>{v}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Orang Tua */}
-                <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 16, border: '1px solid var(--adm-border)' }}>
-                  <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 10 }}>👨‍👩‍👦 Data Orang Tua</h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                    {[['Nama Ayah', selected.namaAyah || selected.namaOrtu || '-'], ['Pekerjaan Ayah', selected.pekerjaanAyah || '-'], ['Nama Ibu', selected.namaIbu || '-'], ['Pekerjaan Ibu', selected.pekerjaanIbu || '-'], ['HP Ortu', selected.noHpAyah || selected.noHpIbu || selected.noOrtu || '-'], ['Nama Wali', selected.namaWali || '-']].map(([l, v]) => (
-                      <div key={l} style={{ background: 'var(--adm-surface-alt)', borderRadius: 8, padding: '7px 10px' }}>
-                        <div style={{ fontSize: 10, color: 'var(--adm-text-faint)', fontWeight: 600, marginBottom: 2 }}>{l}</div>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--adm-text)' }}>{v}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Dokumen */}
-                <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 16, border: '1px solid var(--adm-border)' }}>
-                  <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 10 }}>📎 Dokumen Pendukung</h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                    {[
-                      { label: 'Ijazah', path: selected.fileIjazah },
-                      { label: 'Akte', path: selected.fileAkte },
-                      { label: 'Kartu KK', path: selected.fileKK },
-                      { label: 'KTP Ortu', path: selected.fileKtpOrtu },
-                      { label: 'Kartu KIP', path: selected.fileKip },
-                      { label: 'Pas Foto', path: selected.fileFoto },
-                    ].map(dok => {
-                      const isImg = dok.path && /\.(jpg|jpeg|png)$/i.test(dok.path);
-                      return (
-                        <div key={dok.label} style={{ background: dok.path ? 'var(--adm-success-weak)' : 'var(--adm-surface-alt)', borderRadius: 10, padding: 10, textAlign: 'center', border: `1px solid ${dok.path ? 'var(--adm-success-border)' : 'var(--adm-border)'}`, cursor: dok.path ? 'pointer' : 'default' }}
-                          onClick={() => dok.path && window.open(dok.path, '_blank')}>
-                          {isImg ? <img src={dok.path!} alt={dok.label} style={{ width: '100%', height: 52, objectFit: 'cover', borderRadius: 6, marginBottom: 5 }} /> : <div style={{ fontSize: 24, marginBottom: 5 }}>{dok.path ? '📄' : '📂'}</div>}
-                          <div style={{ fontSize: 10, fontWeight: 700, color: dok.path ? 'var(--adm-success)' : 'var(--adm-text-muted)' }}>{dok.label}</div>
-                          <div style={{ fontSize: 9, color: dok.path ? 'var(--adm-success)' : 'var(--adm-text-faint)', marginTop: 2 }}>{dok.path ? '✓ Klik lihat' : 'Belum upload'}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Ringkasan Pembayaran */}
-                <div style={{ background: 'var(--adm-primary)', borderRadius: 14, padding: 16, color: 'var(--adm-text-invert)' }}>
-                  <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--adm-secondary)', marginBottom: 10 }}>💳 Status Pembayaran</h4>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>{STATUS_BAYAR_CONFIG[selected.statusPembayaran || 'belum_bayar']?.label}</span>
-                    {selected.totalTagihan != null && <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>Tagihan: Rp{selected.totalTagihan.toLocaleString('id-ID')}</span>}
-                  </div>
-                  <Link href={`/admin/pendaftar/${selected.id}`} style={{ display: 'block', textAlign: 'center', fontSize: 12, fontWeight: 700, color: 'var(--adm-text)', background: 'var(--adm-secondary)', borderRadius: 8, padding: '8px', textDecoration: 'none' }}>
-                    Lihat Riwayat Cicilan & Kwitansi →
-                  </Link>
-                </div>
-
-                {/* Daftar Ulang Info */}
-                {selected.sudahDaftarUlang && (
-                  <div style={{ background: 'var(--adm-success-weak)', borderRadius: 14, padding: 16, border: '1px solid var(--adm-success-border)' }}>
-                    <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--adm-success)', marginBottom: 8 }}>✅ Daftar Ulang Dikonfirmasi</h4>
-                    {selected.tanggalDaftarUlang && <p style={{ fontSize: 12, color: 'var(--adm-success)', margin: 0 }}>Tanggal: {new Date(selected.tanggalDaftarUlang).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>}
-                    {selected.catatanDaftarUlang && <p style={{ fontSize: 12, color: 'var(--adm-success)', marginTop: 6, margin: 0 }}>{selected.catatanDaftarUlang}</p>}
-                  </div>
-                )}
-              </div>
-
-              {/* RIGHT - Panel */}
-              <div style={{ position: 'sticky', top: 60, alignSelf: 'flex-start' }}>
-                <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 16, border: '1px solid var(--adm-border)' }}>
-                  <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 12 }}>Panel Verifikasi</h4>
-
-                  {(() => { const sc = STATUS_CONFIG[selected.status] || STATUS_CONFIG['verified']; return (
-                    <div style={{ background: sc.bg, borderRadius: 8, padding: '9px 12px', marginBottom: 14 }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: sc.color, marginBottom: 2 }}>STATUS SAAT INI</div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: sc.color }}>{sc.label}</div>
-                    </div>
-                  ); })()}
-
-                  {/* Verifikasi WhatsApp (manual, bukan email) */}
-                  <div style={{ background: selected.waVerified ? 'var(--adm-success-weak)' : 'var(--adm-warning-weak)', border: `1px solid ${selected.waVerified ? 'var(--adm-success-border)' : 'var(--adm-warning-border)'}`, borderRadius: 8, padding: 10, marginBottom: 12 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: selected.waVerified ? 'var(--adm-success)' : 'var(--adm-warning)', marginBottom: 4 }}>📱 No. WhatsApp: {selected.noPribadi || '-'}</div>
-                    <p style={{ fontSize: 11, color: 'var(--adm-text-muted)', marginBottom: 8 }}>Hubungi nomor ini via WhatsApp untuk memastikan aktif & benar milik pendaftar.</p>
-                    <button onClick={() => handleToggleWa(selected)} style={{ width: '100%', padding: '7px 10px', background: selected.waVerified ? 'var(--adm-success-weak)' : 'var(--adm-text)', border: 'none', borderRadius: 8, color: selected.waVerified ? 'var(--adm-success)' : 'var(--adm-text-invert)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                      {selected.waVerified ? '✓ WhatsApp Terverifikasi (klik batalkan)' : 'Tandai WhatsApp Terverifikasi'}
-                    </button>
-                  </div>
-
-                  {/* Reset Password Akun (untuk siswa yang lupa email/password) */}
-                  <div style={{ background: 'var(--adm-ungu-weak)', border: '1px solid var(--adm-ungu-weak)', borderRadius: 8, padding: 10, marginBottom: 12 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--adm-ungu)', marginBottom: 4 }}>🔑 Akun Login: {selected.userEmail || '-'}</div>
-                    <p style={{ fontSize: 11, color: 'var(--adm-text-muted)', marginBottom: 8 }}>Kalau siswa lupa email/password, reset di sini lalu sampaikan info barunya via WhatsApp.</p>
-                    <button onClick={() => handleResetPassword(selected)} style={{ width: '100%', padding: '7px 10px', background: 'var(--adm-ungu)', border: 'none', borderRadius: 8, color: 'var(--adm-text-invert)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                      Reset Password Akun
-                    </button>
-                  </div>
-
-                  {/* Link ke Detail Lengkap (Biodata & Keuangan/Cicilan) — tombol
-                      edit formulir/biodata sekarang ada di dalam sana (tab
-                      Biodata), berlaku untuk semua pendaftar (online & offline),
-                      bukan cuma draft offline. */}
-                  <Link href={`/admin/pendaftar/${selected.id}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', padding: '9px 10px', background: 'var(--adm-primary)', borderRadius: 8, color: 'var(--adm-text-invert)', fontSize: 12, fontWeight: 700, textDecoration: 'none', marginBottom: 12 }}>
-                    📄 Lihat Detail Lengkap & Keuangan
-                  </Link>
-                  {selected.statusPembayaran === 'menunggu_verifikasi' && (
-                    <p style={{ fontSize: 11, color: 'var(--adm-warning)', marginBottom: 12, textAlign: 'center' }}>⏳ Ada cicilan menunggu verifikasi</p>
-                  )}
-
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 8 }}>UBAH STATUS</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
-                    {[
-                      { s: 'verified',        label: ' Sedang Diverifikasi', color: 'var(--adm-info)', bg: 'var(--adm-info-weak)', border: 'var(--adm-info-border)' },
-                      { s: 'diterima_berkas', label: ' Terima Berkas',       color: 'var(--adm-success)', bg: 'var(--adm-success-weak)', border: 'var(--adm-success-border)' },
-                      { s: 'ditolak',         label: ' Tolak Berkas',        color: 'var(--adm-danger)', bg: 'var(--adm-danger-weak)', border: 'var(--adm-danger-border)' },
-                    ].map(btn => (
-                      <button key={btn.s} onClick={() => openEdit(selected, btn.s)} style={{ width: '100%', padding: '8px 10px', background: btn.bg, border: `1px solid ${btn.border}`, borderRadius: 8, color: btn.color, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
-                        {btn.label}
-                      </button>
-                    ))}
-
-                    {/* Tombol Konfirmasi Daftar Ulang - hanya jika berkas diterima */}
-                    {selected.status === 'diterima_berkas' && (
-                      <button
-                        onClick={() => selected.sudahDaftarUlang ? null : handleKonfirmasiDaftarUlang(selected.id)}
-                        disabled={selected.sudahDaftarUlang}
-                        style={{ width: '100%', padding: '8px 10px', background: selected.sudahDaftarUlang ? 'var(--adm-success-weak)' : 'var(--adm-success-weak)', border: `1px solid ${selected.sudahDaftarUlang ? 'var(--adm-success-border)' : 'var(--adm-success-border)'}`, borderRadius: 8, color: 'var(--adm-success)', fontSize: 12, fontWeight: 700, cursor: selected.sudahDaftarUlang ? 'not-allowed' : 'pointer', fontFamily: 'inherit', textAlign: 'left', opacity: selected.sudahDaftarUlang ? 0.7 : 1 }}>
-                        {selected.sudahDaftarUlang ? '✓ Daftar Ulang Sudah Dikonfirmasi' : '📋 Konfirmasi Daftar Ulang Offline'}
-                      </button>
-                    )}
-                  </div>
-
-                  <button onClick={() => handleDelete(selected.id)} style={{ width: '100%', background: 'var(--adm-danger-weak)', color: 'var(--adm-danger)', border: '1px solid var(--adm-danger-border)', borderRadius: 8, padding: '8px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-                    🗑 Hapus Data
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* EDIT STATUS MODAL */}
-      {editModal && selected && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setEditModal(false)}>
-          <div style={{ background: 'var(--adm-surface)', borderRadius: 20, width: '100%', maxWidth: 500, maxHeight: '88vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--adm-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, background: 'var(--adm-surface)', zIndex: 1 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--adm-text)' }}>Update Status — {selected.namaLengkap}</h3>
-              <button onClick={() => setEditModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--adm-text-faint)' }}><X size={18} /></button>
-            </div>
-            <div style={{ padding: '18px 22px' }}>
-
-              {/* Status dropdown */}
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--adm-text)', display: 'block', marginBottom: 5 }}>Status *</label>
-                <select style={inp} value={editForm.status} onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))}>
-                  <option value="verified">Sedang Diverifikasi</option>
-                  <option value="diterima_berkas">Terima Berkas</option>
-                  <option value="ditolak">Tolak Berkas</option>
-                </select>
-              </div>
-
-              {/* DITOLAK */}
-              {showAlasan && (
-                <div style={{ marginBottom: 14, background: 'var(--adm-warning-weak)', borderRadius: 10, padding: 14, border: '1px solid var(--adm-warning-border)' }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--adm-warning)', marginBottom: 8 }}>❌ Alasan Penolakan <span style={{ fontWeight: 400 }}>(dikirim ke siswa)</span></div>
-                  <textarea style={{ ...inp, minHeight: 80, resize: 'vertical', background: 'var(--adm-surface)', marginBottom: 8 }} value={editForm.alasanPenolakan} onChange={e => setEditForm(f => ({ ...f, alasanPenolakan: e.target.value }))} placeholder="Contoh: Scan ijazah kurang jelas, mohon upload ulang..." />
-                  <textarea style={{ ...inp, minHeight: 60, resize: 'vertical', background: 'var(--adm-surface)' }} value={editForm.catatan} onChange={e => setEditForm(f => ({ ...f, catatan: e.target.value }))} placeholder="Catatan tambahan (opsional)..." />
-                </div>
-              )}
-
-              {/* TERIMA BERKAS — pesan untuk siswa */}
-              {showPengumuman && (
-                <div style={{ marginBottom: 14, background: 'var(--adm-success-weak)', borderRadius: 10, padding: 14, border: '1px solid var(--adm-success-border)' }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--adm-success)', marginBottom: 10 }}>🏆 Berkas Diterima</div>
-
-                  {/* Pesan */}
-                  <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--adm-text)', display: 'block', marginBottom: 4 }}>Pesan untuk Siswa <span style={{ fontWeight: 400 }}>(tampil di dashboard)</span></label>
-                    <textarea style={{ ...inp, minHeight: 80, resize: 'vertical' }} value={editForm.pesanPengumuman} onChange={e => setEditForm(f => ({ ...f, pesanPengumuman: e.target.value }))} placeholder="Selamat! Berkas Anda diterima. Silakan tunggu informasi daftar ulang..." />
-                  </div>
-                </div>
-              )}
-
-              {/* Catatan Umum */}
-              {!showAlasan && !showPengumuman && (
-                <div style={{ marginBottom: 14 }}>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--adm-text)', display: 'block', marginBottom: 5 }}>Catatan (opsional)</label>
-                  <textarea style={{ ...inp, minHeight: 70, resize: 'vertical' }} value={editForm.catatan} onChange={e => setEditForm(f => ({ ...f, catatan: e.target.value }))} placeholder="Catatan untuk siswa..." />
-                </div>
-              )}
-
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={() => setEditModal(false)} style={{ flex: 1, padding: '11px', border: '1.5px solid var(--adm-border)', borderRadius: 8, background: 'transparent', color: 'var(--adm-text-muted)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 13 }}>Batal</button>
-                <button onClick={handleSave} disabled={saving} className="btn-primary" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 13, opacity: saving ? 0.7 : 1 }}>
-                  <Save size={14} /> {saving ? 'Menyimpan...' : 'Simpan & Kirim'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

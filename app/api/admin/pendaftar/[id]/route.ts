@@ -24,6 +24,7 @@ const FIELD_RESOURCE: Record<string, Resource> = {
   alasanPenolakan: 'verifikasi',
   catatan: 'verifikasi',
   waVerified: 'verifikasi',
+  validasiBerkas: 'verifikasi',
   // Kelulusan, pengumuman, dan daftar ulang
   nilaiSeleksi: 'status',
   pesanPengumuman: 'status',
@@ -54,6 +55,7 @@ export async function GET(
       include: {
         user: { select: { email: true } },
         pembayaranList: { orderBy: { angsuranKe: 'asc' } },
+        tahunAjaran: { select: { nama: true } },
       },
     })
     if (!data) return NextResponse.json({ error: 'Data tidak ditemukan' }, { status: 404 })
@@ -112,6 +114,21 @@ export async function PUT(
 
     // Verifikasi WhatsApp (dicek manual oleh admin)
     if (body.waVerified !== undefined)         updateData.waVerified = body.waVerified
+
+    // Checklist per-berkas — DIGABUNG (bukan ditimpa) dengan yang sudah ada,
+    // supaya menandai satu dokumen "Valid" tidak menghapus catatan dokumen
+    // lain yang sudah lebih dulu ditandai "Perlu Revisi". Klien cukup
+    // mengirim entri yang berubah saja, mis. { fileKK: { status: 'valid' } }.
+    // Kirim `null` pada satu fieldKey untuk membersihkan tandanya (tombol ✕).
+    if (body.validasiBerkas !== undefined) {
+      const sudahAda = (existing.validasiBerkas as Record<string, unknown> | null) || {}
+      const gabungan: Record<string, unknown> = { ...sudahAda }
+      for (const [fieldKey, nilai] of Object.entries(body.validasiBerkas as Record<string, unknown>)) {
+        if (nilai === null) delete gabungan[fieldKey]
+        else gabungan[fieldKey] = nilai
+      }
+      updateData.validasiBerkas = gabungan
+    }
 
     // Nilai seleksi
     if (body.nilaiSeleksi !== undefined && body.nilaiSeleksi !== '') {

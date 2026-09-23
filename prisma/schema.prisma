@@ -243,6 +243,13 @@ model Pendaftaran {
   // pelunasan berikutnya (mis. lunas -> refund sebagian -> lunas lagi tetap
   // memegang tanggal lunas yang PERTAMA).
   tanggalLunas           DateTime?
+  // Checklist per-berkas di tab Verifikasi: { [fieldKey]: { status: "valid"
+  // | "revisi", catatan?: string } }, mis. { fileKK: { status: "valid" } }.
+  // TERPISAH dari alasanPenolakan (yang tetap satu ringkasan untuk siswa
+  // saat statusnya diubah jadi "ditolak") — ini murni catatan kerja admin
+  // per dokumen, tidak otomatis dikirim ke siswa kecuali admin memilih
+  // "Minta Revisi" (yang merangkumnya jadi satu alasanPenolakan).
+  validasiBerkas         Json?
   notifikasiList         Notifikasi[]
   pembayaranList         Pembayaran[]
   diskon                 Diskon?      @relation(fields: [diskonId], references: [id])
