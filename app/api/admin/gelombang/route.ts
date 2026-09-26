@@ -63,6 +63,7 @@ export async function POST(req: Request) {
         nama: String(body.nama).trim(),
         urutan: jumlah + 1,
         diskonPersen: 0,
+        diskonNominal: 0,
         aktif: jumlah === 0, // gelombang pertama di jalur ini otomatis jadi aktif
       },
     })

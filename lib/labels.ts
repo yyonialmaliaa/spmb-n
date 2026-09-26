@@ -19,11 +19,27 @@ export const JENJANG_SINGKAT: Record<Jenjang, string> = {
   smk: 'SMK',
 }
 
+/**
+ * Foto besar per jenjang untuk panel horizontal & halaman detail landing.
+ * Sengaja di sini, bukan di lib/landing.ts: modul itu memakai database, dan
+ * komponen client yang mengimpornya ikut menyeret Prisma ke browser.
+ */
+export const GAMBAR_JENJANG: Record<Jenjang, string> = {
+  smp: '/images/pramuka.jpg',
+  sma: '/images/paskibra.jpg',
+  smk: '/images/tekon.jpg',
+}
+
 /** "SMP Citra Negara" — untuk kartu pilih jenjang & indikator konteks. */
 export const JENJANG_LABEL_FULL: Record<Jenjang, string> = {
   smp: 'SMP Citra Negara',
   sma: 'SMA Citra Negara',
   smk: 'SMK Citra Negara',
+}
+
+/** Nama sekolah sesuai jenjang pendaftar; tanpa jenjang yang valid -> "Citra Negara". */
+export function namaSekolah(jenjang?: Jenjang | string | null): string {
+  return jenjang && jenjang in JENJANG_LABEL_FULL ? JENJANG_LABEL_FULL[jenjang as Jenjang] : NAMA_INSTITUSI
 }
 
 /**
@@ -102,12 +118,12 @@ export const STATUS_PENDAFTARAN: Record<string, Label> = {
 export const STATUS_PEMBAYARAN: Record<string, Label> = {
   belum_bayar: { teks: 'Belum Bayar', nada: 'netral' },
   menunggu_verifikasi: { teks: 'Menunggu Verifikasi', nada: 'peringatan' },
-  cicilan_berjalan: { teks: 'Cicilan Berjalan', nada: 'info' },
+  cicilan_berjalan: { teks: 'Angsuran Berjalan', nada: 'info' },
   lunas: { teks: 'Lunas', nada: 'sukses' },
   ditolak: { teks: 'Ditolak', nada: 'bahaya' },
   // Hasil aksi "Kembalikan Kelebihan Bayar" — lihat recalculatePembayaran
   // di lib/keuangan.ts. Sengaja bukan 'cicilan_berjalan': uang yang baru
-  // saja dikembalikan bukan cicilan yang masih berjalan.
+  // saja dikembalikan bukan angsuran yang masih berjalan.
   dikembalikan: { teks: 'Dikembalikan', nada: 'peringatan' },
 }
 
@@ -185,6 +201,12 @@ export const JURUSAN_NETRAL: Jurusan = {
 /** Hanya SMK yang memiliki program keahlian. */
 export function punyaJurusan(jenjang: string | null | undefined): boolean {
   return (jenjang || '').toLowerCase() === 'smk'
+}
+
+/** "SMA" atau "SMK Desain Komunikasi Visual (DKV)" — posisi pendaftar, dipakai riwayat mutasi. */
+export function labelPosisi(jenjang: string, jurusan: string | null | undefined): string {
+  const j = (jenjang || '').toLowerCase()
+  return j === 'smk' && jurusan && jurusan !== '-' ? `SMK ${jurusan}` : j.toUpperCase()
 }
 
 /** Cocokkan teks jurusan bebas dari DB ke salah satu program yang terdaftar. */

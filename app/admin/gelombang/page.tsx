@@ -2,13 +2,13 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Percent, CheckCircle, Plus, Trash2, CalendarClock } from 'lucide-react';
+import { Percent, Banknote, CheckCircle, Plus, Trash2, CalendarClock } from 'lucide-react';
 import { TopHeader } from '@/components/admin/TopHeader';
 import { useAdmin } from '@/components/admin/AdminProvider';
 import { EmptyState } from '@/components/admin/ui';
 
 type Gelombang = {
-  id: string; nama: string; urutan: number; diskonPersen: number;
+  id: string; nama: string; urutan: number; diskonPersen: number; diskonNominal: number;
   aktif: boolean; untukAlumni: boolean; jenjang: string;
   tanggalMulai: string | null; tanggalSelesai: string | null;
 };
@@ -69,6 +69,11 @@ function AdminGelombangInner() {
     setList(l => l.map(g => g.id === id ? { ...g, diskonPersen: parseFloat(val) || 0 } : g));
   };
 
+  const handleNominalChange = (id: string, val: string) => {
+    const angka = parseInt(val.replace(/[^\d]/g, '')) || 0;
+    setList(l => l.map(g => g.id === id ? { ...g, diskonNominal: angka } : g));
+  };
+
   // Tanggal mulai/selesai sudah didukung schema & endpoint PUT sejak awal,
   // tetapi tidak pernah ditampilkan — padahal itulah inti "Jadwal SPMB".
   const handleTanggal = async (g: Gelombang, medan: 'tanggalMulai' | 'tanggalSelesai', nilai: string) => {
@@ -91,7 +96,18 @@ function AdminGelombangInner() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ diskonPersen: g.diskonPersen }),
     });
-    if (res.ok) showToast('✅ Diskon disimpan');
+    if (res.ok) showToast('✅ Persentase tampilan disimpan');
+    setSavingId('');
+  };
+
+  const handleSimpanNominal = async (g: Gelombang) => {
+    setSavingId(g.id);
+    const res = await fetch(`/api/admin/gelombang/${g.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ diskonNominal: g.diskonNominal }),
+    });
+    if (res.ok) showToast('✅ Nominal diskon disimpan');
     setSavingId('');
   };
 
@@ -153,11 +169,34 @@ function AdminGelombangInner() {
             />
           </div>
 
+          {/* Nominal Diskon (Rp) — INI yang benar-benar memotong tagihan
+              (lib/keuangan.ts). Ditonjolkan (border tebal) karena berdampak
+              finansial langsung, beda dengan Persentase Tampilan di sebelahnya
+              yang cuma teks di landing page. */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <label style={{ fontSize: 12, color: 'var(--adm-text-muted)', fontWeight: 600 }}>Diskon:</label>
+            <Banknote size={14} color="var(--adm-primary)" />
+            <label style={{ fontSize: 12, color: 'var(--adm-text-muted)', fontWeight: 600 }} title="Memotong tagihan sesungguhnya">Nominal Diskon:</label>
+            <span style={{ fontSize: 13, color: 'var(--adm-text-faint)' }}>Rp</span>
+            <input
+              type="text" inputMode="numeric"
+              value={g.diskonNominal ? g.diskonNominal.toLocaleString('id-ID') : ''}
+              placeholder="0"
+              onFocus={e => e.target.select()}
+              onChange={e => handleNominalChange(g.id, e.target.value)}
+              onBlur={() => handleSimpanNominal(g)}
+              style={{ width: 110, padding: '7px 8px', border: '1.5px solid var(--adm-primary)', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', fontWeight: 600 }}
+            />
+          </div>
+
+          {/* Persentase Tampilan — HANYA label di landing page (mis. "Diskon
+              20%"). Tidak dipakai untuk menghitung tagihan sama sekali. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <label style={{ fontSize: 12, color: 'var(--adm-text-muted)', fontWeight: 600 }} title="Hanya teks tampilan di halaman pendaftaran, tidak memotong tagihan">Persentase Tampilan:</label>
             <input
               type="number" min={0} max={100} step={0.5}
-              value={g.diskonPersen}
+              value={g.diskonPersen || ''}
+              placeholder="0"
+              onFocus={e => e.target.select()}
               onChange={e => handleDiskonChange(g.id, e.target.value)}
               onBlur={() => handleSimpanDiskon(g)}
               style={{ width: 70, padding: '7px 8px', border: '1px solid var(--adm-border)', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' }}
@@ -214,8 +253,10 @@ function AdminGelombangInner() {
       <div className="adm-content" style={{ maxWidth: 900 }}>
         <p style={{ color: 'var(--adm-text-muted)', fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
           Gelombang berlaku per jenjang dan per tahun ajaran. Untuk SMA/SMK, pendaftar alumni SMP Citra
-          Negara memakai jalur tersendiri. Aktifkan satu gelombang per jalur — diskonnya otomatis
-          memotong harga dari panel Harga. Berlaku untuk TA {tahunAjaran?.nama}.
+          Negara memakai jalur tersendiri. Aktifkan satu gelombang per jalur — <strong>Nominal Diskon (Rp)</strong> itulah
+          yang benar-benar memotong harga dari panel Harga. <strong>Persentase Tampilan (%)</strong> hanya teks
+          di halaman pendaftaran (mis. "Diskon 20%") dan tidak memengaruhi tagihan sama sekali — isi bebas,
+          tidak harus sama persis dengan hasil bagi Nominal Diskon terhadap harga. Berlaku untuk TA {tahunAjaran?.nama}.
         </p>
 
         {toast && (

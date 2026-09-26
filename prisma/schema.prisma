@@ -120,7 +120,14 @@ model Gelombang {
   urutan          Int           @default(1)
   tanggalMulai    DateTime?
   tanggalSelesai  DateTime?
+  // diskonPersen: HANYA label tampilan (mis. landing page "Diskon 20%") —
+  // TIDAK dipakai untuk menghitung tagihan. diskonNominal: potongan RUPIAH
+  // sesungguhnya, dipakai lib/keuangan.ts untuk menghitung tagihan. Keduanya
+  // diisi bebas oleh admin, tidak saling diturunkan (satu gelombang bisa
+  // berlaku untuk banyak baris Harga dengan nominal berbeda-beda, jadi tidak
+  // ada satu "harga acuan" tunggal untuk mengonversi % <-> Rp secara pasti).
   diskonPersen    Float         @default(0)
+  diskonNominal   Int           @default(0)
   aktif           Boolean       @default(false)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -131,8 +138,8 @@ model Gelombang {
 }
 
 model Pendaftaran {
-  id                     String       @id @default(cuid())
-  userId                 String?      @unique
+  id                     String            @id @default(cuid())
+  userId                 String?           @unique
   tahunAjaranId          String
   namaLengkap            String?
   namaPanggilan          String?
@@ -161,11 +168,11 @@ model Pendaftaran {
   asalSMP                String?
   asalSekolah            String?
   jurusan                String?
-  jenjang                String       @default("smk")
+  jenjang                String            @default("smk")
   kelas                  String?
-  tipePendaftaran        String       @default("baru")
+  tipePendaftaran        String            @default("baru")
   kelasMasuk             String?
-  sumberDaftar           String       @default("online")
+  sumberDaftar           String            @default("online")
   alumniSmpCitraNegara   Boolean?
   namaAyah               String?
   ttlAyah                String?
@@ -197,33 +204,33 @@ model Pendaftaran {
   fileKtpOrtu            String?
   fileKip                String?
   fileFoto               String?
-  status                 String       @default("draft")
+  status                 String            @default("draft")
   nilaiSeleksi           Float?
   catatan                String?
   alasanPenolakan        String?
-  waVerified             Boolean      @default(false)
+  waVerified             Boolean           @default(false)
   hargaId                String?
   hargaPokok             Int?
   gelombangId            String?
   gelombang              String?
-  gelombangDiskonNominal Int          @default(0)
+  gelombangDiskonNominal Int               @default(0)
   diskonId               String?
-  diskonNominal          Int          @default(0)
+  diskonNominal          Int               @default(0)
   totalTagihan           Int?
-  totalTagihanLocked     Boolean      @default(false)
+  totalTagihanLocked     Boolean           @default(false)
   metodePembayaran       String?
   buktiPembayaran        String?
-  statusPembayaran       String       @default("belum_bayar")
+  statusPembayaran       String            @default("belum_bayar")
   catatanPembayaran      String?
   tanggalBayar           DateTime?
-  revisiCount            Int          @default(0)
+  revisiCount            Int               @default(0)
   lastRevisiAt           DateTime?
   pesanPengumuman        String?
-  sudahDaftarUlang       Boolean      @default(false)
+  sudahDaftarUlang       Boolean           @default(false)
   tanggalDaftarUlang     DateTime?
   catatanDaftarUlang     String?
-  createdAt              DateTime     @default(now())
-  updatedAt              DateTime     @updatedAt
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
   diskonNama             String?
   lastStep               Int?
   // Nomor resmi "SPMB/0001/SMP/2026-2027/A7K9" — dibuat SEKALI, tepat saat
@@ -232,7 +239,7 @@ model Pendaftaran {
   // lib/nomorPendaftaran.ts. null untuk draft yang belum pernah dikirim.
   // @unique bukan hanya format rapi — itulah yang menegakkan "aman dari
   // duplikasi" di level database, bukan cuma di kode pembuatnya.
-  noPendaftaran          String?      @unique
+  noPendaftaran          String?           @unique
   // Momen yang SAMA dengan noPendaftaran dibuat — dipisah dari createdAt
   // (yang tercatat saat draft PERTAMA disimpan, bisa hari yang berbeda)
   // supaya "Pendaftar Hari Ini" di Dashboard menghitung hari FORMULIR
@@ -245,18 +252,17 @@ model Pendaftaran {
   tanggalLunas           DateTime?
   // Checklist per-berkas di tab Verifikasi: { [fieldKey]: { status: "valid"
   // | "revisi", catatan?: string } }, mis. { fileKK: { status: "valid" } }.
-  // TERPISAH dari alasanPenolakan (yang tetap satu ringkasan untuk siswa
-  // saat statusnya diubah jadi "ditolak") — ini murni catatan kerja admin
-  // per dokumen, tidak otomatis dikirim ke siswa kecuali admin memilih
-  // "Minta Revisi" (yang merangkumnya jadi satu alasanPenolakan).
+  // Menandai satu berkas "revisi" sekaligus mengubah status jadi "ditolak"
+  // dengan alasanPenolakan yang merangkum semua berkas bertanda revisi.
   validasiBerkas         Json?
   notifikasiList         Notifikasi[]
   pembayaranList         Pembayaran[]
-  diskon                 Diskon?      @relation(fields: [diskonId], references: [id])
-  gelombangRelasi        Gelombang?   @relation(fields: [gelombangId], references: [id])
-  harga                  Harga?       @relation(fields: [hargaId], references: [id])
-  tahunAjaran            TahunAjaran  @relation(fields: [tahunAjaranId], references: [id])
-  user                   User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mutasiList             MutasiPendaftar[]
+  diskon                 Diskon?           @relation(fields: [diskonId], references: [id])
+  gelombangRelasi        Gelombang?        @relation(fields: [gelombangId], references: [id])
+  harga                  Harga?            @relation(fields: [hargaId], references: [id])
+  tahunAjaran            TahunAjaran       @relation(fields: [tahunAjaranId], references: [id])
+  user                   User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([tahunAjaranId, jenjang])
 }
@@ -274,6 +280,40 @@ model NomorUrutCounter {
   updatedAt     DateTime @updatedAt
 
   @@unique([tahunAjaranId, jenjang])
+}
+
+// Riwayat mutasi/pindah pendaftar (SMA <-> SMK, atau antar-jurusan SMK).
+// Record Pendaftaran-nya TIDAK dibuat ulang — dipindah di tempat, sehingga
+// biodata, berkas, status, pembayaran, dan notifikasi tetap menempel lewat
+// id yang sama. Tabel ini menyimpan posisi SEBELUM pindah, termasuk nomor
+// pendaftaran lama, supaya asal-usulnya tidak hilang. Rincian keuangan
+// lengkap (harga, gelombang, diskon sebelum/sesudah) ada di AuditLog.
+//
+// diprosesOlehId sengaja bukan relasi ke User, sama seperti AuditLog: jejak
+// ini tidak boleh ikut terhapus kalau akun admin-nya dihapus.
+model MutasiPendaftar {
+  id                String      @id @default(cuid())
+  pendaftaranId     String
+  dariJenjang       String
+  dariJurusan       String?
+  dariKelas         String?
+  keJenjang         String
+  keJurusan         String?
+  keKelas           String
+  noPendaftaranLama String?
+  noPendaftaranBaru String
+  tagihanLama       Int?
+  tagihanBaru       Int
+  // Total bersih yang sudah dibayar saat mutasi (lunas, dikurangi refund/alokasi).
+  dibayarSaatMutasi Int
+  alasan            String
+  diprosesOlehId    String?
+  diprosesOlehNama  String
+  createdAt         DateTime    @default(now())
+  pendaftaran       Pendaftaran @relation(fields: [pendaftaranId], references: [id], onDelete: Cascade)
+
+  @@index([pendaftaranId, createdAt])
+  @@index([noPendaftaranLama])
 }
 
 model Pembayaran {

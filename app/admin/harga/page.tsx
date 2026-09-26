@@ -168,7 +168,7 @@ function AdminHargaInner() {
         ) : (
         <div style={{ maxWidth: 900, margin: '28px auto', padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 28 }}>
           <p style={{ color: 'var(--adm-text-muted)', fontSize: 13, lineHeight: 1.6, margin: 0 }}>
-            Harga di sini adalah acuan utama untuk seluruh perhitungan keuangan SPMB — total tagihan, cicilan, dan laporan semua mengambil dari sini. Mengubah harga tidak mengubah tagihan pendaftar yang sudah mulai membayar.
+            Harga di sini adalah acuan utama untuk seluruh perhitungan keuangan SPMB — total tagihan, angsuran, dan laporan semua mengambil dari sini. Mengubah harga tidak mengubah tagihan pendaftar yang sudah mulai membayar.
           </p>
 
           {/* Pengaturan minimal pembayaran */}
@@ -185,7 +185,7 @@ function AdminHargaInner() {
                 />
               </div>
               <div>
-                <label style={{ fontSize: 12, color: 'var(--adm-text)', fontWeight: 600, display: 'block', marginBottom: 6 }}>Minimal Cicilan Berikutnya</label>
+                <label style={{ fontSize: 12, color: 'var(--adm-text)', fontWeight: 600, display: 'block', marginBottom: 6 }}>Minimal Angsuran Berikutnya</label>
                 <input
                   type="text" inputMode="numeric" style={{ ...inputStyle, width: '100%' }}
                   value={pengaturan.minimalCicilan.toLocaleString('id-ID')}
@@ -201,8 +201,8 @@ function AdminHargaInner() {
           <div>
             <p style={{ fontSize: 12, color: 'var(--adm-text-faint)', margin: '0 0 16px' }}>
               {jenjang === 'smk'
-                ? 'SMK: harga diatur per jurusan, kelas masuk (Kelas 10/11), dan program (Reguler/Plus).'
-                : `${JENJANG_SINGKAT[jenjang]}: tidak ada jurusan — harga diatur per kelas masuk (Kelas ${jenjang === 'smp' ? '7/8' : '10/11'}) dan program (Reguler/Plus).`}
+                ? 'SMK: harga diatur per jurusan, kelas (Kelas 10/11/12), dan program (Reguler/Plus).'
+                : `${JENJANG_SINGKAT[jenjang]}: tidak ada jurusan — harga diatur per kelas (Kelas ${jenjang === 'smp' ? '7/8/9' : '10/11/12'}) dan program (Reguler/Plus).`}
             </p>
 
             {loading ? (
@@ -266,8 +266,8 @@ function AdminHargaInner() {
                   <datalist id="kelas-suggestions">
                     <option value="REGULER" />
                     <option value="PLUS" />
-                    {jenjang === 'smp' && <><option value="Kelas 7 - REGULER" /><option value="Kelas 7 - PLUS" /><option value="Kelas 8 - REGULER" /><option value="Kelas 8 - PLUS" /></>}
-                    {(jenjang === 'sma' || jenjang === 'smk') && <><option value="Kelas 10 - REGULER" /><option value="Kelas 10 - PLUS" /><option value="Kelas 11 - REGULER" /><option value="Kelas 11 - PLUS" /></>}
+                    {jenjang === 'smp' && <><option value="Kelas 7 - REGULER" /><option value="Kelas 7 - PLUS" /><option value="Kelas 8 - REGULER" /><option value="Kelas 8 - PLUS" /><option value="Kelas 9 - REGULER" /><option value="Kelas 9 - PLUS" /></>}
+                    {(jenjang === 'sma' || jenjang === 'smk') && <><option value="Kelas 10 - REGULER" /><option value="Kelas 10 - PLUS" /><option value="Kelas 11 - REGULER" /><option value="Kelas 11 - PLUS" /><option value="Kelas 12 - REGULER" /><option value="Kelas 12 - PLUS" /></>}
                   </datalist>
                 </div>
 

@@ -3,13 +3,10 @@
 import { useCallback, useMemo, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { CheckCircle2, ExternalLink, FileText, RotateCcw, Search, XCircle } from 'lucide-react';
+import { RotateCcw, Search } from 'lucide-react';
 import { TopHeader } from '@/components/admin/TopHeader';
 import { useAdmin } from '@/components/admin/AdminProvider';
-import {
-  ConfirmModal, EmptyState, ErrorState, PermissionGate,
-  SkeletonTabel, StatusBadge, Toast,
-} from '@/components/admin/ui';
+import { EmptyState, ErrorState, SkeletonTabel, StatusBadge } from '@/components/admin/ui';
 import { useMuatData, ambilJson } from '@/components/admin/useMuatData';
 import { FIELD_BERKAS, labelStatusPendaftaran } from '@/lib/labels';
 
@@ -25,9 +22,15 @@ import { FIELD_BERKAS, labelStatusPendaftaran } from '@/lib/labels';
 // "Perlu perbaikan" diwakili pendaftar ditolak yang sudah mengirim revisi
 // (revisiCount > 0), sesuai alur revisi yang sudah ada di sisi siswa.
 //
-// Checklist dokumen dibangun dari DokumenPersyaratan(kategori='pendaftaran')
-// lewat fieldKey -> kolom file di Pendaftaran, jadi daftar berkasnya
-// mengikuti apa yang diatur admin di halaman Persyaratan.
+// Kolom "Kelengkapan Berkas" dibangun dari DokumenPersyaratan(kategori=
+// 'pendaftaran') lewat fieldKey -> kolom file di Pendaftaran, jadi
+// hitungannya mengikuti apa yang diatur admin di halaman Persyaratan.
+//
+// "Periksa" TIDAK membuka panel di halaman ini — langsung ke tab Verifikasi
+// pada Detail Pendaftar, yang sudah jadi satu-satunya tempat pemeriksaan
+// berkas sesungguhnya berlangsung (checklist per-dokumen, Setujui Semua,
+// Tolak Berkas, gerbang keuangan). Menduplikasi aksi itu di sini hanya
+// membuat dua tempat yang bisa berbeda perilaku.
 // ============================================================================
 
 interface Persyaratan {
@@ -76,18 +79,11 @@ export default function VerifikasiPage() {
 
 function VerifikasiInner() {
   const searchParams = useSearchParams();
-  const { jenjang, jenjangSingkat, can, href } = useAdmin();
+  const { jenjang, jenjangSingkat, href } = useAdmin();
   const tahunAjaranId = searchParams.get('tahunAjaranId') || '';
 
   const [tab, setTab] = useState<Tab>('verified');
   const [cari, setCari] = useState('');
-  const [dipilih, setDipilih] = useState<Pendaftar | null>(null);
-  const [konfirmasi, setKonfirmasi] = useState<'terima' | 'tolak' | null>(null);
-  const [alasan, setAlasan] = useState('');
-  const [memproses, setMemproses] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
-
-  const beriToast = (m: string) => { setToast(m); setTimeout(() => setToast(null), 3000); };
 
   const ambil = useCallback(
     async (sinyal: AbortSignal) => {
@@ -127,34 +123,6 @@ function VerifikasiInner() {
     );
   }, [rows, cari]);
 
-  const simpanStatus = async (status: 'diterima_berkas' | 'ditolak') => {
-    if (!dipilih) return;
-    setMemproses(true);
-    try {
-      const res = await fetch(`/api/admin/pendaftar/${dipilih.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(
-          status === 'ditolak'
-            ? { status, alasanPenolakan: alasan }
-            : { status },
-        ),
-      });
-      if (!res.ok) {
-        const e = await res.json().catch(() => null);
-        beriToast(e?.error || 'Gagal menyimpan perubahan');
-        return;
-      }
-      beriToast(status === 'ditolak' ? 'Berkas ditolak' : 'Berkas diverifikasi');
-      setKonfirmasi(null);
-      setDipilih(null);
-      setAlasan('');
-      muat();
-    } finally {
-      setMemproses(false);
-    }
-  };
-
   // Checklist berkas milik SATU pendaftar, jadi persyaratannya harus
   // persyaratan jenjang pendaftar itu sendiri.
   //
@@ -181,11 +149,8 @@ function VerifikasiInner() {
     }));
   };
 
-  const bolehUbah = can('verifikasi', 'update');
-
   return (
     <>
-      <Toast pesan={toast} />
       <TopHeader
         judul={`Verifikasi${jenjangSingkat ? ` ${jenjangSingkat}` : ''}`}
         subjudul="Pemeriksaan kelengkapan dan keabsahan berkas pendaftaran."
@@ -289,12 +254,12 @@ function VerifikasiInner() {
                         </td>
                         <td><StatusBadge teks={st.teks} nada={st.nada} /></td>
                         <td style={{ textAlign: 'right' }}>
-                          <button
+                          <Link
+                            href={href(`/admin/pendaftar/${p.id}`, { jenjang: p.jenjang || jenjang })}
                             className="adm-btn adm-btn--ghost adm-btn--sm"
-                            onClick={() => setDipilih(p)}
                           >
                             Periksa
-                          </button>
+                          </Link>
                         </td>
                       </tr>
                     );
@@ -305,133 +270,6 @@ function VerifikasiInner() {
           )}
         </div>
       </div>
-
-      {/* -------- Panel pemeriksaan berkas -------- */}
-      {dipilih && !konfirmasi && (
-        <div className="adm-overlay" onClick={e => { if (e.target === e.currentTarget) setDipilih(null); }}>
-          <div className="adm-modal" style={{ maxWidth: 620 }}>
-            <div className="adm-card-head">
-              <div>
-                <div className="adm-card-title">{dipilih.namaLengkap || 'Pendaftar'}</div>
-                <div style={{ fontSize: 11.5, color: 'var(--adm-text-muted)', marginTop: 2 }}>
-                  {nomorTampil(dipilih)}
-                  {dipilih.jurusan ? ` · ${dipilih.jurusan}` : ''}
-                </div>
-              </div>
-              <button onClick={() => setDipilih(null)} aria-label="Tutup" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--adm-text-muted)' }}>
-                <XCircle size={18} />
-              </button>
-            </div>
-
-            <div style={{ padding: '16px 20px' }}>
-              <div className="adm-label">Berkas Persyaratan</div>
-              {berkasDari(dipilih).length === 0 ? (
-                <p style={{ fontSize: 13, color: 'var(--adm-text-muted)' }}>
-                  Persyaratan berkas untuk jenjang ini belum diatur.{' '}
-                  <Link href={href('/admin/persyaratan')} style={{ color: 'var(--adm-primary)' }}>Atur sekarang →</Link>
-                </p>
-              ) : (
-                <div style={{ display: 'grid', gap: 8 }}>
-                  {berkasDari(dipilih).map(b => (
-                    <div
-                      key={b.id}
-                      style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
-                        padding: '9px 12px', border: '1px solid var(--adm-border)',
-                        borderRadius: 'var(--adm-r-sm)', background: 'var(--adm-surface-alt)',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-                        <FileText size={15} color="var(--adm-text-faint)" style={{ flexShrink: 0 }} />
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 550, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {b.label}
-                          </div>
-                          {!b.wajib && <div style={{ fontSize: 11, color: 'var(--adm-text-faint)' }}>Opsional</div>}
-                        </div>
-                      </div>
-                      {b.url ? (
-                        <a href={b.url} target="_blank" rel="noopener noreferrer" className="adm-btn adm-btn--ghost adm-btn--sm">
-                          Lihat <ExternalLink size={12} />
-                        </a>
-                      ) : (
-                        <StatusBadge teks={b.wajib ? 'Belum diunggah' : 'Tidak ada'} nada={b.wajib ? 'bahaya' : 'netral'} />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {dipilih.alasanPenolakan && (
-                <div className="adm-banner adm-banner--danger" style={{ marginTop: 14 }}>
-                  <div><strong>Alasan penolakan sebelumnya:</strong> {dipilih.alasanPenolakan}</div>
-                </div>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '12px 20px', borderTop: '1px solid var(--adm-border)', background: 'var(--adm-surface-alt)' }}>
-              <Link href={href(`/admin/pendaftar/${dipilih.id}`, { jenjang: dipilih.jenjang || jenjang })} className="adm-btn adm-btn--ghost adm-btn--sm">
-                Buka Detail Lengkap
-              </Link>
-              <PermissionGate
-                resource="verifikasi"
-                action="update"
-                fallback={<span style={{ fontSize: 12, color: 'var(--adm-text-muted)' }}>Mode tampilan</span>}
-              >
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="adm-btn adm-btn--danger adm-btn--sm" onClick={() => setKonfirmasi('tolak')}>
-                    <XCircle size={14} /> Tolak
-                  </button>
-                  <button className="adm-btn adm-btn--success adm-btn--sm" onClick={() => setKonfirmasi('terima')}>
-                    <CheckCircle2 size={14} /> Verifikasi
-                  </button>
-                </div>
-              </PermissionGate>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* -------- Konfirmasi -------- */}
-      {konfirmasi === 'terima' && dipilih && bolehUbah && (
-        <ConfirmModal
-          judul="Verifikasi berkas pendaftar?"
-          pesan={`Berkas ${dipilih.namaLengkap || 'pendaftar ini'} akan dinyatakan terverifikasi, dan pendaftar menerima notifikasi.`}
-          labelKonfirmasi="Ya, Verifikasi"
-          nada="primary"
-          memproses={memproses}
-          onBatal={() => setKonfirmasi(null)}
-          onKonfirmasi={() => simpanStatus('diterima_berkas')}
-        />
-      )}
-
-      {konfirmasi === 'tolak' && dipilih && bolehUbah && (
-        <ConfirmModal
-          judul="Tolak berkas pendaftar?"
-          pesan="Pendaftar akan diminta memperbaiki berkasnya. Tuliskan alasan yang jelas agar mereka tahu apa yang harus diperbaiki."
-          labelKonfirmasi="Tolak Berkas"
-          nada="danger"
-          memproses={memproses}
-          detail={
-            <div>
-              <label className="adm-label" htmlFor="alasan">Alasan penolakan</label>
-              <textarea
-                id="alasan"
-                className="adm-input"
-                rows={3}
-                value={alasan}
-                onChange={e => setAlasan(e.target.value)}
-                placeholder="Contoh: Scan Kartu Keluarga tidak terbaca, mohon unggah ulang."
-              />
-            </div>
-          }
-          onBatal={() => setKonfirmasi(null)}
-          onKonfirmasi={() => {
-            if (!alasan.trim()) { beriToast('Alasan penolakan wajib diisi'); return; }
-            simpanStatus('ditolak');
-          }}
-        />
-      )}
     </>
   );
 }

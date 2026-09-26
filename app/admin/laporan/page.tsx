@@ -3,18 +3,21 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Users, BarChart2, Download,
+  Users, Download,
   CheckCircle, XCircle, ClipboardCheck, RefreshCw,
   AlertTriangle, TrendingUp, TrendingDown, Lightbulb, DollarSign,
   type LucideIcon,
 } from 'lucide-react';
 import { TopHeader } from '@/components/admin/TopHeader';
 import { SkeletonStat } from '@/components/admin/ui';
+import { useAdmin } from '@/components/admin/AdminProvider';
+import { HEADER_BIODATA, barisBiodata, type PendaftaranBiodata } from '@/lib/biodataPendaftar';
+import { buatWorkbookTabelHijau } from '@/lib/excelStyle';
 
 // =====================================================================
-// Laporan Analitik SPMB — SATU jenjang per halaman (jenjang datang dari
-// URL ?jenjang=, mengikuti admin yang sedang berada di dashboard jenjang
-// tsb — TIDAK ADA pemilih SMP/SMA/SMK di halaman ini, dan TIDAK ADA tabel
+// Laporan Analitik SPMB — SATU jenjang per halaman (jenjang dari konteks
+// sidebar, sama dengan halaman admin lain — TIDAK ADA pemilih
+// SMP/SMA/SMK di halaman ini, dan TIDAK ADA tabel
 // nama pendaftar; itu tugas menu "Pendaftar"). Semua angka dihitung server-
 // side lewat lib/laporanSpmb.ts, sudah di-scope ke jenjang + tahun ajaran
 // aktif sebelum sampai ke browser — halaman ini murni menampilkan hasilnya.
@@ -37,7 +40,6 @@ type LaporanData = {
   evaluasi: string[];
 };
 
-const JENJANG_VALID = ['smp', 'sma', 'smk'] as const;
 const JENJANG_LABEL: Record<string, string> = { smp: 'SMP', sma: 'SMA', smk: 'SMK' };
 
 function formatRupiah(n: number) {
@@ -54,12 +56,8 @@ export default function AdminLaporan() {
 
 function AdminLaporanInner() {
   const searchParams = useSearchParams();
-  const jenjangParam = (searchParams.get('jenjang') || '').toLowerCase();
-  const jenjangValid = (JENJANG_VALID as readonly string[]).includes(jenjangParam);
-  const jenjang = jenjangValid ? (jenjangParam as 'smp' | 'sma' | 'smk') : null;
+  const { jenjang, tahunAjaran } = useAdmin();
   const tahunAjaranId = searchParams.get('tahunAjaranId') || '';
-  const qsOnly = tahunAjaranId ? `?tahunAjaranId=${tahunAjaranId}` : '';
-  const qs = tahunAjaranId ? `&tahunAjaranId=${tahunAjaranId}` : '';
 
   const [laporan, setLaporan] = useState<LaporanData | null>(null);
   const [belumAdaTahunAjaran, setBelumAdaTahunAjaran] = useState(false);
@@ -69,7 +67,6 @@ function AdminLaporanInner() {
 
 
   useEffect(() => {
-    if (!jenjang) return;
     const query = tahunAjaranId ? `&tahunAjaranId=${tahunAjaranId}` : '';
     fetch(`/api/admin/laporan?jenjang=${jenjang}${query}`).then(r => r.json()).then(d => {
       if (!d.data) { setBelumAdaTahunAjaran(true); setLaporan(null); } else { setBelumAdaTahunAjaran(false); setLaporan(d.data); }
@@ -77,28 +74,34 @@ function AdminLaporanInner() {
     });
   }, [jenjang, tahunAjaranId]);
 
+  // "Export Biodata" — pindahan persis dari tombol yang sebelumnya ada di
+  // halaman Pendaftar (components/admin/PendaftarView.tsx), menggantikan
+  // "Export Excel" di sini. Kolom/urutan/isinya SAMA PERSIS (lihat
+  // lib/biodataPendaftar.ts) — bedanya cuma di sini tidak ada filter
+  // sumber/pencarian/status seperti di halaman Pendaftar, jadi cakupannya
+  // seluruh pendaftar jenjang + tahun ajaran ini apa adanya.
   const handleExport = async () => {
-    if (!jenjang) return;
     setExporting(true);
     setExportError('');
     try {
-      const res = await fetch(`/api/admin/laporan/export?jenjang=${jenjang}${qs}`);
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        setExportError(err?.error || 'Gagal membuat file Excel');
-        return;
-      }
-      const blob = await res.blob();
-      const disposition = res.headers.get('Content-Disposition') || '';
-      const match = disposition.match(/filename="(.+)"/);
-      const namaFile = match?.[1] || `Laporan_SPMB_${JENJANG_LABEL[jenjang]}.xlsx`;
+      const res = await fetch(`/api/admin/pendaftar${tahunAjaranId ? `?tahunAjaranId=${tahunAjaranId}` : ''}`);
+      const d = await res.json();
+      const list = ((d.data || []) as PendaftaranBiodata[]).filter(p => (p.jenjang || 'smk') === jenjang);
+      const buffer = await buatWorkbookTabelHijau(
+        {
+          judul: `Data Pendaftar (Biodata) — ${JENJANG_LABEL[jenjang]} — TA ${tahunAjaran?.nama || '-'}`,
+          headers: [...HEADER_BIODATA],
+          rows: list.map((p, i) => barisBiodata(p, i)),
+          pesanKosong: 'Belum ada pendaftar pada jenjang/tahun ajaran ini',
+        },
+        'Biodata',
+      );
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = namaFile;
+      a.href = URL.createObjectURL(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      a.download = `data-pendaftar-${jenjang}-${new Date().toISOString().slice(0, 10)}.xlsx`;
       a.click();
-      URL.revokeObjectURL(a.href);
     } catch {
-      setExportError('Terjadi kesalahan jaringan');
+      setExportError('Gagal membuat file Excel');
     } finally {
       setExporting(false);
     }
@@ -107,15 +110,15 @@ function AdminLaporanInner() {
   return (
     <>
       <TopHeader
-        judul={`Laporan Pendaftaran${jenjang ? ` ${JENJANG_LABEL[jenjang]}` : ''}`}
+        judul={`Laporan Pendaftaran ${JENJANG_LABEL[jenjang]}`}
         subjudul="Analisis dan evaluasi penerimaan peserta didik baru."
         remah={[{ label: 'Laporan' }, { label: 'Pendaftaran' }]}
         aksi={
-          jenjang && laporan ? (
+          laporan ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
               <button onClick={handleExport} disabled={exporting} className="adm-btn adm-btn--primary adm-btn--sm">
                 <Download size={14} />
-                {exporting ? 'Menyiapkan…' : 'Export Excel'}
+                {exporting ? 'Menyiapkan…' : 'Export Biodata'}
               </button>
               {exportError && <span style={{ fontSize: 11, color: 'var(--adm-danger)' }}>{exportError}</span>}
             </div>
@@ -124,9 +127,7 @@ function AdminLaporanInner() {
       />
 
       <div className="adm-content">
-        {!jenjang ? (
-          <PilihJenjangPrompt qsOnly={qsOnly} />
-        ) : loading ? (
+        {loading ? (
           <SkeletonStat jumlah={6} />
         ) : belumAdaTahunAjaran ? (
           <TidakAdaTahunAjaran />
@@ -135,25 +136,6 @@ function AdminLaporanInner() {
         ) : null}
       </div>
     </>
-  );
-}
-
-function PilihJenjangPrompt({ qsOnly }: { qsOnly: string }) {
-  return (
-    <div style={{ background: 'var(--adm-surface)', borderRadius: 14, border: '1px solid var(--adm-border)', padding: 40, textAlign: 'center', maxWidth: 560, margin: '40px auto' }}>
-      <BarChart2 size={32} color="var(--adm-secondary)" style={{ marginBottom: 14 }} />
-      <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 8 }}>Pilih Jenjang Terlebih Dahulu</h2>
-      <p style={{ fontSize: 13, color: 'var(--adm-text-muted)', marginBottom: 22, lineHeight: 1.6 }}>
-        Laporan SPMB selalu ditampilkan per jenjang. Buka Dashboard jenjang yang ingin dilihat, lalu klik menu Laporan dari sana.
-      </p>
-      <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-        {JENJANG_VALID.map(j => (
-          <Link key={j} href={`/admin/dashboard/${j}${qsOnly}`} style={{ padding: '10px 22px', background: 'var(--adm-primary)', color: 'var(--adm-secondary)', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
-            Dashboard {JENJANG_LABEL[j]}
-          </Link>
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -319,7 +301,7 @@ function LaporanKonten({ data }: { data: LaporanData }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {[
             { label: 'Lunas', val: data.pembayaran.lunas, color: 'var(--adm-success)', bg: 'var(--adm-success-weak)' },
-            { label: 'Cicilan Berjalan', val: data.pembayaran.cicilan, color: 'var(--adm-ungu)', bg: 'var(--adm-ungu-weak)' },
+            { label: 'Angsuran Berjalan', val: data.pembayaran.cicilan, color: 'var(--adm-ungu)', bg: 'var(--adm-ungu-weak)' },
             { label: 'Menunggu Verifikasi', val: data.pembayaran.menunggu, color: 'var(--adm-info)', bg: 'var(--adm-info-weak)' },
             { label: 'Belum Bayar', val: data.pembayaran.belumBayar, color: 'var(--adm-text-faint)', bg: 'var(--adm-surface-alt)' },
             { label: 'Dikembalikan', val: data.pembayaran.dikembalikan, color: 'var(--adm-warning)', bg: 'var(--adm-warning-weak)' },

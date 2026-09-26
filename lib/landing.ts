@@ -28,7 +28,10 @@ export type BarisJadwal = {
   untukAlumni: boolean
   tanggalMulai: string | null
   tanggalSelesai: string | null
+  /** Label tampilan saja (mis. "Diskon 20%") — TIDAK dipakai menghitung harga. */
   diskonPersen: number
+  /** Potongan Rupiah sesungguhnya — inilah yang dipakai menghitung harga setelah diskon. */
+  diskonNominal: number
   aktif: boolean
 }
 
@@ -84,13 +87,6 @@ const GAMBAR_PROGRAM: Record<string, string> = {
 }
 const GAMBAR_PROGRAM_CADANGAN = '/images/citter.jpg'
 
-/** Foto besar per jenjang untuk panel horizontal & halaman detail. */
-export const GAMBAR_JENJANG: Record<Jenjang, string> = {
-  smp: '/images/pramuka.jpg',
-  sma: '/images/paskibra.jpg',
-  smk: '/images/tekon.jpg',
-}
-
 function keJadwal(g: {
   id: string
   nama: string
@@ -98,6 +94,7 @@ function keJadwal(g: {
   tanggalMulai: Date | null
   tanggalSelesai: Date | null
   diskonPersen: number
+  diskonNominal: number
   aktif: boolean
 }): BarisJadwal {
   return {
@@ -109,6 +106,7 @@ function keJadwal(g: {
     tanggalMulai: g.tanggalMulai ? g.tanggalMulai.toISOString() : null,
     tanggalSelesai: g.tanggalSelesai ? g.tanggalSelesai.toISOString() : null,
     diskonPersen: g.diskonPersen,
+    diskonNominal: g.diskonNominal,
     aktif: g.aktif,
   }
 }

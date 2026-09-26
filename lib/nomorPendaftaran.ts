@@ -36,21 +36,28 @@ function kodeAcak(panjang: number): string {
 }
 
 /**
- * Buat & KUNCI nomor pendaftaran satu pendaftar. Panggil TEPAT SEKALI per
- * pendaftaran — saat formulir online berhasil dikirim (draft -> verified)
- * atau saat admin membuat pendaftar offline. Bukan fungsi murni (mengubah
- * NomorUrutCounter di database), sengaja tidak dipanggil ulang untuk
- * pendaftaran yang sudah punya noPendaftaran — pemanggil bertanggung jawab
- * memeriksa itu dulu (lihat pemakainya).
+ * Buat & KUNCI nomor pendaftaran satu pendaftar. Panggil sekali saat
+ * formulir online berhasil dikirim (draft -> verified) atau saat admin
+ * membuat pendaftar offline — dan sekali lagi setiap kali pendaftar
+ * dimutasi ke jenjang/jurusan lain (lib/mutasi.ts; nomor lama disimpan di
+ * MutasiPendaftar). Bukan fungsi murni (mengubah NomorUrutCounter di
+ * database).
+ *
+ * `db` boleh berupa klien transaksi: mutasi membuat nomor DI DALAM
+ * transaksinya, supaya mutasi yang gagal/ditolak tidak menghabiskan satu
+ * nomor urut dan meninggalkan lubang di urutan.
  */
-export async function buatNomorPendaftaran(params: {
-  tahunAjaranId: string
-  tahunAjaranNama: string
-  jenjang: string
-}): Promise<string> {
+export async function buatNomorPendaftaran(
+  params: {
+    tahunAjaranId: string
+    tahunAjaranNama: string
+    jenjang: string
+  },
+  db: Pick<typeof prisma, 'nomorUrutCounter'> = prisma,
+): Promise<string> {
   const { tahunAjaranId, tahunAjaranNama, jenjang } = params
 
-  const counter = await prisma.nomorUrutCounter.upsert({
+  const counter = await db.nomorUrutCounter.upsert({
     where: { tahunAjaranId_jenjang: { tahunAjaranId, jenjang } },
     create: { tahunAjaranId, jenjang, nilaiTerakhir: 1 },
     update: { nilaiTerakhir: { increment: 1 } },

@@ -295,7 +295,7 @@ function AdminDashboardJenjangInner() {
                             const sb = p.statusPembayaran || 'belum_bayar';
                             const map: Record<string, { l: string; c: string }> = {
                               belum_bayar: { l: 'Belum Bayar', c: 'var(--adm-text-faint)' },
-                              cicilan_berjalan: { l: 'Cicilan Berjalan', c: 'var(--adm-ungu)' },
+                              cicilan_berjalan: { l: 'Angsuran Berjalan', c: 'var(--adm-ungu)' },
                               menunggu_verifikasi: { l: 'Menunggu', c: 'var(--adm-info)' },
                               lunas: { l: 'Lunas', c: 'var(--adm-success)' },
                               ditolak: { l: 'Ditolak', c: 'var(--adm-danger)' },
@@ -308,7 +308,10 @@ function AdminDashboardJenjangInner() {
                           <span style={{ background: sc.bg, color: sc.color, padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 700 }}>{sc.label}</span>
                         </td>
                         <td style={{ padding: '12px 16px' }}>
-                          <Link href={`/admin/pendaftar?jenjang=${jenjang}${qs}`} className="adm-btn adm-btn--primary adm-btn--sm">
+                          {/* Langsung ke pendaftar INI (bukan ke daftar
+                              umum) — mendarat di tab Verifikasi, sama seperti
+                              tombol Detail di halaman Pendaftar/Verifikasi. */}
+                          <Link href={href(`/admin/pendaftar/${p.id}`, { jenjang: p.jenjang || jenjang })} className="adm-btn adm-btn--primary adm-btn--sm">
                             Detail
                           </Link>
                         </td>

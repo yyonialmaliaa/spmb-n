@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { notifRevisiMasuk } from '@/lib/notifikasiAdmin'
+import { asalDariSD } from '@/lib/kelas'
 
 const JENJANG_VALID = ['smp', 'sma', 'smk']
 
@@ -112,15 +113,14 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'Revisi hanya bisa dilakukan ketika status ditolak' }, { status: 400 })
     }
 
-    const isSMP = existing.jenjang === 'smp'
-    const isBaru = existing.tipePendaftaran !== 'pindahan'
+    const dariSD = asalDariSD(existing.jenjang, existing.tipePendaftaran)
     const asalSD = 'asalSD' in body ? body.asalSD : existing.asalSD
     const asalSMP = 'asalSMP' in body ? body.asalSMP : existing.asalSMP
 
-    if (isSMP && isBaru && !asalSD) {
+    if (dariSD && !asalSD) {
       return NextResponse.json({ error: 'Asal SD/MI wajib diisi untuk pendaftaran SMP baru' }, { status: 400 })
     }
-    if (!isSMP && !asalSMP) {
+    if (!dariSD && !asalSMP) {
       return NextResponse.json({ error: 'Asal SMP/MTs wajib diisi' }, { status: 400 })
     }
 

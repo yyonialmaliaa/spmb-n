@@ -20,14 +20,14 @@ const RANTAI = [
   { istilah: 'Harga', arti: 'Konfigurasi biaya pendidikan per jenjang, jurusan, dan kelas. Ini aturan, belum menempel ke siapa pun.' },
   { istilah: 'Diskon', arti: 'Konfigurasi potongan biaya. Sama seperti Harga: masih berupa daftar pilihan.' },
   { istilah: 'Tagihan', arti: 'Jumlah yang harus dibayar SATU pendaftar, hasil Harga dikurangi Diskon.' },
-  { istilah: 'Pembayaran', arti: 'Uang yang benar-benar disetorkan pendaftar, bisa dicicil.' },
+  { istilah: 'Pembayaran', arti: 'Uang yang benar-benar disetorkan pendaftar, bisa diangsur.' },
   { istilah: 'Transaksi', arti: 'Riwayat setiap pembayaran, pengembalian, dan alokasi.' },
 ];
 
 const RESOURCE_LABEL: Partial<Record<Resource, string>> = {
   dashboard: 'Dashboard',
   pendaftar: 'Pendaftar',
-  verifikasi: 'Verifikasi',
+  verifikasi: 'Verifikasi',  
   status: 'Status SPMB',
   tahun_ajaran: 'Tahun Ajaran',
   jadwal: 'Jadwal SPMB',

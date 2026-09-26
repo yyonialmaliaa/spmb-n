@@ -58,7 +58,11 @@ export function useMuatData<T>(
       .catch(err => {
         // Pembatalan bukan kegagalan — jangan tampilkan ErrorState karenanya.
         if (ac.signal.aborted || (err as Error)?.name === 'AbortError') return
-        console.error('Gagal memuat data admin:', err)
+        // warn, bukan error: kegagalan ini SUDAH ditangani (ErrorState + "Coba
+        // Lagi", lonceng notifikasi diam lalu mencoba lagi). console.error
+        // memunculkan overlay error Next.js di mode dev setiap kali koneksi
+        // database putus sesaat, seolah-olah aplikasinya rusak.
+        console.warn('Gagal memuat data admin:', err)
         setGagal(true)
         setLoading(false)
       })

@@ -3,11 +3,11 @@
 import { useCallback, useMemo, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Info, Megaphone, Search } from 'lucide-react';
+import { Info, Search } from 'lucide-react';
 import { TopHeader } from '@/components/admin/TopHeader';
 import { useAdmin } from '@/components/admin/AdminProvider';
 import {
-  ConfirmModal, EmptyState, ErrorState, Modal, PermissionGate,
+  ConfirmModal, EmptyState, ErrorState, PermissionGate,
   SkeletonStat, SkeletonTabel, StatCard, StatusBadge, Toast,
 } from '@/components/admin/ui';
 import { useMuatData, ambilJson } from '@/components/admin/useMuatData';
@@ -35,7 +35,6 @@ interface Pendaftar {
   statusPembayaran?: string;
   sudahDaftarUlang?: boolean;
   nilaiSeleksi?: number | null;
-  pesanPengumuman?: string | null;
   createdAt: string;
 }
 
@@ -59,8 +58,6 @@ function StatusInner() {
   const [cari, setCari] = useState('');
   const [toast, setToast] = useState<string | null>(null);
 
-  const [pengumuman, setPengumuman] = useState<Pendaftar | null>(null);
-  const [teksPengumuman, setTeksPengumuman] = useState('');
   const [konfirmasiDU, setKonfirmasiDU] = useState<Pendaftar | null>(null);
   const [memproses, setMemproses] = useState(false);
 
@@ -223,12 +220,6 @@ function StatusInner() {
                             }
                           >
                             <div style={{ display: 'inline-flex', gap: 6 }}>
-                              <button
-                                className="adm-btn adm-btn--ghost adm-btn--sm"
-                                onClick={() => { setPengumuman(p); setTeksPengumuman(p.pesanPengumuman || ''); }}
-                              >
-                                <Megaphone size={13} /> Pengumuman
-                              </button>
                               {p.status === 'diterima_berkas' && !p.sudahDaftarUlang && (
                                 <button className="adm-btn adm-btn--success adm-btn--sm" onClick={() => setKonfirmasiDU(p)}>
                                   Konfirmasi Daftar Ulang
@@ -246,39 +237,6 @@ function StatusInner() {
           )}
         </div>
       </div>
-
-      {pengumuman && (
-        <Modal
-          judul={`Pengumuman untuk ${pengumuman.namaLengkap || 'pendaftar'}`}
-          onTutup={() => setPengumuman(null)}
-          footer={
-            <>
-              <button className="adm-btn adm-btn--ghost" onClick={() => setPengumuman(null)} disabled={memproses}>Batal</button>
-              <button
-                className="adm-btn adm-btn--primary"
-                disabled={memproses}
-                onClick={async () => {
-                  const ok = await simpan(pengumuman.id, { pesanPengumuman: teksPengumuman }, 'Pengumuman tersimpan');
-                  if (ok) setPengumuman(null);
-                }}
-              >
-                {memproses ? 'Menyimpan…' : 'Simpan Pengumuman'}
-              </button>
-            </>
-          }
-        >
-          <p style={{ fontSize: 13, color: 'var(--adm-text-muted)', marginBottom: 12 }}>
-            Pesan ini tampil di dashboard pendaftar. Pendaftar juga menerima notifikasi bahwa ada pengumuman baru.
-          </p>
-          <textarea
-            className="adm-input"
-            rows={5}
-            value={teksPengumuman}
-            onChange={e => setTeksPengumuman(e.target.value)}
-            placeholder="Contoh: Selamat, Anda diterima. Daftar ulang paling lambat 30 Juni di ruang Tata Usaha."
-          />
-        </Modal>
-      )}
 
       {konfirmasiDU && (
         <ConfirmModal

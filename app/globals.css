@@ -232,7 +232,23 @@ body {
   background: var(--adm-bg);
   color: var(--adm-text);
   line-height: 1.6;
+  /* Tulisan tidak boleh keluar dari kotaknya — di seluruh web (publik,
+     portal siswa, admin), desktop maupun HP. Kata/kode panjang tanpa
+     spasi (No. Pendaftaran, email, nama file, tautan) dipatahkan di dalam
+     kotaknya. "anywhere", bukan "break-word": nilai ini ikut mengecilkan
+     lebar minimum isi flex/grid, sehingga kotaknya tidak ikut melebar
+     melewati pembungkusnya. Kata biasa tetap dipatahkan di spasi dulu. */
+  overflow-wrap: anywhere;
 }
+
+/* Tabel data justru mempertahankan lebar kolom yang wajar lalu digulir
+   menyamping (.adm-table-wrap), bukan memeras kolom sampai kata terpotong
+   per huruf. */
+table { overflow-wrap: normal; }
+
+/* Lebar alami <select> mengikuti opsi terpanjangnya (mis. nama jurusan
+   lengkap) — tanpa batas ini satu dropdown bisa lebih lebar dari layar HP. */
+select { max-width: 100%; }
 
 .font-display { font-family: 'Playfair Display', serif; }
 
@@ -404,15 +420,6 @@ body {
     align-items: flex-start !important;
     gap: 8px !important;
   }
-}
-
-/* ===================================================================
-   RESPONSIVE — umum: cegah elemen lebar-tetap bikin horizontal
-   scroll di layar sempit, kecuali tabel (yang memang sengaja
-   overflow-x: auto).
-   =================================================================== */
-@media (max-width: 480px) {
-  h1, h2 { word-break: break-word; }
 }
 
 /* ===================================================================

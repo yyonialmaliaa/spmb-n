@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { ChevronLeft, Upload, X, Loader } from 'lucide-react';
 import { Jenjang } from '@/lib/biaya';
-import { getKelasMasukOptions, getKelasMasukBaru, pecahKelasHarga, labelTier, filterKelasByTingkat } from '@/lib/kelas';
+import { useAdmin } from '@/components/admin/AdminProvider';
+import { getKelasMasukOptions, getKelasMasukBaru, pecahKelasHarga, labelTier, filterKelasByTingkat, asalDariSD } from '@/lib/kelas';
 
 type HargaRow = { id: string; jenjang: string; jurusan: string; kelas: string; nominal: number; urutan: number };
 
@@ -54,17 +55,12 @@ function TambahPendaftarOfflineInner() {
   const searchParams = useSearchParams();
   const idParam = searchParams.get('id');
   const tahunAjaranId = searchParams.get('tahunAjaranId') || '';
-  const qsOnly = tahunAjaranId ? `&tahunAjaranId=${tahunAjaranId}` : '';
 
+  const { jenjang: jenjangKonteks, href } = useAdmin();
   const [pendaftaranId, setPendaftaranId] = useState<string | null>(idParam);
-  const [jenjang, setJenjang] = useState<Jenjang>(() => {
-    // 'smp' sebagai bawaan terakhir — sama dengan bawaan konteks admin
-    // (AdminProvider) — supaya kalau suatu saat halaman ini dibuka tanpa
-    // ?jenjang= sama sekali, nilainya tidak berselisih dengan yang
-    // ditampilkan sidebar.
-    const p = (searchParams.get('jenjang') || 'smp').toLowerCase();
-    return (['smp', 'sma', 'smk'].includes(p) ? p : 'smp') as Jenjang;
-  });
+  // Awalnya ikut konteks sidebar (jenjang yang sedang dikelola); kalau ini
+  // melanjutkan formulir tersimpan, ditimpa jenjang RECORD-nya di bawah.
+  const [jenjang, setJenjang] = useState<Jenjang>(jenjangKonteks);
   const isSMK = jenjang === 'smk';
 
   const [form, setForm] = useState(INITIAL_FORM);
@@ -75,8 +71,6 @@ function TambahPendaftarOfflineInner() {
   const [files, setFiles] = useState<FilesState>({
     ijazah: emptyFile(), akte: emptyFile(), kk: emptyFile(), ktpOrtu: emptyFile(), kip: emptyFile(), foto: emptyFile(),
   });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [hargaOptions, setHargaOptions] = useState<HargaRow[]>([]);
 
@@ -189,15 +183,17 @@ function TambahPendaftarOfflineInner() {
   // proses upload, dan kalau mengisi akun, email & password harus lengkap
   // berdua (bukan wajib ada, tapi kalau diisi harus valid).
   const handleSubmit = async () => {
-    setError('');
-    setSuccess('');
-    if (Object.values(files).some(f => f.uploading)) { setError('Tunggu proses upload berkas selesai'); return; }
+    // Pop up (bukan kotak di atas halaman) — formulir ini panjang, dan admin
+    // menekan Simpan dari bawah. Kotak notifikasi di atas gampang tidak
+    // kelihatan kalau tidak digulir balik ke atas; pop up selalu tampil di
+    // tengah layar terlepas dari posisi gulir.
+    if (Object.values(files).some(f => f.uploading)) { alert('⚠ Tunggu proses upload berkas selesai'); return; }
     if ((form.email && !form.password) || (!form.email && form.password)) {
-      setError('Untuk membuat akun, isi Email dan Password berdua — atau kosongkan berdua kalau belum mau membuat akun sekarang');
+      alert('⚠ Untuk membuat akun, isi Email dan Password berdua — atau kosongkan berdua kalau belum mau membuat akun sekarang');
       return;
     }
-    if (form.password && form.password.length < 8) { setError('Password minimal 8 karakter'); return; }
-    if (form.nik && form.nik.length !== 16) { setError('NIK harus 16 digit kalau diisi'); return; }
+    if (form.password && form.password.length < 8) { alert('⚠ Password minimal 8 karakter'); return; }
+    if (form.nik && form.nik.length !== 16) { alert('⚠ NIK harus 16 digit kalau diisi'); return; }
 
     setLoading(true);
     try {
@@ -215,7 +211,7 @@ function TambahPendaftarOfflineInner() {
         nisn: form.nisn || null, nik: form.nik || null, noPribadi: form.noPribadi || null,
         namaPemberiReferensi: form.namaPemberiReferensi || null, noHpReferensi: form.noHpReferensi || null,
         asalSD: form.asalSD || null, asalSMP: form.asalSMP || null,
-        asalSekolah: jenjang === 'smp' ? (form.asalSD || null) : (form.asalSMP || null),
+        asalSekolah: asalDariSD(jenjang, form.tipePendaftaran) ? (form.asalSD || null) : (form.asalSMP || null),
         jurusan: isSMK ? (form.jurusan || null) : '-',
         kelas: form.kelas || null,
         jenisIjazah: form.jenisIjazah,
@@ -244,7 +240,7 @@ function TambahPendaftarOfflineInner() {
           body: JSON.stringify(payload),
         });
         const d = await res.json();
-        if (!res.ok) { setError(d.error || 'Gagal menyimpan data'); setLoading(false); return; }
+        if (!res.ok) { alert(`❌ ${d.error || 'Gagal menyimpan data'}`); setLoading(false); return; }
       } else {
         const res = await fetch('/api/admin/pendaftar-offline', {
           method: 'POST',
@@ -252,14 +248,15 @@ function TambahPendaftarOfflineInner() {
           body: JSON.stringify({ ...payload, jenjang, tahunAjaranId: tahunAjaranId || undefined }),
         });
         const d = await res.json();
-        if (!res.ok) { setError(d.error || 'Gagal menyimpan data'); setLoading(false); return; }
+        if (!res.ok) { alert(`❌ ${d.error || 'Gagal menyimpan data'}`); setLoading(false); return; }
         currentId = d.data.id;
         setPendaftaranId(currentId);
-        router.replace(`/admin/pendaftar/tambah?id=${currentId}`);
+        router.replace(href('/admin/pendaftar/tambah', { id: currentId, jenjang }));
       }
 
       // Akun login dibuat terpisah (section C) — hanya kalau admin mengisi
       // email & password DAN pendaftar ini belum punya akun.
+      let pesanSukses = '✅ Data formulir tersimpan.';
       if (form.email && form.password && !hasAccount && currentId) {
         const resAkun = await fetch(`/api/admin/pendaftar-offline/${currentId}/buat-akun`, {
           method: 'POST',
@@ -268,21 +265,22 @@ function TambahPendaftarOfflineInner() {
         });
         const dAkun = await resAkun.json();
         if (!resAkun.ok) {
-          setSuccess('✅ Data formulir tersimpan.');
-          setError(`⚠ Data tersimpan, tapi akun gagal dibuat: ${dAkun.error || 'terjadi kesalahan'}`);
+          // Datanya sendiri sudah tersimpan (POST/PUT di atas berhasil) —
+          // tetap di halaman ini (BUKAN kembali ke daftar) supaya admin bisa
+          // memperbaiki email/password lalu coba buat akunnya lagi tanpa
+          // kehilangan isian yang sudah ada.
+          alert(`⚠ Data tersimpan, tapi akun gagal dibuat: ${dAkun.error || 'terjadi kesalahan'}`);
           setLoading(false);
           return;
         }
-        setHasAccount(true);
-        setAccountEmail(form.email);
-        alert(`✅ Data tersimpan & akun login dibuat!\n\nEmail login: ${form.email}\nPassword: ${form.password}\n\nSampaikan info ini ke siswa/orang tua supaya bisa lanjut isi dari rumah.`);
-        setForm(f => ({ ...f, password: '' }));
-      } else {
-        setSuccess('✅ Data formulir tersimpan.');
+        pesanSukses = `✅ Data tersimpan & akun login dibuat!\n\nEmail login: ${form.email}\nPassword: ${form.password}\n\nSampaikan info ini ke siswa/orang tua supaya bisa lanjut isi dari rumah.`;
       }
-      setLoading(false);
+      // Simpan = selesai: beri tahu lalu langsung kembali ke daftar Pendaftar
+      // Offline, tidak perlu tautan "Selesai" terpisah lagi.
+      alert(pesanSukses);
+      router.push(href('/admin/pendaftar/offline', { jenjang }));
     } catch {
-      setError('Terjadi kesalahan jaringan');
+      alert('❌ Terjadi kesalahan jaringan');
       setLoading(false);
     }
   };
@@ -325,20 +323,20 @@ function TambahPendaftarOfflineInner() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--adm-bg)' }}>
-      <header style={{ background: 'var(--adm-primary)', padding: '18px 24px' }}>
+      {/* Terang, sama seperti header halaman admin lain — lihat catatan yang
+          sama di app/admin/pendaftar/[id]/page.tsx untuk kenapa var(--adm-primary)
+          (navy pekat) tidak dipakai lagi sebagai latar header. */}
+      <header style={{ background: 'var(--adm-surface)', borderBottom: '1px solid var(--adm-border)', padding: '18px 24px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
-          <Link href={`/admin/pendaftar?jenjang=${jenjang}&sumber=offline${qsOnly}`} style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.6)', fontSize: 12, textDecoration: 'none', marginBottom: 10, width: 'fit-content' }}>
+          <Link href={href('/admin/pendaftar/offline', { jenjang })} style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--adm-text-muted)', fontSize: 12, textDecoration: 'none', marginBottom: 10, width: 'fit-content' }}>
             <ChevronLeft size={14} /> Kembali
           </Link>
-          <h1 style={{ color: 'var(--adm-text-invert)', fontSize: 18, fontWeight: 700 }}>{pendaftaranId ? 'Lanjutkan Formulir Offline' : 'Tambah Pendaftar Offline'} — {jenjang.toUpperCase()}</h1>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>Untuk siswa yang mendaftar langsung di sekolah. Boleh disimpan sekalipun belum lengkap — bisa dilanjutkan kapan saja.</p>
+          <h1 style={{ color: 'var(--adm-text)', fontSize: 18, fontWeight: 700 }}>{pendaftaranId ? 'Lanjutkan Formulir Offline' : 'Tambah Pendaftar Offline'} — {jenjang.toUpperCase()}</h1>
+          <p style={{ color: 'var(--adm-text-muted)', fontSize: 12 }}>Untuk siswa yang mendaftar langsung di sekolah. Boleh disimpan sekalipun belum lengkap — bisa dilanjutkan kapan saja.</p>
         </div>
       </header>
 
       <div style={{ maxWidth: 800, margin: '0 auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
-        {error && <div style={{ background: 'var(--adm-danger-weak)', border: '1px solid var(--adm-danger-border)', borderRadius: 8, padding: 12, fontSize: 13, color: 'var(--adm-danger)' }}>{error}</div>}
-        {success && !error && <div style={{ background: 'var(--adm-success-weak)', border: '1px solid var(--adm-success-border)', borderRadius: 8, padding: 12, fontSize: 13, color: 'var(--adm-success)' }}>{success}</div>}
-
         <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 4 }}>Akun Login Siswa</h3>
           {hasAccount ? (
@@ -456,8 +454,10 @@ function TambahPendaftarOfflineInner() {
                 ) : <p style={{ fontSize: 12, color: 'var(--adm-danger)' }}>Belum ada harga untuk pilihan ini.</p>;
               })()}
             </div>
-            {jenjang === 'smp' ? (
+            {asalDariSD(jenjang, form.tipePendaftaran) ? (
               <div><label style={lbl}>Asal SD/MI</label><input style={inp} value={form.asalSD} onChange={set('asalSD')} /></div>
+            ) : jenjang === 'smp' ? (
+              <div><label style={lbl}>Asal SMP/MTs</label><input style={inp} value={form.asalSMP} onChange={set('asalSMP')} /></div>
             ) : (
               <>
                 <div><label style={lbl}>Asal SMP/MTs</label><input style={inp} value={form.asalSMP} onChange={set('asalSMP')} /></div>
@@ -540,9 +540,6 @@ function TambahPendaftarOfflineInner() {
           <button onClick={handleSubmit} disabled={loading} className="btn-primary" style={{ padding: '12px 28px', fontSize: 14, opacity: loading ? 0.6 : 1 }}>
             {loading ? 'Menyimpan...' : 'Simpan'}
           </button>
-          <Link href={`/admin/pendaftar?jenjang=${jenjang}&sumber=offline${qsOnly}`} style={{ fontSize: 13, color: 'var(--adm-text-muted)', textDecoration: 'none' }}>
-            Selesai, kembali ke Data Pendaftar →
-          </Link>
         </div>
       </div>
     </div>

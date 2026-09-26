@@ -31,6 +31,7 @@ export type Resource =
   | 'pengaturan'
   | 'pengaturan_keuangan'
   | 'audit'
+  | 'mutasi'
 
 const R: Action[] = ['read']
 const RX: Action[] = ['read', 'export']
@@ -55,9 +56,14 @@ type Matrix = Record<Role, Partial<Record<Resource, Action[]>>>
 //   Mengaktifkan tahun ajaran mengubah konteks data SELURUH sistem.
 //
 // - jadwal untuk admin_keuangan: `update` diberikan karena
-//   Gelombang.diskonPersen adalah tuas harga. Route wajib mempersempit
-//   field yang boleh disentuh role ini ke diskonPersen saja — tanggal,
-//   aktivasi, dan pembuatan gelombang tetap milik SPMB.
+//   Gelombang.diskonNominal adalah tuas harga (diskonPersen cuma label
+//   tampilan landing page, tidak berdampak keuangan). Route wajib
+//   mempersempit field yang boleh disentuh role ini ke diskonNominal saja —
+//   tanggal, aktivasi, dan pembuatan gelombang tetap milik SPMB.
+//
+// - mutasi (pindah SMA <-> SMK / antar-jurusan SMK): keputusan penempatan
+//   siswa, jadi milik SPMB — Loket Keuangan tidak memindahkan siswa walau
+//   tagihannya ikut dihitung ulang otomatis sebagai akibat mutasi.
 export const MATRIX: Matrix = {
   super_admin: {
     dashboard: R,
@@ -78,6 +84,7 @@ export const MATRIX: Matrix = {
     pengaturan: RU,
     pengaturan_keuangan: RU,
     audit: RX,
+    mutasi: RU,
   },
 
   // Front office: penuh di area SPMB, read-only di area keuangan,
@@ -116,6 +123,7 @@ export const MATRIX: Matrix = {
     laporan_keuangan: RX,
     pengaturan: R,
     pengaturan_keuangan: R,
+    mutasi: RU,
   },
 
   // Loket keuangan: penuh di area uang, TIDAK PUNYA AKSES sama sekali ke
@@ -202,7 +210,7 @@ export const LABEL_ROLE: Record<Role, string> = {
 /** Keterangan panjang untuk halaman Pengguna Admin & Bantuan. */
 export const DESKRIPSI_ROLE: Record<Role, string> = {
   super_admin: 'Akses penuh ke seluruh sistem, termasuk tahun ajaran dan pengguna admin.',
-  admin_spmb: 'Front office: kelola pendaftar, verifikasi, jadwal, dan persyaratan. Boleh mengatur harga, diskon, membantu input pembayaran, dan menerapkan diskon yang sudah tersedia — tapi tidak bisa mengembalikan atau mengalokasikan kelebihan bayar.',
+  admin_spmb: 'Front office: kelola pendaftar, verifikasi, jadwal, dan persyaratan, serta memindahkan (mutasi) pendaftar yang sudah diterima. Boleh mengatur harga, diskon, membantu input pembayaran, dan menerapkan diskon yang sudah tersedia — tapi tidak bisa mengembalikan atau mengalokasikan kelebihan bayar.',
   admin_keuangan: 'Loket keuangan: kelola tagihan, pembayaran, dan transaksi. Tidak dapat memverifikasi dokumen atau mengubah kelulusan.',
   user: 'Akun pendaftar, tanpa akses panel admin.',
 }

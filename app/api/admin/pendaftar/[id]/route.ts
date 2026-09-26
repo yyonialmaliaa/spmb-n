@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { getAdminSession, forbidden, unauthorized, requirePermission } from '@/lib/adminSession'
 import { can, type Resource } from '@/lib/permissions'
 import { prisma } from '@/lib/db'
-import { hitungUlangTagihan, previewTagihan, recalculatePembayaran, HargaTidakDitemukanError } from '@/lib/keuangan'
+import { FIELD_BERKAS } from '@/lib/labels'
+import { hitungUlangTagihan, previewTagihan, recalculatePembayaran, cekKeuanganUntukTerima, HargaTidakDitemukanError } from '@/lib/keuangan'
 import { kirimNotifikasi } from '@/lib/notifikasi'
 
 const LABEL_STATUS: Record<string, string> = {
@@ -56,11 +57,12 @@ export async function GET(
         user: { select: { email: true } },
         pembayaranList: { orderBy: { angsuranKe: 'asc' } },
         tahunAjaran: { select: { nama: true } },
+        mutasiList: { orderBy: { createdAt: 'desc' } },
       },
     })
     if (!data) return NextResponse.json({ error: 'Data tidak ditemukan' }, { status: 404 })
-    const breakdown = await previewTagihan(id)
-    return NextResponse.json({ data: { ...data, breakdown } })
+    const [breakdown, syaratTerima] = await Promise.all([previewTagihan(id), cekKeuanganUntukTerima(id)])
+    return NextResponse.json({ data: { ...data, breakdown, syaratTerima } })
   } catch (err) {
     console.error('Get detail error:', err)
     return NextResponse.json({ error: 'Terjadi kesalahan' }, { status: 500 })
@@ -104,6 +106,17 @@ export async function PUT(
     const existing = await prisma.pendaftaran.findUnique({ where: { id } })
     if (!existing) return NextResponse.json({ error: 'Data tidak ditemukan' }, { status: 404 })
 
+    // Menerima berkas menunggu Loket Keuangan memverifikasi pembayarannya.
+    // Ditegakkan di sini (bukan cuma tombol yang dinonaktifkan) karena semua
+    // jalur penerimaan — Terima Berkas, Setujui Semua, halaman Verifikasi —
+    // lewat route ini.
+    if (body.status === 'diterima_berkas' && existing.status !== 'diterima_berkas') {
+      const syarat = await cekKeuanganUntukTerima(id)
+      if (syarat && !syarat.boleh) {
+        return NextResponse.json({ error: `Berkas belum bisa diterima. ${syarat.alasan}` }, { status: 400 })
+      }
+    }
+
     const updateData: Record<string, any> = {}
 
     if (body.status !== undefined)            updateData.status = body.status
@@ -120,12 +133,22 @@ export async function PUT(
     // lain yang sudah lebih dulu ditandai "Perlu Revisi". Klien cukup
     // mengirim entri yang berubah saja, mis. { fileKK: { status: 'valid' } }.
     // Kirim `null` pada satu fieldKey untuk membersihkan tandanya (tombol ✕).
+    // Revisi per-dokumen HARUS sampai ke siswa saat itu juga — admin bisa
+    // menandai satu berkas "Perlu Revisi" tanpa melalui aksi "Tolak Berkas"
+    // (yang baru mengubah status keseluruhan). Tanpa notifikasi di sini,
+    // siswa tidak akan pernah tahu ada dokumen yang perlu diperbaiki sampai
+    // admin membuat keputusan akhir kelulusan.
+    const notifRevisiBerkas: { label: string; catatan?: string }[] = []
     if (body.validasiBerkas !== undefined) {
-      const sudahAda = (existing.validasiBerkas as Record<string, unknown> | null) || {}
+      const sudahAda = (existing.validasiBerkas as Record<string, { status?: string; catatan?: string }> | null) || {}
       const gabungan: Record<string, unknown> = { ...sudahAda }
-      for (const [fieldKey, nilai] of Object.entries(body.validasiBerkas as Record<string, unknown>)) {
-        if (nilai === null) delete gabungan[fieldKey]
-        else gabungan[fieldKey] = nilai
+      for (const [fieldKey, nilai] of Object.entries(body.validasiBerkas as Record<string, { status?: string; catatan?: string } | null>)) {
+        if (nilai === null) { delete gabungan[fieldKey]; continue }
+        gabungan[fieldKey] = nilai
+        const sebelum = sudahAda[fieldKey]
+        if (nilai.status === 'revisi' && (sebelum?.status !== 'revisi' || sebelum?.catatan !== nilai.catatan)) {
+          notifRevisiBerkas.push({ label: FIELD_BERKAS[fieldKey] || fieldKey, catatan: nilai.catatan })
+        }
       }
       updateData.validasiBerkas = gabungan
     }
@@ -189,6 +212,9 @@ export async function PUT(
     }
     if (updateData.pesanPengumuman && updateData.pesanPengumuman !== existing.pesanPengumuman) {
       await kirimNotifikasi(id, 'Ada pengumuman baru dari admin — cek halaman Dashboard Anda.')
+    }
+    for (const r of notifRevisiBerkas) {
+      await kirimNotifikasi(id, `Dokumen "${r.label}" perlu direvisi.${r.catatan ? ` Catatan admin: ${r.catatan}` : ''}`)
     }
 
     if (body.diskonId !== undefined && updated.totalTagihanLocked && body.hitungUlang === true) {

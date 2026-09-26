@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { Search, X, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TopHeader } from '@/components/admin/TopHeader';
 import { PermissionGate, ReadOnlyBanner } from '@/components/admin/ui';
-import { hitungRingkasan } from '@/lib/pembayaran-utils';
-import { JENJANG_LABEL_FULL, JURUSAN_SMK, cariJurusan, punyaJurusan, type Jenjang } from '@/lib/labels';
+import { useAdmin } from '@/components/admin/AdminProvider';
+import { JENJANG_LABEL_FULL, JURUSAN_SMK, cariJurusan, punyaJurusan } from '@/lib/labels';
+import TeksKode from '@/components/TeksKode';
 
 type Pendaftaran = {
   id: string; namaLengkap: string | null; namaPanggilan?: string; noPendaftaran?: string | null;
@@ -29,12 +30,13 @@ type Pendaftaran = {
   waVerified?: boolean;
   metodePembayaran?: string; buktiPembayaran?: string;
   statusPembayaran?: string; catatanPembayaran?: string; totalTagihan?: number; gelombang?: string;
+  hargaPokok?: number | null; gelombangDiskonNominal?: number; diskonNominal?: number;
   sudahDaftarUlang?: boolean; tanggalDaftarUlang?: string; catatanDaftarUlang?: string;
   fileIjazah?: string | null; fileAkte?: string | null;
   fileKK?: string | null; fileKtpOrtu?: string | null;
   fileKip?: string | null; fileFoto?: string | null;
   createdAt: string; userEmail?: string; userId?: string;
-  pembayaranList?: { id: string; jenis?: string; nominal: number; status: string }[];
+  pembayaranList?: { id: string; jenis?: string; nominal: number; status: string; angsuranKe: number; tanggalBayar: string }[];
 };
 
 type Stats = {
@@ -52,7 +54,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 
 const STATUS_BAYAR_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   belum_bayar:         { label: 'Belum Bayar',              color: 'var(--adm-warning)', bg: 'var(--adm-warning-weak)' },
-  cicilan_berjalan:    { label: 'Cicilan Berjalan',         color: 'var(--adm-ungu)', bg: 'var(--adm-ungu-weak)' },
+  cicilan_berjalan:    { label: 'Angsuran Berjalan',        color: 'var(--adm-ungu)', bg: 'var(--adm-ungu-weak)' },
   menunggu_verifikasi: { label: 'Menunggu Verifikasi',       color: 'var(--adm-info)', bg: 'var(--adm-info-weak)' },
   lunas:               { label: 'Lunas',                     color: 'var(--adm-success)', bg: 'var(--adm-success-weak)' },
   ditolak:             { label: 'Ditolak',                   color: 'var(--adm-danger)', bg: 'var(--adm-danger-weak)' },
@@ -91,23 +93,22 @@ type PropPendaftarView = {
 export function PendaftarView({ sumberTetap }: PropPendaftarView) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const jenjangParam = (searchParams.get('jenjang') || '').toLowerCase();
-  const jenjang: 'smp' | 'sma' | 'smk' | '' = (['smp', 'sma', 'smk'].includes(jenjangParam) ? jenjangParam : '') as any;
+  // Jenjang SELALU dari konteks sidebar — tidak lagi membaca URL sendiri
+  // dengan "Semua Jenjang" sebagai bawaan, yang dulu bisa berselisih dengan
+  // jenjang yang tertulis di sidebar.
+  const { jenjang, href } = useAdmin();
   // Halaman khusus (/pendaftar/online, /pendaftar/offline) mengunci sumbernya
   // lewat prop; halaman gabungan masih menerima ?sumber= agar tautan lama
   // yang sudah tersebar tetap berfungsi.
   const sumberParam = (searchParams.get('sumber') || '').toLowerCase();
   const sumber: 'online' | 'offline' | '' = sumberTetap
     ?? ((['online', 'offline'].includes(sumberParam) ? sumberParam : '') as 'online' | 'offline' | '');
-  // Program keahlian hanya dimiliki SMK. Saat jenjang belum dipilih (tampilan
-  // "Semua Jenjang") kolomnya tetap ditampilkan karena daftarnya bisa memuat
-  // pendaftar SMK.
-  const tampilkanJurusan = !jenjang || jenjang === 'smk';
+  // Program keahlian hanya dimiliki SMK.
+  const tampilkanJurusan = jenjang === 'smk';
   const tahunAjaranId = searchParams.get('tahunAjaranId') || '';
-  const qs = tahunAjaranId ? `&tahunAjaranId=${tahunAjaranId}` : '';
   const qsOnly = tahunAjaranId ? `?tahunAjaranId=${tahunAjaranId}` : '';
   const [data, setData] = useState<Pendaftaran[]>([]);
-  const dataInJenjang = data.filter(p => (!jenjang || (p.jenjang || 'smk') === jenjang) && (!sumber || (p.sumberDaftar || 'online') === sumber));
+  const dataInJenjang = data.filter(p => (p.jenjang || 'smk') === jenjang && (!sumber || (p.sumberDaftar || 'online') === sumber));
   const stats: Stats = {
     total: dataInJenjang.length,
     verified: dataInJenjang.filter(p => p.status === 'verified').length,
@@ -137,86 +138,8 @@ export function PendaftarView({ sumberTetap }: PropPendaftarView) {
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
-  // Toggle verifikasi WhatsApp (cek manual admin)
-  const handleExportExcel = () => {
-    const headers = [
-      'No', 'Sumber Daftar', 'Status Verifikasi', 'Status Pembayaran', 'Email Akun',
-      'Nama Lengkap', 'Nama Panggilan', 'Tempat Lahir', 'Tanggal Lahir', 'Jenis Kelamin', 'Agama', 'Anak Ke',
-      'Berat Badan', 'Tinggi Badan', 'Golongan Darah', 'Ukuran Seragam',
-      'NIK', 'NISN', 'No. WhatsApp', 'WA Terverifikasi',
-      'Alamat', 'RT', 'RW', 'Kelurahan', 'Kecamatan', 'Kab/Kota',
-      'Nama Pemberi Referensi', 'No. HP Referensi',
-      'Jenjang', 'Jurusan', 'Kelas', 'Tipe Pendaftaran', 'Kelas Masuk (Pindahan)',
-      'Asal SD', 'Asal SMP',
-      'Nama Ayah', 'TTL Ayah', 'Pendidikan Ayah', 'Pekerjaan Ayah', 'Penghasilan Ayah', 'No. HP Ayah', 'Alamat Ayah',
-      'Nama Ibu', 'TTL Ibu', 'Pendidikan Ibu', 'Pekerjaan Ibu', 'Penghasilan Ibu', 'No. HP Ibu', 'Alamat Ibu',
-      'Nama Wali', 'TTL Wali', 'Pendidikan Wali', 'Pekerjaan Wali', 'Penghasilan Wali', 'No. HP Wali', 'Alamat Wali',
-      'Gelombang', 'Total Tagihan',
-      'Sudah Daftar Ulang', 'Tanggal Daftar Ulang', 'Catatan Daftar Ulang',
-      'Catatan Admin', 'Alasan Penolakan', 'Pesan Pengumuman',
-      'File Ijazah', 'File Akte', 'File KK', 'File KTP Ortu', 'File KIP', 'File Foto',
-      'Tanggal Daftar',
-    ];
-    const rows = filtered.map((p, i) => [
-      i + 1, (p.sumberDaftar || 'online') === 'online' ? 'Online' : 'Offline',
-      STATUS_CONFIG[p.status]?.label || p.status, STATUS_BAYAR_CONFIG[p.statusPembayaran || 'belum_bayar']?.label || p.statusPembayaran || '-',
-      p.userEmail || '-',
-      p.namaLengkap || '-', p.namaPanggilan || '-', p.tempatLahir || '-', p.tanggalLahir || '-', p.jenisKelamin || '-', p.agama || '-', p.anakKe || '-',
-      p.beratBadan || '-', p.tinggiBadan || '-', p.golonganDarah || '-', p.ukuranSeragam || '-',
-      p.nik || '-', p.nisn || '-', p.noPribadi || '-', p.waVerified ? 'Ya' : 'Belum',
-      p.alamat || '-', p.rt || '-', p.rw || '-', p.kelurahan || '-', p.kecamatan || '-', p.kabupaten || '-',
-      p.namaPemberiReferensi || '-', p.noHpReferensi || '-',
-      (p.jenjang || 'smk').toUpperCase(), p.jurusan || '-', p.kelas || '-', p.tipePendaftaran === 'pindahan' ? 'Pindahan' : 'Baru', p.kelasMasuk || '-',
-      p.asalSD || '-', p.asalSMP || p.asalSekolah || '-',
-      p.namaAyah || '-', p.ttlAyah || '-', p.pendidikanAyah || '-', p.pekerjaanAyah || '-', p.penghasilanAyah || '-', p.noHpAyah || '-', p.alamatAyah || '-',
-      p.namaIbu || '-', p.ttlIbu || '-', p.pendidikanIbu || '-', p.pekerjaanIbu || '-', p.penghasilanIbu || '-', p.noHpIbu || '-', p.alamatIbu || '-',
-      p.namaWali || '-', p.ttlWali || '-', p.pendidikanWali || '-', p.pekerjaanWali || '-', p.penghasilanWali || '-', p.noHpWali || '-', p.alamatWali || '-',
-      p.gelombang || '-', p.totalTagihan ?? 0,
-      p.sudahDaftarUlang ? 'Ya' : 'Belum', p.tanggalDaftarUlang ? new Date(p.tanggalDaftarUlang).toLocaleDateString('id-ID') : '-', p.catatanDaftarUlang || '-',
-      p.catatan || '-', p.alasanPenolakan || '-', p.pesanPengumuman || '-',
-      p.fileIjazah || '-', p.fileAkte || '-', p.fileKK || '-', p.fileKtpOrtu || '-', p.fileKip || '-', p.fileFoto || '-',
-      new Date(p.createdAt).toLocaleDateString('id-ID'),
-    ]);
-    const csv = '\uFEFF' + [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-    a.download = `data-pendaftar-${slugEkspor}-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-  };
-
-  const handleExportKeuangan = () => {
-    const headers = [
-      'No', 'Nama Lengkap', 'Email Akun', 'Jenjang', 'Jurusan', 'Kelas', 'Sumber Daftar',
-      'Gelombang', 'Total Tagihan', 'Total Dibayar (Bersih)', 'Tunggakan (Kurang Bayar)',
-      'Kelebihan Bayar', 'Sudah Dikembalikan (Refund)', 'Status Pembayaran',
-      'Jumlah Cicilan Terverifikasi', 'Jumlah Cicilan Menunggu Verifikasi', 'Jumlah Refund',
-    ];
-    const rows = filtered.map((p, i) => {
-      const list = p.pembayaranList || [];
-      const totalTagihan = p.totalTagihan || 0;
-      const { totalDibayar, sisaBayar, kelebihanBayar, totalRefund } = hitungRingkasan(list, totalTagihan);
-      const jmlCicilanLunas = list.filter(x => (x.jenis || 'bayar') === 'bayar' && x.status === 'lunas').length;
-      const jmlMenunggu = list.filter(x => x.status === 'menunggu_verifikasi').length;
-      const jmlRefund = list.filter(x => x.jenis === 'refund' && x.status === 'lunas').length;
-      return [
-        i + 1, p.namaLengkap || '-', p.userEmail || '-', (p.jenjang || 'smk').toUpperCase(), p.jurusan || '-', p.kelas || '-',
-        (p.sumberDaftar || 'online') === 'online' ? 'Online' : 'Offline',
-        p.gelombang || '-', totalTagihan, totalDibayar, sisaBayar, kelebihanBayar, totalRefund,
-        STATUS_BAYAR_CONFIG[p.statusPembayaran || 'belum_bayar']?.label || p.statusPembayaran || '-',
-        jmlCicilanLunas, jmlMenunggu, jmlRefund,
-      ];
-    });
-    const csv = '\uFEFF' + [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-    a.download = `keuangan-pendaftar-${slugEkspor}-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-  };
-
- 
-
   const filtered = data.filter(p =>
-    (!jenjang || (p.jenjang || 'smk') === jenjang)
+    (p.jenjang || 'smk') === jenjang
     && (!sumber || (p.sumberDaftar || 'online') === sumber)
     && (!search || (p.namaLengkap || '').toLowerCase().includes(search.toLowerCase()) || (p.userEmail || '').toLowerCase().includes(search.toLowerCase()) || (p.nik || '').includes(search))
     && (!filterJurusan || (p.jurusan || '').toUpperCase().includes(filterJurusan))
@@ -228,10 +151,7 @@ export function PendaftarView({ sumberTetap }: PropPendaftarView) {
   // saja — menu Laporan → "Analisis Minat Program Keahlian" — dan hanya untuk
   // SMK. Halaman ini fokus pada data, pencarian, filter, status, dan aksi.
 
-  // Nama jenjang selalu mengikuti konteks yang sedang dibuka, tidak pernah
-  // dipatok ke satu jenjang: SMP Citra Negara / SMA Citra Negara / SMK Citra
-  // Negara — atau "Citra Negara" saja bila belum ada jenjang terpilih.
-  const namaJenjang = jenjang ? JENJANG_LABEL_FULL[jenjang as Jenjang] : 'Semua Jenjang';
+  const namaJenjang = JENJANG_LABEL_FULL[jenjang];
   // Judul, subjudul, breadcrumb, dan tab di bawah SEMUA harus mengikuti
   // `sumber` (filter yang BENAR-BENAR aktif — sudah menggabungkan rute
   // /online /offline maupun ?sumber= lama), bukan `sumberTetap` (cuma
@@ -249,8 +169,6 @@ export function PendaftarView({ sumberTetap }: PropPendaftarView) {
     : sumber === 'offline'
       ? 'Pendaftar yang didaftarkan langsung oleh admin di loket.'
       : 'Kelola data pendaftaran peserta didik baru.';
-  /** Potongan nama berkas ekspor, supaya sumbernya terbaca dari nama file. */
-  const slugEkspor = `${jenjang || 'semua'}${sumber ? `-${sumber}` : ''}`;
 
   return (
     <>
@@ -263,23 +181,16 @@ export function PendaftarView({ sumberTetap }: PropPendaftarView) {
           remah={[{ label: 'Pendaftaran' }, { label: 'Pendaftar' }, ...(sumber ? [{ label: sumber === 'online' ? 'Online' : 'Offline' }] : [])]}
           aksi={
             <>
-              <PermissionGate resource="pendaftar" action="export">
-                <button onClick={handleExportExcel} className="adm-btn adm-btn--ghost adm-btn--sm">
-                  Export Biodata
-                </button>
-              </PermissionGate>
-              <PermissionGate resource="laporan_keuangan" action="export">
-                <button onClick={handleExportKeuangan} className="adm-btn adm-btn--secondary adm-btn--sm">
-                  Export Keuangan
-                </button>
-              </PermissionGate>
+              {/* "Export Biodata" & "Export Keuangan" pindah ke sidebar Laporan
+                  (menggantikan tombol "Export Excel" di masing-masing) — lihat
+                  app/admin/laporan/page.tsx & app/admin/laporan/keuangan/page.tsx. */}
               {/* Tombol tambah HANYA muncul di halaman Pendaftar Offline —
                   di situlah satu-satunya tempat admin membuat pendaftar
                   offline. Halaman gabungan dan halaman Online tidak
                   menampilkannya, dan tidak ada menu sidebar untuk ini. */}
-              {sumberTetap === 'offline' && jenjang && (
+              {sumberTetap === 'offline' && (
                 <PermissionGate resource="pendaftar" action="create">
-                  <Link href={`/admin/pendaftar/tambah?jenjang=${jenjang}${qs}`} className="adm-btn adm-btn--primary adm-btn--sm">
+                  <Link href={href('/admin/pendaftar/tambah')} className="adm-btn adm-btn--primary adm-btn--sm">
                     + Tambah Pendaftar Offline
                   </Link>
                 </PermissionGate>
@@ -306,7 +217,7 @@ export function PendaftarView({ sumberTetap }: PropPendaftarView) {
               return (
                 <Link
                   key={t.label}
-                  href={`/admin/pendaftar${t.ke}${jenjang ? `?jenjang=${jenjang}${qs}` : qsOnly}`}
+                  href={href(`/admin/pendaftar${t.ke}`)}
                   style={{
                     padding: '7px 16px', borderRadius: 999, fontSize: 12.5, fontWeight: 600,
                     textDecoration: 'none', border: '1px solid',
@@ -395,7 +306,7 @@ export function PendaftarView({ sumberTetap }: PropPendaftarView) {
                                   <div style={{ width: 32, height: 32, borderRadius: '50%', background: jur.latar, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: jur.warna, flexShrink: 0 }}>{getInitials(p.namaLengkap)}</div>
                                   <div>
                                     <div style={{ fontWeight: 600, color: 'var(--adm-text)', fontSize: 13 }}>{p.namaLengkap}</div>
-                                    <div style={{ fontSize: 10, color: 'var(--adm-text-faint)' }}>{getRegNo(p)}</div>
+                                    <div style={{ fontSize: 10, color: 'var(--adm-text-faint)' }}><TeksKode teks={getRegNo(p)} /></div>
                                     {(p.revisiCount || 0) > 0 && <div style={{ fontSize: 9, color: 'var(--adm-warning)', fontWeight: 600 }}>Revisi {p.revisiCount}x</div>}
                                   </div>
                                 </div>
@@ -427,7 +338,7 @@ export function PendaftarView({ sumberTetap }: PropPendaftarView) {
                                     ini. Modal lama sudah dilipat jadi tab
                                     Verifikasi di sana, jadi "Detail" di sini
                                     tidak lagi menduplikasi tampilan yang sama. */}
-                                <Link href={`/admin/pendaftar/${p.id}?jenjang=${p.jenjang || jenjang}${qs}`} className="adm-btn adm-btn--primary adm-btn--sm">Detail</Link>
+                                <Link href={href(`/admin/pendaftar/${p.id}`, { jenjang: p.jenjang || jenjang })} className="adm-btn adm-btn--primary adm-btn--sm">Detail</Link>
                               </td>
                             </tr>
                           );

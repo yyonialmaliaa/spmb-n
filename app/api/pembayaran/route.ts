@@ -13,6 +13,7 @@ import {
   formatRupiah,
   HargaTidakDitemukanError,
 } from '@/lib/keuangan'
+import { perluLengkapiFormulir } from '@/lib/kelas'
 
 // GET - riwayat cicilan milik user yang login + ringkasan (total tagihan, sudah dibayar, sisa)
 export async function GET() {
@@ -84,6 +85,12 @@ export async function POST(req: Request) {
     const pendaftaranAwal = await prisma.pendaftaran.findUnique({ where: { userId: session.userId } })
     if (!pendaftaranAwal) {
       return NextResponse.json({ error: 'Silakan lengkapi formulir pendaftaran terlebih dahulu' }, { status: 404 })
+    }
+    // Dicek SEBELUM lockTagihanJikaBelum: pembayaran pertama mengunci tagihan
+    // dari kelas/jurusan yang tersimpan, jadi tidak boleh terjadi selagi data
+    // wajib formulir (termasuk kelas) belum lengkap.
+    if (perluLengkapiFormulir(pendaftaranAwal)) {
+      return NextResponse.json({ error: 'Lengkapi semua data dan berkas wajib pada formulir pendaftaran terlebih dahulu sebelum melakukan pembayaran.' }, { status: 400 })
     }
 
     await lockTagihanJikaBelum(pendaftaranAwal.id)

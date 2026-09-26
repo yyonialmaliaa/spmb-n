@@ -26,13 +26,19 @@ export function Biaya({ jenjang }: { jenjang: DataJenjang[] }) {
   const adaHarga = jenjang.some(j => j.harga.length > 0)
   if (!adaHarga) return null
 
-  const potongan = data?.gelombangAktif?.diskonPersen ?? 0
+  // potonganNominal (Rupiah) adalah yang SUNGGUHAN memotong harga — identik
+  // dengan cara tagihan pendaftar dihitung di lib/keuangan.ts. potonganPersen
+  // HANYA label tampilan (mis. "−20%") dan sengaja TIDAK dipakai untuk
+  // menghitung angka apa pun di bawah ini.
+  const potonganNominal = data?.gelombangAktif?.diskonNominal ?? 0
+  const potonganPersen = data?.gelombangAktif?.diskonPersen ?? 0
+  const adaPotongan = potonganNominal > 0
 
   // Satu jenjang bisa punya beberapa baris harga (kelas / program berbeda).
   // Yang ditampilkan adalah rentangnya, bukan satu angka yang menyesatkan.
   const nominalTerendah = data && data.harga.length > 0 ? Math.min(...data.harga.map(h => h.nominal)) : 0
   const nominalTertinggi = data && data.harga.length > 0 ? Math.max(...data.harga.map(h => h.nominal)) : 0
-  const setelahPotongan = (n: number) => Math.round(n * (1 - potongan / 100))
+  const setelahPotongan = (n: number) => Math.max(n - potonganNominal, 0)
 
   return (
     <section id="biaya" className="lp-bagian">
@@ -101,13 +107,13 @@ export function Biaya({ jenjang }: { jenjang: DataJenjang[] }) {
                     )}
                   </div>
                   <span className="lp-biaya-nominal">
-                    {potongan > 0 && <span className="lp-coret">{formatRupiah(h.nominal)}</span>}
+                    {adaPotongan && <span className="lp-coret">{formatRupiah(h.nominal)}</span>}
                     {formatRupiah(setelahPotongan(h.nominal))}
                   </span>
                 </div>
               ))}
 
-              {potongan > 0 && data.gelombangAktif && (
+              {adaPotongan && data.gelombangAktif && (
                 <div className="lp-biaya-baris" style={{ borderBottom: 'none' }}>
                   <div>
                     <div style={{ fontWeight: 650, color: 'var(--lp-hijau)' }}>
@@ -118,7 +124,7 @@ export function Biaya({ jenjang }: { jenjang: DataJenjang[] }) {
                     </div>
                   </div>
                   <span className="lp-biaya-nominal" style={{ color: 'var(--lp-hijau)' }}>
-                    −{potongan}%
+                    {potonganPersen > 0 ? `−${potonganPersen}%` : `−${formatRupiah(potonganNominal)}`}
                   </span>
                 </div>
               )}

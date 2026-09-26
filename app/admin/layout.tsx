@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { getAdminSession } from '@/lib/adminSession'
 import { prisma } from '@/lib/db'
 import { AdminProvider } from '@/components/admin/AdminProvider'
@@ -30,8 +31,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     orderBy: { createdAt: 'desc' },
   })
 
+  // Dibaca di server lalu dioper sebagai prop, supaya render server dan
+  // hidrasi client memakai nilai awal yang sama (lihat AdminProvider).
+  const jenjangTerakhir = (await cookies()).get('adm_jenjang')?.value ?? null
+
   return (
-    <AdminProvider initial={{ user: session, tahunAjaranList }}>
+    <AdminProvider initial={{ user: session, tahunAjaranList, jenjangTerakhir }}>
       <AdminShell>{children}</AdminShell>
     </AdminProvider>
   )

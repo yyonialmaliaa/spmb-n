@@ -10,8 +10,12 @@ import { useMuatData, ambilJson } from '@/components/admin/useMuatData';
 import {
   EmptyState, ErrorState, PermissionGate, SkeletonStat, StatCard, StatusBadge,
 } from '@/components/admin/ui';
-import { JENJANG_SINGKAT, type Jenjang } from '@/lib/labels';
+import { type Jenjang, NAMA_INSTITUSI } from '@/lib/labels';
 import { formatRupiah } from '@/lib/pembayaran-utils';
+import { hitungBarisExportKeuangan, maksAngsuranDari, type BarisPendaftaranUntukExportKeuangan } from '@/lib/rincianKeuangan';
+import { buatWorkbookExportKeuanganPendaftar } from '@/lib/laporanKeuanganExcel';
+import { hitungKesimpulanKeuangan, type BarisPendaftaranUntukKesimpulan } from '@/lib/kesimpulanKeuangan';
+import { buatWorkbookKesimpulanKeuangan } from '@/lib/kesimpulanKeuanganExcel';
 
 // ============================================================================
 // LAPORAN KEUANGAN — kembaran Laporan Pendaftaran untuk sisi uang.
@@ -67,7 +71,7 @@ export default function LaporanKeuanganPage() {
 
 function LaporanKeuanganInner() {
   const searchParams = useSearchParams();
-  const { jenjang, jenjangSingkat } = useAdmin();
+  const { jenjang, jenjangSingkat, tahunAjaran } = useAdmin();
   const tahunAjaranId = searchParams.get('tahunAjaranId') || '';
   const [mengekspor, setMengekspor] = useState(false);
   const [errExport, setErrExport] = useState('');
@@ -85,29 +89,61 @@ function LaporanKeuanganInner() {
 
   const { data, loading, gagal, muatUlang } = useMuatData(ambil, [jenjang, tahunAjaranId]);
 
+  // "Export Keuangan" — pindahan persis dari tombol yang sebelumnya ada di
+  // halaman Pendaftar (components/admin/PendaftarView.tsx), menggantikan
+  // "Export Excel" di sini. Kolom, rincian angsuran (nominal+tanggal), dan
+  // gaya visualnya SAMA PERSIS (lihat lib/rincianKeuangan.ts +
+  // lib/laporanKeuanganExcel.ts) — bedanya cuma di sini tidak ada filter
+  // sumber Online/Offline/pencarian seperti di halaman Pendaftar, jadi
+  // cakupannya seluruh pendaftar jenjang + tahun ajaran ini apa adanya.
   const ekspor = async () => {
     if (!jenjang) return;
     setMengekspor(true); setErrExport('');
     try {
-      const qp = new URLSearchParams({ jenjang });
-      if (tahunAjaranId) qp.set('tahunAjaranId', tahunAjaranId);
-      const res = await fetch(`/api/admin/laporan/keuangan/export?${qp}`);
-      if (!res.ok) {
-        const e = await res.json().catch(() => null);
-        setErrExport(e?.error || 'Gagal membuat file Excel');
-        return;
-      }
-      const blob = await res.blob();
-      const nama = res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1]
-        ?? `Laporan_Keuangan_${JENJANG_SINGKAT[jenjang]}.xlsx`;
+      const res = await fetch(`/api/admin/pendaftar${tahunAjaranId ? `?tahunAjaranId=${tahunAjaranId}` : ''}`);
+      const d = await res.json();
+      const list = ((d.data || []) as BarisPendaftaranUntukExportKeuangan[]).filter(p => (p.jenjang || 'smk') === jenjang);
+      const baris = hitungBarisExportKeuangan(list);
+      const buffer = await buatWorkbookExportKeuanganPendaftar({
+        jenjang,
+        sumber: null,
+        tahunAjaran: { nama: tahunAjaran?.nama || '-' },
+        baris,
+        maksAngsuran: maksAngsuranDari(baris),
+      });
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = nama;
+      a.href = URL.createObjectURL(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      a.download = `keuangan-pendaftar-${jenjang}-${new Date().toISOString().slice(0, 10)}.xlsx`;
       a.click();
-      URL.revokeObjectURL(a.href);
     } catch {
-      setErrExport('Terjadi kesalahan jaringan');
+      setErrExport('Gagal membuat file Excel');
     } finally { setMengekspor(false); }
+  };
+
+  const [mengeksporKesimpulan, setMengeksporKesimpulan] = useState(false);
+  const [errKesimpulan, setErrKesimpulan] = useState('');
+
+  // "Export Kesimpulan Keuangan" — laporan RINGKASAN (bukan per-pendaftar
+  // seperti "Export Keuangan" di atas): satu jenjang per file, dipecah per
+  // kategori HARGA yang memang ada di sistem (PLUS/REGULER, dan untuk SMK
+  // per jurusan juga) — BUKAN per kelas 7/8/9/10/11/12. Lihat
+  // lib/kesimpulanKeuangan.ts untuk aturan kategorisasinya.
+  const eksporKesimpulan = async () => {
+    if (!jenjang) return;
+    setMengeksporKesimpulan(true); setErrKesimpulan('');
+    try {
+      const res = await fetch(`/api/admin/pendaftar${tahunAjaranId ? `?tahunAjaranId=${tahunAjaranId}` : ''}`);
+      const d = await res.json();
+      const list = ((d.data || []) as BarisPendaftaranUntukKesimpulan[]).filter(p => (p.jenjang || 'smk') === jenjang);
+      const kesimpulan = hitungKesimpulanKeuangan(list, jenjang);
+      const buffer = await buatWorkbookKesimpulanKeuangan(kesimpulan, NAMA_INSTITUSI.toUpperCase(), tahunAjaran?.nama || '-');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      a.download = `kesimpulan-keuangan-${jenjang}-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+    } catch {
+      setErrKesimpulan('Gagal membuat file Excel');
+    } finally { setMengeksporKesimpulan(false); }
   };
 
   const maksGelombang = Math.max(1, ...(data?.perGelombang ?? []).map(g => g.tagihan));
@@ -123,10 +159,16 @@ function LaporanKeuanganInner() {
           data ? (
             <PermissionGate resource="laporan_keuangan" action="export">
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                <button onClick={ekspor} disabled={mengekspor} className="adm-btn adm-btn--primary adm-btn--sm">
-                  <Download size={14} /> {mengekspor ? 'Menyiapkan…' : 'Export Excel'}
-                </button>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button onClick={ekspor} disabled={mengekspor} className="adm-btn adm-btn--primary adm-btn--sm">
+                    <Download size={14} /> {mengekspor ? 'Menyiapkan…' : 'Export Keuangan'}
+                  </button>
+                  <button onClick={eksporKesimpulan} disabled={mengeksporKesimpulan} className="adm-btn adm-btn--secondary adm-btn--sm">
+                    <Download size={14} /> {mengeksporKesimpulan ? 'Menyiapkan…' : 'Export Kesimpulan Keuangan'}
+                  </button>
+                </div>
                 {errExport && <span style={{ fontSize: 11, color: 'var(--adm-danger)' }}>{errExport}</span>}
+                {errKesimpulan && <span style={{ fontSize: 11, color: 'var(--adm-danger)' }}>{errKesimpulan}</span>}
               </div>
             </PermissionGate>
           ) : null

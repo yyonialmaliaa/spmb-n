@@ -28,6 +28,7 @@ export type AksiAudit =
   | 'verify'
   | 'reject'
   | 'reset_password'
+  | 'mutasi'
 
 export interface InputAudit {
   session: Pick<AdminSession, 'userId' | 'email' | 'role'>

@@ -15,7 +15,8 @@
 // =====================================================================
 
 import { prisma } from './db'
-import { hitungRingkasan, MIN_CICILAN, DEFAULT_MIN_PEMBAYARAN_AWAL, LABEL_JENIS_TRANSAKSI, formatRupiah, hitungTotalDisetorkan } from './pembayaran-utils'
+import { hitungRingkasan, MIN_CICILAN, DEFAULT_MIN_PEMBAYARAN_AWAL, LABEL_JENIS_TRANSAKSI, formatRupiah, hitungTotalDisetorkan, syaratKeuanganTerima, type SyaratTerima } from './pembayaran-utils'
+import { notifPendaftarOfflineSiapVerifikasi } from './notifikasiAdmin'
 
 // Re-export murni dari pembayaran-utils supaya route API cukup import satu
 // modul (lib/keuangan.ts). Komponen client HARUS import langsung dari
@@ -47,6 +48,54 @@ export async function getMinimalPembayaranAwal(tahunAjaranId: string): Promise<n
 export async function getMinimalCicilan(tahunAjaranId: string): Promise<number> {
   const pengaturan = await prisma.pengaturanKeuangan.findUnique({ where: { tahunAjaranId } })
   return pengaturan?.minimalCicilan ?? MIN_CICILAN
+}
+
+// Dokumen wajib saat PENDAFTARAN (bukan daftar ulang) — persis daftar yang
+// digerbangi "Kirim Formulir" jalur online (app/api/pendaftaran/kirim/route.ts,
+// fileKip sengaja tidak wajib di sana juga). Disalin literal, bukan diimpor
+// dari route itu, supaya kedua gerbang tetap independen kalau salah satu
+// jenjang nanti butuh pengecualian sendiri.
+function dokumenPendaftaranLengkap(p: {
+  fileIjazah: string | null; fileAkte: string | null; fileKK: string | null
+  fileKtpOrtu: string | null; fileFoto: string | null
+}): boolean {
+  return !!p.fileIjazah && !!p.fileAkte && !!p.fileKK && !!p.fileKtpOrtu && !!p.fileFoto
+}
+
+// Pendaftar OFFLINE tidak melalui "Kirim Formulir" — datanya diinput admin
+// langsung di sekolah (app/api/admin/pendaftar-offline/route.ts), jadi tidak
+// ada tombol yang memicu transisi draft -> verified seperti jalur online.
+// Tanpa ini status bisa nyangkut selamanya di "Draft — Belum Dikirim"
+// walau dokumennya sudah lengkap dan sudah bayar.
+//
+// Dipanggil setiap kali dokumen ATAU pembayaran offline berubah, supaya
+// begitu SYARAT YANG SAMA PERSIS dengan jalur online terpenuhi (dokumen
+// wajib lengkap + minimal uang pendaftaran sudah disetor), statusnya
+// otomatis pindah ke "Sedang Diverifikasi" tanpa menunggu admin memencet
+// apa pun. Diam-diam no-op untuk pendaftar online atau yang statusnya
+// sudah bukan draft (mis. sudah ditolak/diterima).
+export async function cekOtomatisVerifikasiOffline(pendaftaranId: string) {
+  const p = await prisma.pendaftaran.findUnique({
+    where: { id: pendaftaranId },
+    include: { pembayaranList: true },
+  })
+  if (!p || p.status !== 'draft' || p.sumberDaftar !== 'offline') return null
+  if (!dokumenPendaftaranLengkap(p)) return null
+
+  const minimal = await getMinimalPembayaranAwal(p.tahunAjaranId)
+  if (hitungTotalDisetorkan(p.pembayaranList) < minimal) return null
+
+  const updated = await prisma.pendaftaran.update({
+    where: { id: pendaftaranId },
+    data: { status: 'verified' },
+  })
+  await notifPendaftarOfflineSiapVerifikasi({
+    id: updated.id,
+    namaLengkap: updated.namaLengkap,
+    jenjang: updated.jenjang,
+    tahunAjaranId: updated.tahunAjaranId,
+  })
+  return updated
 }
 
 async function getHargaAktif(params: { tahunAjaranId: string; jenjang: string; jurusan: string; kelas: string }) {
@@ -88,13 +137,17 @@ type TagihanBreakdown = {
 // ditentukan pula (tidak melakukan lookup "yang aktif sekarang" — dipakai
 // baik untuk kunci pertama kali maupun hitung ulang, beda hanya di mana
 // gelombang/diskon-nya berasal, lihat pemanggilnya).
+//
+// Diskon gelombang dipotong dari Gelombang.diskonNominal (Rupiah tetap yang
+// diinput admin), BUKAN dari Gelombang.diskonPersen — field persen itu
+// sekarang murni label tampilan landing page (lihat komentar di schema).
 async function hitungDariGelombangDanDiskon(params: {
   hargaPokok: number
-  gelombang: { nama: string; diskonPersen: number } | null
+  gelombang: { nama: string; diskonNominal: number } | null
   diskonId: string | null
 }): Promise<Pick<TagihanBreakdown, 'gelombangDiskonNominal' | 'gelombangNama' | 'diskonNominal' | 'diskonNama' | 'totalTagihan'>> {
   const { hargaPokok, gelombang, diskonId } = params
-  const gelombangDiskonNominal = Math.round(hargaPokok * ((gelombang?.diskonPersen ?? 0) / 100))
+  const gelombangDiskonNominal = gelombang?.diskonNominal ?? 0
 
   let diskonNominal = 0
   let diskonNama: string | null = null
@@ -243,6 +296,63 @@ export async function hitungUlangTagihan(pendaftaranId: string) {
       totalTagihanLocked: true,
     },
   })
+}
+
+// Syarat keuangan sebelum berkas pendaftar boleh diterima — dipakai gerbang
+// PUT /api/admin/pendaftar/[id] (penegakan sebenarnya) dan GET detail
+// (supaya tombolnya bisa dinonaktifkan lengkap dengan alasannya).
+export async function cekKeuanganUntukTerima(pendaftaranId: string): Promise<SyaratTerima | null> {
+  const p = await prisma.pendaftaran.findUnique({
+    where: { id: pendaftaranId },
+    select: { tahunAjaranId: true, pembayaranList: { select: { jenis: true, nominal: true, status: true } } },
+  })
+  if (!p) return null
+  const [tagihan, minimalAwal] = await Promise.all([previewTagihan(pendaftaranId), getMinimalPembayaranAwal(p.tahunAjaranId)])
+  return syaratKeuanganTerima({
+    pembayaranList: p.pembayaranList,
+    totalTagihan: tagihan?.totalTagihan ?? 0,
+    hargaTersedia: tagihan?.hargaTersedia ?? false,
+    minimalAwal,
+  })
+}
+
+// Tagihan pendaftar SEANDAINYA dipindah (mutasi) ke jenjang/jurusan/kelas
+// lain. Dipakai pratinjau DAN eksekusi mutasi (lib/mutasi.ts), jadi angka
+// yang admin lihat sebelum menekan "Pindahkan" persis sama dengan yang
+// tersimpan. Tagihan lama tidak pernah disalin: Harga SELALU dari tujuan,
+// Diskon dari pilihan admin untuk tujuan.
+//
+// Gelombang: kalau jenjangnya sama (pindah jurusan SMK) dan tagihan sudah
+// terkunci, gelombang yang sudah ditetapkan dipertahankan — alasan yang sama
+// dengan hitungUlangTagihan: pindah jurusan tidak boleh diam-diam memindah
+// pendaftar ke gelombang lain yang kebetulan sedang aktif. Kalau jenjangnya
+// berubah, gelombang lama milik jenjang asal dan tidak berlaku di tujuan,
+// jadi diambil gelombang AKTIF jenjang tujuan.
+export async function hitungTagihanTujuan(
+  p: { tahunAjaranId: string; jenjang: string; gelombangId: string | null; totalTagihanLocked: boolean; alumniSmpCitraNegara: boolean | null },
+  tujuan: { jenjang: string; jurusan: string | null; kelas: string; diskonId: string | null },
+) {
+  const harga = await getHargaAktif({
+    tahunAjaranId: p.tahunAjaranId,
+    jenjang: tujuan.jenjang,
+    jurusan: tujuan.jurusan || '-',
+    kelas: tujuan.kelas,
+  })
+  if (!harga) {
+    throw new HargaTidakDitemukanError(labelPilihan(tujuan.jenjang, tujuan.jurusan || '-', tujuan.kelas))
+  }
+
+  const pertahankanGelombang = tujuan.jenjang === p.jenjang && p.totalTagihanLocked
+  const gelombang = pertahankanGelombang
+    ? (p.gelombangId ? await prisma.gelombang.findUnique({ where: { id: p.gelombangId } }) : null)
+    : await getGelombangAktif({
+        tahunAjaranId: p.tahunAjaranId,
+        jenjang: tujuan.jenjang,
+        untukAlumni: tujuan.jenjang !== 'smp' && !!p.alumniSmpCitraNegara,
+      })
+
+  const calc = await hitungDariGelombangDanDiskon({ hargaPokok: harga.nominal, gelombang, diskonId: tujuan.diskonId })
+  return { harga, gelombang, gelombangDipertahankan: pertahankanGelombang, ...calc }
 }
 
 // Hitung ulang statusPembayaran pada Pendaftaran berdasarkan seluruh riwayat

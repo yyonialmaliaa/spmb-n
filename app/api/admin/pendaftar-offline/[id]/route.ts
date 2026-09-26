@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/adminSession'
 import { prisma } from '@/lib/db'
+import { cekOtomatisVerifikasiOffline } from '@/lib/keuangan'
 
 const EDITABLE_FIELDS = [
   'namaLengkap', 'namaPanggilan', 'tempatLahir', 'tanggalLahir', 'ttl', 'jenisKelamin', 'agama', 'anakKe',
@@ -41,7 +42,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       where: { id },
       data: pickEditableFields(body),
     })
-    return NextResponse.json({ success: true, data: updated })
+    // Berkas yang baru saja lengkap bisa jadi syarat TERAKHIR yang tadinya
+    // kurang (pembayaran sudah duluan) — cek transisi otomatis draft -> verified.
+    const autoVerified = await cekOtomatisVerifikasiOffline(id)
+    return NextResponse.json({ success: true, data: autoVerified || updated })
   } catch (err) {
     console.error('Pendaftaran offline (update) error:', err)
     return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 })

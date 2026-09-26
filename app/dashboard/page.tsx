@@ -1,13 +1,16 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ClipboardList, CheckCircle, XCircle, AlertCircle,
-  ChevronRight, Edit3, Wallet, FolderOpen, PartyPopper,
+  ChevronRight, Edit3, Wallet, FolderOpen, PartyPopper, Send,
 } from 'lucide-react';
 import PortalShell, { PortalContext } from '@/components/portal/PortalShell';
 import { STATUS_CONFIG, TAHAPAN, daftarBerkas, teksSelanjutnya } from '@/components/portal/statusConfig';
+import InfoPopupDialog from '@/components/portal/InfoPopupDialog';
 import { formatRupiah } from '@/lib/pembayaran-utils';
+import { namaSekolah } from '@/lib/labels';
+import { formulirLengkap, kekuranganBerkas, perluLengkapiFormulir } from '@/lib/kelas';
 
 // ---------------------------------------------------------------------
 // Dashboard = RINGKASAN saja (section 3 di brief UI/UX). Detail lengkap
@@ -27,6 +30,43 @@ export default function DashboardPage() {
 function DashboardContent({ session, pendaftaran, riwayat, dokumenSekolah, reload }: PortalContext) {
   const [kirimLoading, setKirimLoading] = useState(false);
   const [kirimError, setKirimError] = useState('');
+  const [popup, setPopup] = useState<'siap_kirim' | 'diterima' | null>(null);
+  const [baruBayar, setBaruBayar] = useState(false);
+
+  // Dua momen yang gampang terlewat kalau hanya berupa card di tengah
+  // halaman: begitu pembayaran minimal terpenuhi (bisa lanjut kirim
+  // formulir) dan begitu diterima (harus lihat dokumen daftar ulang). Popup
+  // muncul SEKALI per pendaftaran (ditandai lewat localStorage saat
+  // ditutup) — kecuali tepat setelah menyetor dari halaman Pembayaran
+  // (?pembayaran=terkirim): saat itu kirim formulir SELALU ditawarkan.
+  useEffect(() => {
+    if (!pendaftaran) return;
+    try {
+      if (pendaftaran.status === 'draft') {
+        // Keputusannya butuh data pembayaran — efek ini jalan lagi begitu
+        // riwayat termuat. Tanda di URL baru dibuang setelah dipakai.
+        if (!riwayat) return;
+        const dariPembayaran = new URLSearchParams(window.location.search).get('pembayaran') === 'terkirim';
+        if (dariPembayaran) window.history.replaceState(null, '', '/dashboard');
+        const bolehKirimSekarang = riwayat.totalDisetorkan >= (riwayat.minimalPembayaranAwal || 200000);
+        const pernahDitutup = !!localStorage.getItem(`spmb-popup-siap-kirim-${pendaftaran.id}`);
+        if (formulirLengkap(pendaftaran) && bolehKirimSekarang && (dariPembayaran || !pernahDitutup)) {
+          if (dariPembayaran) setBaruBayar(true);
+          setPopup('siap_kirim');
+        }
+      } else if (pendaftaran.status === 'diterima_berkas' && !pendaftaran.sudahDaftarUlang) {
+        if (!localStorage.getItem(`spmb-popup-diterima-${pendaftaran.id}`)) setPopup('diterima');
+      }
+    } catch { /* mode privat: abaikan, popup cukup tidak muncul */ }
+  }, [pendaftaran, riwayat]);
+
+  const tutupPopup = () => {
+    if (pendaftaran) {
+      const kunci = popup === 'siap_kirim' ? `spmb-popup-siap-kirim-${pendaftaran.id}` : `spmb-popup-diterima-${pendaftaran.id}`;
+      try { localStorage.setItem(kunci, '1'); } catch { /* mode privat: abaikan */ }
+    }
+    setPopup(null);
+  };
 
   const handleKirimFormulir = async () => {
     setKirimLoading(true);
@@ -77,13 +117,31 @@ function DashboardContent({ session, pendaftaran, riwayat, dokumenSekolah, reloa
     );
   }
 
+  // ── Sudah mulai mengisi, tapi field wajib belum lengkap ──────────────
+  // Total tagihan & pembayaran baru dibuka setelah formulir lengkap (server
+  // juga menolak pembayaran di tahap ini) — tunjukkan apa yang masih kurang.
+  if (perluLengkapiFormulir(pendaftaran)) {
+    return (
+      <div style={{ maxWidth: 600, margin: '0 auto' }}>
+        <Greeting nama={namaDepan} />
+        <EmptyPromptCard
+          title="Formulir Belum Lengkap"
+          desc="Lengkapi semua data dan berkas wajib pada formulir pendaftaran. Total tagihan dan pembayaran baru bisa diakses setelah formulir lengkap."
+          kurang={kekuranganBerkas(pendaftaran)}
+          ctaLabel="Lanjutkan Mengisi Formulir"
+          ctaHref={`/spmb/daftar?jenjang=${pendaftaran.jenjang || 'smk'}`}
+        />
+      </div>
+    );
+  }
+
   const isDraft = pendaftaran.status === 'draft';
   const isDitolak = pendaftaran.status === 'ditolak';
   const isDiterima = pendaftaran.status === 'diterima_berkas';
   const isDaftarUlang = !!pendaftaran.sudahDaftarUlang;
   const statusCfg = !isDraft ? (STATUS_CONFIG[pendaftaran.status] || STATUS_CONFIG['verified']) : null;
   const currentStep = statusCfg?.step || 0;
-  const selanjutnya = !isDraft ? teksSelanjutnya(pendaftaran.status, pendaftaran.sudahDaftarUlang) : '';
+  const selanjutnya = !isDraft ? teksSelanjutnya(pendaftaran.status, pendaftaran.sudahDaftarUlang, pendaftaran.jenjang) : '';
 
   const totalTagihan = riwayat?.totalTagihan ?? 0;
   const totalDibayar = riwayat?.totalDibayar ?? 0;
@@ -115,7 +173,7 @@ function DashboardContent({ session, pendaftaran, riwayat, dokumenSekolah, reloa
         />
         {isDraft ? (
           <p style={{ fontSize: 13.5, color: 'var(--adm-text-muted)', lineHeight: 1.7 }}>
-            Formulir Anda tersimpan sebagai draft dan <strong>belum masuk ke admin</strong>. Lengkapi data, berkas, dan pembayaran untuk dapat mengirim formulir.
+            Formulir Anda sudah lengkap, tetapi <strong>belum masuk ke admin</strong>. Bayar uang pendaftaran minimal, lalu kirim formulir ke admin.
           </p>
         ) : (
           <>
@@ -224,7 +282,7 @@ function DashboardContent({ session, pendaftaran, riwayat, dokumenSekolah, reloa
 
       {/* 6. Informasi/Pengumuman penting */}
       {isDiterima && (
-        <div style={{ background: 'linear-gradient(135deg,#123524,#0B2A1C)', borderRadius: 16, padding: 26, color: 'white', border: '1px solid #C8973A' }}>
+        <div id="bagian-diterima" style={{ background: 'linear-gradient(135deg,#123524,#0B2A1C)', borderRadius: 16, padding: 26, color: 'white', border: '1px solid #C8973A' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <PartyPopper size={26} color="#E8B84B" />
             <h2 className="font-display" style={{ fontSize: 19, color: 'white', margin: 0 }}>
@@ -245,7 +303,7 @@ function DashboardContent({ session, pendaftaran, riwayat, dokumenSekolah, reloa
 
           {!isDaftarUlang && dokumenSekolah.some(d => d.url) && (
             <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 10, padding: 14, marginBottom: 14 }}>
-              <p style={{ fontSize: 12.5, fontWeight: 700, color: '#FEF3C7', marginBottom: 8 }}>Download & Lengkapi Dokumen Daftar Ulang</p>
+              <p style={{ fontSize: 12.5, fontWeight: 700, color: '#FEF3C7', marginBottom: 8 }}>Unduh dan cetak Dokumen Daftar Ulang, kemudian lengkapi seluruh bagian yang diperlukan.</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {dokumenSekolah.filter(d => d.url).map(d => (
                   <a key={d.jenis} href={d.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.08)', borderRadius: 8, padding: '9px 12px', color: 'white', textDecoration: 'none', fontSize: 12.5 }}>
@@ -267,6 +325,33 @@ function DashboardContent({ session, pendaftaran, riwayat, dokumenSekolah, reloa
           )}
         </div>
       )}
+
+      {popup === 'siap_kirim' && (
+        <InfoPopupDialog
+          icon={Send}
+          iconColor="var(--adm-success)"
+          iconBg="var(--adm-success-weak)"
+          title={baruBayar ? 'Bukti Pembayaran Terkirim!' : 'Formulir Siap Dikirim!'}
+          message={baruBayar
+            ? 'Uang pendaftaran minimal sudah Anda setorkan. Langkah berikutnya: kirim formulir ke admin agar berkas Anda segera diverifikasi.'
+            : 'Anda sudah membayar uang pendaftaran minimal. Kirim formulir Anda sekarang agar admin dapat mulai memverifikasi berkas.'}
+          aksiLabel="Kirim Formulir ke Admin"
+          onAksi={handleKirimFormulir}
+          onClose={tutupPopup}
+        />
+      )}
+      {popup === 'diterima' && (
+        <InfoPopupDialog
+          icon={PartyPopper}
+          iconColor="var(--cn-emas)"
+          iconBg="var(--adm-warning-weak)"
+          title="Selamat, Anda Diterima!"
+          message={`Anda dinyatakan diterima sebagai peserta didik baru di ${namaSekolah(pendaftaran.jenjang)}. Unduh dan lengkapi dokumen daftar ulang di bagian bawah halaman ini.`}
+          aksiLabel="Lihat Dokumen Daftar Ulang"
+          onAksi={() => document.getElementById('bagian-diterima')?.scrollIntoView({ behavior: 'smooth' })}
+          onClose={tutupPopup}
+        />
+      )}
     </div>
   );
 }
@@ -284,7 +369,7 @@ function Greeting({ nama }: { nama: string }) {
   );
 }
 
-function EmptyPromptCard({ title, desc, ctaLabel, ctaHref }: { title: string; desc: string; ctaLabel?: string; ctaHref?: string }) {
+function EmptyPromptCard({ title, desc, kurang, ctaLabel, ctaHref }: { title: string; desc: string; kurang?: string[]; ctaLabel?: string; ctaHref?: string }) {
   return (
     <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 24, border: '1px solid var(--adm-border)', boxShadow: 'var(--adm-shadow-sm)' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: ctaLabel ? 20 : 0 }}>
@@ -294,6 +379,16 @@ function EmptyPromptCard({ title, desc, ctaLabel, ctaHref }: { title: string; de
         <div>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--adm-text)', margin: 0, marginBottom: 4 }}>{title}</h2>
           <p style={{ color: 'var(--adm-text-muted)', fontSize: 13, lineHeight: 1.55, margin: 0 }}>{desc}</p>
+          {kurang && kurang.length > 0 && (
+            <div style={{ marginTop: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--adm-text-muted)', letterSpacing: 0.3, marginBottom: 8 }}>BERKAS YANG BELUM DIUPLOAD</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {kurang.map(k => (
+                  <span key={k} style={{ fontSize: 12, fontWeight: 600, color: 'var(--adm-warning)', background: 'var(--adm-warning-weak)', border: '1px solid var(--adm-warning-border)', borderRadius: 999, padding: '3px 10px' }}>{k}</span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
       {ctaLabel && ctaHref && (

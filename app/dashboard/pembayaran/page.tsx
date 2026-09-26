@@ -97,6 +97,10 @@ function PembayaranContent({ pendaftaran, riwayat, reload }: PortalContext) {
       const data = await res.json();
       if (!res.ok) { setBayarError(data.error || 'Gagal mengirim bukti pembayaran'); setBayarLoading(false); return; }
       setMetode(''); setNominal(''); setBuktiPath(''); setBankPengirim(''); setNamaPengirim('');
+      // Formulir yang masih draft belum masuk ke admin — begitu setoran
+      // terkirim, arahkan ke Dashboard yang langsung menawarkan "Kirim
+      // Formulir ke Admin" lewat pop-up (ditandai ?pembayaran=terkirim).
+      if (pendaftaran.status === 'draft') { router.push('/dashboard?pembayaran=terkirim'); return; }
       reload();
     } catch {
       setBayarError('Terjadi kesalahan jaringan');
@@ -133,7 +137,7 @@ function PembayaranContent({ pendaftaran, riwayat, reload }: PortalContext) {
       {/* Form bayar/cicilan */}
       {showForm && (
         <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 22, border: '1px solid var(--adm-border)', marginBottom: 20 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 16 }}>Bayar / Cicil Sekarang</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 16 }}>Bayar / Angsur Sekarang</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div style={{ background: 'var(--adm-success-weak)', border: '1px solid var(--adm-success-border)', borderRadius: 10, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div>
@@ -148,7 +152,7 @@ function PembayaranContent({ pendaftaran, riwayat, reload }: PortalContext) {
                 <div style={{ fontSize: 10, color: 'var(--adm-success)', fontWeight: 700 }}>ATAS NAMA</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)' }}>{BANK_TUJUAN.atasNama}</div>
               </div>
-              <p style={{ fontSize: 11.5, color: 'var(--adm-success)', margin: 0 }}>Boleh dicicil, minimal {formatRupiah(minCicilan)} per pembayaran.</p>
+            
             </div>
 
             <FieldGroup>
@@ -260,7 +264,7 @@ function PembayaranContent({ pendaftaran, riwayat, reload }: PortalContext) {
                       ? `${LABEL_JENIS_TRANSAKSI.refund}${r.alasanRefund ? ` — ${r.alasanRefund}` : ''}`
                       : isAlokasi
                       ? `${LABEL_JENIS_TRANSAKSI.alokasi} — ${r.kategoriAlokasi || 'Lainnya'}`
-                      : `Cicilan ke-${r.angsuranKe}`}
+                      : `Angsuran ke-${r.angsuranKe}`}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--adm-text-faint)', marginTop: 2 }}>
                     {new Date(r.tanggalBayar).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}

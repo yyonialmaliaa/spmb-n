@@ -1,6 +1,7 @@
 // Konfigurasi tampilan status — dipakai bersama oleh Dashboard & halaman
 // Pendaftaran supaya label/warna/tahapan selalu konsisten di kedua tempat.
 import { CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { namaSekolah } from '@/lib/labels';
 
 export const STATUS_CONFIG: Record<string, {
   label: string; color: string; bg: string; border: string; icon: any; step: number; desc: string;
@@ -29,12 +30,12 @@ export const TAHAPAN = [
 // (bukan card "Tahapan Selanjutnya" terpisah). Cuma teks ringkas; tombol
 // tindakannya sendiri (kalau ada) tetap di card "Yang Perlu Dilakukan" pada
 // Dashboard, supaya tidak ada tombol yang tampil dobel di dua tempat.
-export function teksSelanjutnya(status: string, sudahDaftarUlang?: boolean): string {
+export function teksSelanjutnya(status: string, sudahDaftarUlang?: boolean, jenjang?: string | null): string {
   if (status === 'ditolak') return 'Perbaiki berkas Anda sesuai catatan admin, lalu kirim ulang.';
   if (status === 'verified') return 'Tunggu admin memverifikasi berkas dan nomor WhatsApp Anda.';
   if (status === 'diterima_berkas') {
     return sudahDaftarUlang
-      ? 'Tidak ada tindakan lebih lanjut. Selamat bergabung di SMK Citra Negara!'
+      ? `Tidak ada tindakan lebih lanjut. Selamat bergabung di ${namaSekolah(jenjang)}!`
       : 'Lakukan daftar ulang sesuai informasi yang akan disampaikan melalui WhatsApp.';
   }
   return '';

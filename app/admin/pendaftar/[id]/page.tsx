@@ -4,15 +4,19 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ChevronLeft, User, Wallet, Printer, ExternalLink, Pencil,
-  ShieldCheck, CheckCircle2, XCircle, RotateCcw, FileText,
-  MessageCircle, KeyRound, ClipboardCheck, X as XIcon,
+  ShieldCheck, CheckCircle2, RotateCcw, FileText,
+  MessageCircle, KeyRound, ClipboardCheck, X as XIcon, ArrowLeftRight,
+  Upload, Loader,
 } from 'lucide-react';
 import { JENJANG_LABEL, Jenjang } from '@/lib/biaya';
-import { formatRupiah, hitungRingkasan } from '@/lib/pembayaran-utils';
+import { formatRupiah, hitungRingkasan, type SyaratTerima } from '@/lib/pembayaran-utils';
 import { PermissionGate } from '@/components/admin/ui';
+import { MutasiModal } from '@/components/admin/MutasiModal';
 import { isAdminRole, normalizeRole } from '@/lib/permissions';
 import { useAdmin } from '@/components/admin/AdminProvider';
-import { FIELD_BERKAS } from '@/lib/labels';
+import { FIELD_BERKAS, labelPosisi } from '@/lib/labels';
+import { tanggalPendek } from '@/lib/tanggal';
+import TeksKode from '@/components/TeksKode';
 
 type Cicilan = {
   id: string; angsuranKe: number; nominal: number; jenis?: string;
@@ -66,12 +70,22 @@ type Pendaftar = {
   pesanPengumuman?: string;
   noPendaftaran?: string | null;
   validasiBerkas?: Record<string, { status: 'valid' | 'revisi'; catatan?: string }> | null;
+  syaratTerima?: SyaratTerima | null;
 
   createdAt: string;
   tahunAjaranId?: string;
   user?: { email: string };
   userId?: string;
   pembayaranList: Cicilan[];
+  mutasiList?: RiwayatMutasi[];
+};
+
+type RiwayatMutasi = {
+  id: string; dariJenjang: string; dariJurusan: string | null; dariKelas: string | null;
+  keJenjang: string; keJurusan: string | null; keKelas: string;
+  noPendaftaranLama: string | null; noPendaftaranBaru: string;
+  tagihanLama: number | null; tagihanBaru: number; dibayarSaatMutasi: number;
+  alasan: string; diprosesOlehNama: string; createdAt: string;
 };
 
 type Persyaratan = {
@@ -95,7 +109,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 const STATUS_BAYAR_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   belum_bayar:         { label: 'Belum Bayar',       color: 'var(--adm-text-faint)', bg: 'var(--adm-surface-alt)' },
   menunggu_verifikasi: { label: 'Menunggu Verifikasi', color: 'var(--adm-info)', bg: 'var(--adm-info-weak)' },
-  cicilan_berjalan:    { label: 'Cicilan Berjalan',   color: 'var(--adm-ungu)', bg: 'var(--adm-ungu-weak)' },
+  cicilan_berjalan:    { label: 'Angsuran Berjalan',  color: 'var(--adm-ungu)', bg: 'var(--adm-ungu-weak)' },
   lunas:               { label: 'Lunas',              color: 'var(--adm-success)', bg: 'var(--adm-success-weak)' },
   ditolak:             { label: 'Ditolak',            color: 'var(--adm-danger)', bg: 'var(--adm-danger-weak)' },
   dikembalikan:        { label: 'Dikembalikan',       color: 'var(--adm-warning)', bg: 'var(--adm-warning-weak)' },
@@ -131,18 +145,18 @@ export default function DetailPendaftarPage() {
   // yang sama seperti /admin/verifikasi, bukan gerbang role manual baru.
   const bolehVerifikasi = can('verifikasi', 'update');
   const bolehHapus = can('pendaftar', 'delete');
+  const bolehMutasi = can('mutasi', 'update');
 
   const [data, setData] = useState<Pendaftar | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'verifikasi' | 'biodata' | 'keuangan'>('verifikasi');
   const [toast, setToast] = useState('');
   const [persyaratan, setPersyaratan] = useState<Persyaratan[]>([]);
-  // Modal konfirmasi 2-langkah untuk ubah status kelulusan — sama seperti
-  // pola yang sudah ada (pilih status dulu, isi pesan/alasan, baru kirim),
-  // supaya siswa tidak pernah menerima notifikasi status tanpa admin sempat
-  // menuliskan pesannya.
-  const [statusModal, setStatusModal] = useState<{ status: 'diterima_berkas' | 'ditolak'; alasan: string; pesan: string } | null>(null);
+  // Murni modal "Tolak Berkas" (alasan wajib) — Terima Berkas & Setujui
+  // Semua langsung konfirmasi+kirim, tidak lewat modal ini.
+  const [statusModal, setStatusModal] = useState<{ alasan: string } | null>(null);
   const [savingStatus, setSavingStatus] = useState(false);
+  const [mutasiBuka, setMutasiBuka] = useState(false);
   const [formBayar, setFormBayar] = useState({ nominal: '', metode: '', bukti: '', uploading: false });
   const [savingBayar, setSavingBayar] = useState(false);
   const [formRefund, setFormRefund] = useState({ nominal: '', metode: '', bukti: '', alasan: '', alasanLainnya: '', uploading: false });
@@ -223,6 +237,12 @@ export default function DetailPendaftarPage() {
   };
 
   // Tandai satu berkas Valid / Perlu Revisi / bersihkan tandanya (✕).
+  // Menandai satu berkas "Perlu Revisi" EFEKNYA sama persis dengan "Tolak
+  // Berkas" (status jadi ditolak, siswa harus perbaiki & kirim ulang) —
+  // bedanya cuma alasan yang dikirim langsung menunjuk dokumen mana yang
+  // bermasalah, dirangkum dari SEMUA dokumen yang sedang ditandai revisi
+  // (bukan cuma yang baru saja diklik), supaya siswa lihat satu daftar
+  // lengkap sekali baca kalau lebih dari satu berkas bermasalah.
   const handleUbahValidasi = async (fieldKey: string, status: 'valid' | 'revisi' | null) => {
     let catatan: string | undefined;
     if (status === 'revisi') {
@@ -231,57 +251,70 @@ export default function DetailPendaftarPage() {
       if (!c.trim()) { showToast('❌ Catatan revisi wajib diisi'); return; }
       catatan = c.trim();
     }
+
+    const body: Record<string, unknown> = {
+      validasiBerkas: { [fieldKey]: status === null ? null : { status, catatan } },
+    };
+    if (status === 'revisi') {
+      const checklist = checklistBerkas();
+      const label = checklist.find(b => b.fieldKey === fieldKey)?.label || FIELD_BERKAS[fieldKey] || fieldKey;
+      const revisiLain = checklist.filter(b => b.status === 'revisi' && b.fieldKey !== fieldKey);
+      const semuaRevisi = [...revisiLain, { label, catatan }];
+      body.status = 'ditolak';
+      body.alasanPenolakan = semuaRevisi.map(b => `• ${b.label}: ${b.catatan || 'perlu diperbaiki'}`).join('\n');
+    }
+
     const res = await fetch(`/api/admin/pendaftar/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ validasiBerkas: { [fieldKey]: status === null ? null : { status, catatan } } }),
+      body: JSON.stringify(body),
     });
-    if (res.ok) { load(); } else { showToast('❌ Gagal menyimpan'); }
+    if (res.ok) { showToast(status === 'revisi' ? '↩ Ditandai revisi, siswa diberi tahu' : '✅ Tersimpan'); load(); }
+    else { showToast('❌ Gagal menyimpan'); }
+  };
+
+  // Terima Berkas & Setujui Semua TIDAK lagi lewat modal "tulis pesan untuk
+  // siswa" — server sudah otomatis mengirim notifikasi baku begitu status
+  // berubah jadi diterima_berkas (lihat kirimNotifikasi di
+  // app/api/admin/pendaftar/[id]/route.ts), jadi menulis pesan lagi di sini
+  // cuma duplikasi. Pengumuman KUSTOM tetap ada, tapi jadi wewenang halaman
+  // Status (fitur terpisah), bukan langkah wajib tiap kali menerima berkas.
+  // Cukup konfirmasi lalu langsung kirim.
+  const handleTerimaBerkas = async () => {
+    if (!confirm('Yakin ingin menerima berkas pendaftar ini? Siswa akan mendapat notifikasi otomatis.')) return;
+    const res = await fetch(`/api/admin/pendaftar/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'diterima_berkas' }),
+    });
+    if (res.ok) { showToast('✅ Berkas diterima, siswa diberi tahu'); load(); }
+    else { showToast(`❌ ${(await res.json().catch(() => null))?.error || 'Gagal menyimpan'}`); }
   };
 
   // Tombol besar "Setujui Semua (Valid)" — bulk tandai seluruh checklist
-  // Valid, lalu lanjut ke modal status "Terima Berkas" supaya admin tetap
-  // sempat menuliskan pesan selamat untuk siswa sebelum benar-benar dikirim
-  // (pola yang sama dengan tombol status lain — tidak ada status yang
-  // berubah/notifikasi terkirim tanpa admin sempat melihat pesannya dulu).
+  // Valid SEKALIGUS menerima berkas dalam satu langkah (satu konfirmasi).
   const handleSetujuiSemua = async () => {
     if (!data) return;
+    if (!confirm('Tandai semua berkas Valid dan terima berkas pendaftar ini? Siswa akan mendapat notifikasi otomatis.')) return;
     const checklist = checklistBerkas();
-    if (!confirm('Tandai SEMUA berkas sebagai Valid, lalu lanjut ke penerimaan berkas?')) return;
     const validasiBaru: Record<string, { status: 'valid' }> = {};
     for (const b of checklist) validasiBaru[b.fieldKey] = { status: 'valid' };
     const res = await fetch(`/api/admin/pendaftar/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ validasiBerkas: validasiBaru }),
+      body: JSON.stringify({ validasiBerkas: validasiBaru, status: 'diterima_berkas' }),
     });
-    if (!res.ok) { showToast('❌ Gagal menyimpan checklist'); return; }
-    load();
-    setStatusModal({ status: 'diterima_berkas', alasan: '', pesan: data.pesanPengumuman || 'Selamat! Berkas Anda dinyatakan lengkap dan diterima. Silakan tunggu informasi daftar ulang selanjutnya.' });
+    if (res.ok) { showToast('✅ Berkas diterima, siswa diberi tahu'); load(); }
+    else { showToast(`❌ ${(await res.json().catch(() => null))?.error || 'Gagal menyimpan'}`); }
   };
 
   const handleTolakBerkas = () => {
-    setStatusModal({ status: 'ditolak', alasan: data?.alasanPenolakan || '', pesan: '' });
-  };
-
-  // "Minta Revisi" — rangkum catatan dari berkas yang sudah ditandai "Perlu
-  // Revisi" jadi satu draf alasan penolakan (tetap bisa diedit admin sebelum
-  // dikirim), supaya admin tidak perlu mengetik ulang apa yang sudah dicatat
-  // per-dokumen di checklist.
-  const handleMintaRevisi = () => {
-    const perluRevisi = checklistBerkas().filter(b => b.status === 'revisi');
-    const draf = perluRevisi.length > 0
-      ? perluRevisi.map(b => `• ${b.label}: ${b.catatan || 'perlu diperbaiki'}`).join('\n')
-      : '';
-    if (perluRevisi.length === 0) {
-      showToast('ℹ️ Tandai dulu berkas mana yang "Perlu Revisi" di checklist di bawah');
-    }
-    setStatusModal({ status: 'ditolak', alasan: draf, pesan: '' });
+    setStatusModal({ alasan: data?.alasanPenolakan || '' });
   };
 
   const handleKirimStatus = async () => {
     if (!statusModal) return;
-    if (statusModal.status === 'ditolak' && !statusModal.alasan.trim()) {
+    if (!statusModal.alasan.trim()) {
       showToast('❌ Alasan penolakan wajib diisi'); return;
     }
     setSavingStatus(true);
@@ -289,14 +322,10 @@ export default function DetailPendaftarPage() {
       const res = await fetch(`/api/admin/pendaftar/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(
-          statusModal.status === 'ditolak'
-            ? { status: 'ditolak', alasanPenolakan: statusModal.alasan.trim() }
-            : { status: 'diterima_berkas', pesanPengumuman: statusModal.pesan.trim() },
-        ),
+        body: JSON.stringify({ status: 'ditolak', alasanPenolakan: statusModal.alasan.trim() }),
       });
       if (res.ok) {
-        showToast(statusModal.status === 'ditolak' ? '↩ Berkas ditolak, siswa diberi tahu' : '✅ Berkas diterima, siswa diberi tahu');
+        showToast('↩ Berkas ditolak, siswa diberi tahu');
         setStatusModal(null);
         load();
       } else {
@@ -407,7 +436,7 @@ export default function DetailPendaftarPage() {
       if (c === null) return;
       catatanAdmin = c;
     } else {
-      if (!confirm(`Konfirmasi cicilan ke-${cicilan.angsuranKe} sebesar ${formatRupiah(cicilan.nominal)} ini LUNAS/terverifikasi?`)) return;
+      if (!confirm(`Konfirmasi angsuran ke-${cicilan.angsuranKe} sebesar ${formatRupiah(cicilan.nominal)} ini LUNAS/terverifikasi?`)) return;
     }
     const res = await fetch(`/api/admin/pembayaran/${cicilan.id}`, {
       method: 'PUT',
@@ -415,7 +444,7 @@ export default function DetailPendaftarPage() {
       body: JSON.stringify({ status, catatanAdmin }),
     });
     if (res.ok) {
-      showToast(status === 'lunas' ? '✅ Cicilan diverifikasi' : '↩ Cicilan ditolak');
+      showToast(status === 'lunas' ? '✅ Angsuran diverifikasi' : '↩ Angsuran ditolak');
       load();
     } else {
       showToast('❌ Gagal memproses');
@@ -590,15 +619,21 @@ export default function DetailPendaftarPage() {
     <div style={{ minHeight: '100vh', background: 'var(--adm-bg)' }}>
       {toast && <div style={{ position: 'fixed', top: 24, right: 24, background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', padding: '12px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, zIndex: 9999 }}>{toast}</div>}
 
-      <header style={{ background: 'var(--adm-primary)', padding: '18px 24px' }}>
+      {/* Terang, sama seperti .adm-topbar yang dipakai halaman admin lain
+          (lihat components/admin/TopHeader.tsx) — dulu latarnya dipakaikan
+          var(--adm-primary) yang di sistem warna ini adalah navy pekat,
+          sehingga cuma halaman ini yang punya header gelap sendiri dan
+          tidak ikut menyesuaikan saat mode gelap diaktifkan (teksnya
+          hardcode rgba(255,255,255,...), bukan token tema). */}
+      <header style={{ background: 'var(--adm-surface)', borderBottom: '1px solid var(--adm-border)', padding: '18px 24px' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-          <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', fontSize: 12, cursor: 'pointer', marginBottom: 10, fontFamily: 'inherit' }}>
+          <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'var(--adm-text-muted)', fontSize: 12, cursor: 'pointer', marginBottom: 10, fontFamily: 'inherit' }}>
             <ChevronLeft size={14} /> Kembali
           </button>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
             <div>
-              <h1 style={{ color: 'var(--adm-text-invert)', fontSize: 20, fontWeight: 700 }}>{data.namaLengkap}</h1>
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>{JENJANG_LABEL[jenjang]}{jenjang === 'smk' ? ` — ${data.jurusan}` : ''} · {data.user?.email}</p>
+              <h1 style={{ color: 'var(--adm-text)', fontSize: 20, fontWeight: 700 }}>{data.namaLengkap}</h1>
+              <p style={{ color: 'var(--adm-text-muted)', fontSize: 12 }}>{JENJANG_LABEL[jenjang]}{jenjang === 'smk' ? ` — ${data.jurusan}` : ''} · {data.user?.email}</p>
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <span style={{ background: sc.bg, color: sc.color, padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700 }}>{sc.label}</span>
@@ -635,11 +670,20 @@ export default function DetailPendaftarPage() {
           const checklist = checklistBerkas();
           const wajibList = checklist.filter(b => b.wajib);
           const validCount = wajibList.filter(b => b.status === 'valid').length;
-          // Sekali berkas diterima, tombol Terima/Tolak (dan tiga aksi cepat
-          // di atas) dikunci abu-abu — satu-satunya langkah yang tersisa
-          // adalah Konfirmasi Daftar Ulang, supaya admin tidak bisa keliru
+          // Sekali berkas diterima, tombol Terima/Tolak dan Setujui Semua
+          // dikunci abu-abu — satu-satunya langkah yang tersisa adalah
+          // Konfirmasi Daftar Ulang, supaya admin tidak bisa keliru
           // bolak-balik status setelah keputusan dijatuhkan.
           const statusFinal = data.status === 'diterima_berkas';
+          // Menerima berkas menunggu Loket Keuangan memverifikasi pembayaran
+          // (aturan sebenarnya ditegakkan server; ini supaya tombolnya jujur).
+          const tungguKeuangan = !statusFinal && !!data.syaratTerima && !data.syaratTerima.boleh;
+          const kunciTerima = statusFinal || tungguKeuangan;
+          const catatanKeuangan = tungguKeuangan && (
+            <div style={{ background: 'var(--adm-warning-weak)', border: '1px solid var(--adm-warning-border)', borderRadius: 8, padding: '8px 10px', fontSize: 11.5, color: 'var(--adm-warning)', lineHeight: 1.5 }}>
+              <strong>Menunggu verifikasi keuangan.</strong> {data.syaratTerima!.alasan} Berkas baru bisa diterima setelah Loket Keuangan memverifikasinya.
+            </div>
+          );
           const badgeValidasi = (status: 'valid' | 'revisi' | null, adaBerkas: boolean) => {
             if (!adaBerkas) return { teks: 'Belum diupload', color: 'var(--adm-text-faint)', bg: 'var(--adm-surface-alt)' };
             if (status === 'valid') return { teks: 'Valid ✓', color: 'var(--adm-success)', bg: 'var(--adm-success-weak)' };
@@ -649,7 +693,7 @@ export default function DetailPendaftarPage() {
 
           return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {/* Profil ringkas + tiga aksi cepat */}
+            {/* Profil ringkas */}
             <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 18, border: '1px solid var(--adm-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
               <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
                 <div style={{ width: 52, height: 52, borderRadius: 12, background: 'var(--adm-primary-weak)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: 'var(--adm-primary)', flexShrink: 0 }}>
@@ -666,30 +710,16 @@ export default function DetailPendaftarPage() {
                     )}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--adm-text-muted)', marginTop: 3 }}>
-                    {data.noPendaftaran && <>#{data.noPendaftaran} · </>}
+                    {data.noPendaftaran && <>#<TeksKode teks={data.noPendaftaran} /> · </>}
                     {JENJANG_LABEL[jenjang]}{jenjang === 'smk' && data.jurusan ? ` — ${data.jurusan}` : ''}
                     {data.gelombang && <> · Jalur: {data.gelombang}</>}
                     {data.noPribadi && <> · 📱 {data.noPribadi}</>}
                   </div>
                 </div>
               </div>
-
-              {bolehVerifikasi && (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <button onClick={handleTolakBerkas} disabled={statusFinal} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', background: 'var(--adm-danger-weak)', color: 'var(--adm-danger)', border: '1px solid var(--adm-danger-border)', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: statusFinal ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: statusFinal ? 0.5 : 1 }}>
-                    <XCircle size={14} /> Tolak
-                  </button>
-                  <button onClick={handleMintaRevisi} disabled={statusFinal} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', background: 'var(--adm-warning-weak)', color: 'var(--adm-warning)', border: '1px solid var(--adm-warning-border)', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: statusFinal ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: statusFinal ? 0.5 : 1 }}>
-                    <RotateCcw size={14} /> Minta Revisi
-                  </button>
-                  <button onClick={handleSetujuiSemua} disabled={statusFinal} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', background: 'var(--adm-success)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: statusFinal ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: statusFinal ? 0.6 : 1 }}>
-                    <CheckCircle2 size={14} /> Setujui Semua (Valid)
-                  </button>
-                </div>
-              )}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: 20, alignItems: 'start' }}>
+            <div className="adm-detail-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: 20, alignItems: 'start' }}>
               {/* LEFT — Checklist berkas */}
               <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
@@ -761,6 +791,15 @@ export default function DetailPendaftarPage() {
                     <div style={{ fontSize: 12, color: 'var(--adm-danger)', whiteSpace: 'pre-wrap' }}>{data.alasanPenolakan}</div>
                   </div>
                 )}
+
+                {bolehVerifikasi && checklist.length > 0 && (
+                  <>
+                    {catatanKeuangan && <div style={{ marginTop: 16 }}>{catatanKeuangan}</div>}
+                    <button onClick={handleSetujuiSemua} disabled={kunciTerima} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', marginTop: tungguKeuangan ? 8 : 16, padding: '12px 14px', background: 'var(--adm-success)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: kunciTerima ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: kunciTerima ? 0.6 : 1 }}>
+                      <CheckCircle2 size={15} /> Setujui Semua (Valid)
+                    </button>
+                  </>
+                )}
               </div>
 
               {/* RIGHT — Panel Verifikasi */}
@@ -783,29 +822,29 @@ export default function DetailPendaftarPage() {
                   </button>
                 </div>
 
-                {/* Reset Password Akun */}
-                <div style={{ background: 'var(--adm-ungu-weak)', border: '1px solid var(--adm-ungu-weak)', borderRadius: 8, padding: 10, marginBottom: 12 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--adm-ungu)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
+                {/* Reset Password Akun — utilitas akun netral, BUKAN aksi
+                    keuangan (alokasi) — dipakaikan navy/primary yang sama
+                    dengan tombol utama lain (mis. Cetak Kwitansi), bukan
+                    ungu yang di sistem ini khusus semantik "Alokasi". */}
+                <div style={{ background: 'var(--adm-primary-weak)', border: '1px solid var(--adm-primary-border)', borderRadius: 8, padding: 10, marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--adm-primary)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
                     <KeyRound size={13} /> Akun Login: {data.user?.email || '-'}
                   </div>
                   <p style={{ fontSize: 11, color: 'var(--adm-text-muted)', marginBottom: 8 }}>Kalau siswa lupa email/password, reset di sini lalu sampaikan info barunya via WhatsApp.</p>
-                  <button onClick={handleResetPassword} style={{ width: '100%', padding: '7px 10px', background: 'var(--adm-ungu)', border: 'none', borderRadius: 8, color: 'var(--adm-text-invert)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  <button onClick={handleResetPassword} style={{ width: '100%', padding: '7px 10px', background: 'var(--adm-primary)', border: 'none', borderRadius: 8, color: 'var(--adm-text-invert)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                     Reset Password Akun
                   </button>
                 </div>
-
-                <button onClick={() => setTab('keuangan')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', padding: '9px 10px', background: 'var(--adm-primary)', borderRadius: 8, color: 'var(--adm-text-invert)', fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: 'inherit', marginBottom: 12 }}>
-                  <Wallet size={13} /> Lihat Detail Lengkap &amp; Keuangan
-                </button>
 
                 {bolehVerifikasi && (
                   <>
                     <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 8 }}>UBAH STATUS</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {catatanKeuangan}
                       <button
-                        onClick={() => setStatusModal({ status: 'diterima_berkas', alasan: '', pesan: data.pesanPengumuman || '' })}
-                        disabled={statusFinal}
-                        style={{ width: '100%', padding: '8px 10px', background: 'var(--adm-success-weak)', border: '1px solid var(--adm-success-border)', borderRadius: 8, color: 'var(--adm-success)', fontSize: 12, fontWeight: 600, cursor: statusFinal ? 'not-allowed' : 'pointer', fontFamily: 'inherit', textAlign: 'left', opacity: statusFinal ? 0.5 : 1 }}>
+                        onClick={handleTerimaBerkas}
+                        disabled={kunciTerima}
+                        style={{ width: '100%', padding: '8px 10px', background: 'var(--adm-success-weak)', border: '1px solid var(--adm-success-border)', borderRadius: 8, color: 'var(--adm-success)', fontSize: 12, fontWeight: 600, cursor: kunciTerima ? 'not-allowed' : 'pointer', fontFamily: 'inherit', textAlign: 'left', opacity: kunciTerima ? 0.5 : 1 }}>
                         {statusFinal ? '✓ Terima Berkas (sudah)' : 'Terima Berkas'}
                       </button>
                       <button
@@ -830,13 +869,64 @@ export default function DetailPendaftarPage() {
                   </>
                 )}
 
+                {/* Mutasi hanya untuk pendaftar yang SUDAH diterima dan
+                    hanya SMA/SMK — SMP tidak termasuk. */}
+                {bolehMutasi && statusFinal && (data.jenjang === 'sma' || data.jenjang === 'smk') && (
+                  <div style={{ marginTop: 16 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 8 }}>MUTASI / PINDAH</div>
+                    <button onClick={() => setMutasiBuka(true)} style={{ width: '100%', padding: '8px 10px', background: 'var(--adm-primary-weak)', border: '1px solid var(--adm-primary)', borderRadius: 8, color: 'var(--adm-primary)', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                      <ArrowLeftRight size={13} /> Pindahkan Pendaftar
+                    </button>
+                    <p style={{ fontSize: 10.5, color: 'var(--adm-text-muted)', marginTop: 6, lineHeight: 1.5 }}>
+                      SMA ↔ SMK atau pindah jurusan SMK. Tagihan dihitung ulang dari harga tujuan; pembayaran lama tetap tercatat.
+                    </p>
+                  </div>
+                )}
+
                 {bolehHapus && (
-                  <button onClick={handleHapusData} style={{ width: '100%', marginTop: 14, background: 'var(--adm-danger-weak)', color: 'var(--adm-danger)', border: '1px solid var(--adm-danger-border)', borderRadius: 8, padding: '8px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-                    🗑 Hapus Data
-                  </button>
+                  <div style={{ marginTop: 16, background: 'var(--adm-danger-weak)', border: '1px solid var(--adm-danger-border)', borderRadius: 10, padding: 14 }}>
+                    <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--adm-danger)', marginBottom: 6, letterSpacing: 0.3 }}>
+                      ⚠ ZONA AKSI KRITIS
+                    </div>
+                    <p style={{ fontSize: 11.5, color: 'var(--adm-danger)', marginBottom: 10, lineHeight: 1.5 }}>
+                      Tindakan ini akan menghapus permanen seluruh data pendaftaran dan berkas peserta ini dari basis data SPMB.
+                    </p>
+                    <button onClick={handleHapusData} style={{ width: '100%', background: 'var(--adm-danger)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 8, padding: '9px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                      🗙 Hapus Pendaftar Ini Permanen
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
+
+            {(data.mutasiList?.length ?? 0) > 0 && (
+              <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
+                <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)', display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}>
+                  <ArrowLeftRight size={16} /> Riwayat Mutasi
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {data.mutasiList!.map(m => (
+                    <div key={m.id} style={{ border: '1px solid var(--adm-border)', borderRadius: 10, background: 'var(--adm-surface-alt)', padding: '10px 12px' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--adm-text)' }}>
+                        {labelPosisi(m.dariJenjang, m.dariJurusan)}
+                        {m.dariKelas && <span style={{ fontWeight: 500, color: 'var(--adm-text-muted)' }}> ({m.dariKelas})</span>}
+                        {' → '}
+                        {labelPosisi(m.keJenjang, m.keJurusan)}
+                        <span style={{ fontWeight: 500, color: 'var(--adm-text-muted)' }}> ({m.keKelas})</span>
+                      </div>
+                      <div style={{ fontSize: 11.5, color: 'var(--adm-text-muted)', marginTop: 2 }}>
+                        {tanggalPendek(m.createdAt)} · diproses oleh {m.diprosesOlehNama}
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--adm-text)', marginTop: 6 }}>Alasan: {m.alasan}</div>
+                      <div style={{ fontSize: 11.5, color: 'var(--adm-text-muted)', marginTop: 4, lineHeight: 1.6 }}>
+                        No. lama: {m.noPendaftaranLama || '-'} → No. baru: {m.noPendaftaranBaru}<br />
+                        Tagihan {formatRupiah(m.tagihanLama ?? 0)} → {formatRupiah(m.tagihanBaru)} · sudah dibayar saat mutasi {formatRupiah(m.dibayarSaatMutasi)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           );
         })()}
@@ -955,9 +1045,17 @@ export default function DetailPendaftarPage() {
                 Anda dapat melihat rincian tagihan, mencatat pembayaran baru, dan menerapkan diskon. Pengembalian dan alokasi kelebihan bayar hanya dapat dilakukan oleh Admin Keuangan.
               </div>
             )}
+            {data.mutasiList?.[0] && (() => {
+              const m = data.mutasiList[0];
+              return (
+                <div className="adm-banner adm-banner--info">
+                  Tagihan dihitung ulang karena mutasi {labelPosisi(m.dariJenjang, m.dariJurusan)} → {labelPosisi(m.keJenjang, m.keJurusan)} pada {tanggalPendek(m.createdAt)} (sebelumnya {formatRupiah(m.tagihanLama ?? 0)}). Seluruh pembayaran sebelum mutasi tetap tercatat di riwayat di bawah.
+                </div>
+              );
+            })()}
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <Link href={`/admin/kwitansi/${data.id}`} target="_blank" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'var(--adm-primary)', color: 'var(--adm-text-invert)', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
-                <Printer size={14} /> Cetak Kwitansi (Semua Pembayaran)
+                <Printer size={14} /> Cetak Kwitansi
               </Link>
             </div>
 
@@ -997,10 +1095,13 @@ export default function DetailPendaftarPage() {
               </div>
             </div>
 
-            {/* Admin bantu input pembayaran (misal siswa bayar tunai langsung di sekolah) */}
+            {/* Admin bantu input pembayaran (misal siswa bayar tunai langsung
+                di sekolah) — ini aksi BAYAR, dipakaikan hijau/success yang
+                sama dengan "Total Pembayaran" & tombol Verifikasi cicilan di
+                bawah, bukan ungu yang di sistem ini khusus semantik "Alokasi". */}
             <PermissionGate resource="pembayaran" action="update">
-            <div style={{ background: 'var(--adm-ungu-weak)', border: '1px solid var(--adm-ungu-weak)', borderRadius: 14, padding: 20 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-ungu)', marginBottom: 4 }}>💰 Bantu Input Pembayaran</h3>
+            <div style={{ background: 'var(--adm-success-weak)', border: '1px solid var(--adm-success-border)', borderRadius: 14, padding: 20 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-success)', marginBottom: 4 }}>💰 Bantu Input Pembayaran</h3>
               <p style={{ fontSize: 12, color: 'var(--adm-text-muted)', marginBottom: 14 }}>Kalau siswa bayar tunai/transfer langsung ke sekolah, admin bisa catat di sini. Bukti pembayaran wajib diupload untuk transfer online; opsional untuk tunai di sekolah.</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 12 }}>
                 <div>
@@ -1029,13 +1130,16 @@ export default function DetailPendaftarPage() {
                       <button onClick={() => setFormBayar(f => ({ ...f, bukti: '' }))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--adm-danger)' }}>✕</button>
                     </div>
                   ) : (
-                    <input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={handleUploadBuktiAdmin} disabled={formBayar.uploading} style={{ fontSize: 12 }} />
+                    <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, border: '1.5px dashed var(--adm-border-strong)', borderRadius: 8, padding: '9px 12px', cursor: formBayar.uploading ? 'wait' : 'pointer', fontSize: 12, fontWeight: 600, color: 'var(--adm-text-muted)', background: 'var(--adm-surface)' }}>
+                      {formBayar.uploading ? <Loader size={14} className="animate-spin" /> : <Upload size={14} />}
+                      {formBayar.uploading ? 'Mengupload...' : 'Pilih Berkas Bukti'}
+                      <input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={handleUploadBuktiAdmin} disabled={formBayar.uploading} style={{ display: 'none' }} />
+                    </label>
                   )}
-                  {formBayar.uploading && <p style={{ fontSize: 11, color: 'var(--adm-text-faint)', marginTop: 4 }}>Mengupload...</p>}
                 </div>
               </div>
-              <button onClick={handleInputPembayaranAdmin} disabled={savingBayar} style={{ padding: '9px 18px', background: 'var(--adm-ungu)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: savingBayar ? 0.6 : 1 }}>
-                {savingBayar ? 'Menyimpan...' : 'Catat Pembayaran (Langsung Lunas)'}
+              <button onClick={handleInputPembayaranAdmin} disabled={savingBayar} style={{ padding: '9px 18px', background: 'var(--adm-success)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: savingBayar ? 0.6 : 1 }}>
+                {savingBayar ? 'Menyimpan...' : 'Catat Pembayaran'}
               </button>
             </div>
             </PermissionGate>
@@ -1058,7 +1162,7 @@ export default function DetailPendaftarPage() {
               <p style={{ fontSize: 12, color: 'var(--adm-text-muted)', marginBottom: 14 }}>
                 {kelebihanBayar > 0
                   ? <>Kelebihan bayar saat ini: <strong style={{ color: 'var(--adm-warning)' }}>{formatRupiah(kelebihanBayar)}</strong> (misal karena pindah jurusan atau tidak jadi daftar).</>
-                  : 'Tidak ada kelebihan bayar saat ini — form ini aktif lagi begitu ada kelebihan bayar. Transaksi pengembalian dicatat terpisah dari cicilan, tidak pernah dianggap sebagai cicilan.'}
+                  : 'Tidak ada kelebihan bayar saat ini — form ini aktif lagi begitu ada kelebihan bayar. Transaksi pengembalian dicatat terpisah dari angsuran, tidak pernah dianggap sebagai angsuran.'}
               </p>
               <fieldset disabled={kelebihanBayar <= 0} style={{ border: 'none', padding: 0, margin: 0, opacity: kelebihanBayar <= 0 ? 0.5 : 1 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 12 }}>
@@ -1101,9 +1205,12 @@ export default function DetailPendaftarPage() {
                         <button onClick={() => setFormRefund(f => ({ ...f, bukti: '' }))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--adm-danger)' }}>✕</button>
                       </div>
                     ) : (
-                      <input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={handleUploadBuktiRefund} disabled={formRefund.uploading} style={{ fontSize: 12 }} />
+                      <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, border: '1.5px dashed var(--adm-border-strong)', borderRadius: 8, padding: '9px 12px', cursor: formRefund.uploading ? 'wait' : 'pointer', fontSize: 12, fontWeight: 600, color: 'var(--adm-text-muted)', background: 'var(--adm-surface)' }}>
+                        {formRefund.uploading ? <Loader size={14} className="animate-spin" /> : <Upload size={14} />}
+                        {formRefund.uploading ? 'Mengupload...' : 'Pilih Berkas Bukti'}
+                        <input type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={handleUploadBuktiRefund} disabled={formRefund.uploading} style={{ display: 'none' }} />
+                      </label>
                     )}
-                    {formRefund.uploading && <p style={{ fontSize: 11, color: 'var(--adm-text-faint)', marginTop: 4 }}>Mengupload...</p>}
                   </div>
                 </div>
                 <button onClick={handleRefund} disabled={savingRefund || kelebihanBayar <= 0} style={{ padding: '9px 18px', background: 'var(--adm-warning)', color: 'var(--adm-text-invert)', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: savingRefund ? 0.6 : 1 }}>
@@ -1175,7 +1282,7 @@ export default function DetailPendaftarPage() {
                 <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--adm-text)' }}>{formatRupiah(totalTagihan)}</div>
               </div>
               <div style={{ background: 'var(--adm-success-weak)', borderRadius: 12, padding: 16, border: '1px solid var(--adm-success-weak)' }}>
-                <div style={{ ...lbl, color: 'var(--adm-success)' }}>TOTAL PEMBAYARAN (CICILAN)</div>
+                <div style={{ ...lbl, color: 'var(--adm-success)' }}>TOTAL PEMBAYARAN (ANGSURAN)</div>
                 <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--adm-success)' }}>{formatRupiah(totalBayar)}</div>
               </div>
               <div style={{ background: 'var(--adm-warning-weak)', borderRadius: 12, padding: 16, border: '1px solid var(--adm-warning-border)' }}>
@@ -1202,7 +1309,7 @@ export default function DetailPendaftarPage() {
 
             <div style={{ background: 'var(--adm-surface)', borderRadius: 14, border: '1px solid var(--adm-border)', overflow: 'hidden' }}>
               <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--adm-border)' }}>
-                <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)' }}>Riwayat Cicilan Pembayaran</h3>
+                <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)' }}>Riwayat Angsuran Pembayaran</h3>
               </div>
               {data.pembayaranList.length === 0 ? (
                 <div style={{ padding: 40, textAlign: 'center', color: 'var(--adm-text-faint)', fontSize: 13 }}>Belum ada pembayaran masuk</div>
@@ -1224,7 +1331,7 @@ export default function DetailPendaftarPage() {
                             ? `↩ Refund ke-${c.angsuranKe} — ${formatRupiah(c.nominal)}`
                             : isAlokasi
                             ? `⇄ Alokasi ke-${c.angsuranKe} (${c.kategoriAlokasi || 'Lainnya'}) — ${formatRupiah(c.nominal)}`
-                            : `Cicilan ke-${c.angsuranKe} — ${formatRupiah(c.nominal)}`}
+                            : `Angsuran ke-${c.angsuranKe} — ${formatRupiah(c.nominal)}`}
                         </div>
                         <div style={{ fontSize: 12, color: 'var(--adm-text-muted)', marginTop: 2 }}>
                           {new Date(c.tanggalBayar).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -1262,42 +1369,30 @@ export default function DetailPendaftarPage() {
         )}
       </div>
 
-      {/* Modal konfirmasi status — 2 langkah (pilih status dulu, lalu di
-          sinilah pesan/alasannya ditulis) supaya siswa tidak pernah menerima
-          notifikasi tanpa admin sempat melihat/menyunting pesannya. */}
+      {/* Modal Tolak Berkas — satu-satunya aksi status yang masih perlu teks
+          tertulis (alasan penolakan wajib dikirim ke siswa). Terima Berkas &
+          Setujui Semua sudah langsung konfirmasi+kirim (lihat handleTerimaBerkas
+          / handleSetujuiSemua), tidak lagi lewat modal ini. */}
       {statusModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => !savingStatus && setStatusModal(null)}>
           <div style={{ background: 'var(--adm-surface)', borderRadius: 16, width: '100%', maxWidth: 480, maxHeight: '88vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--adm-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--adm-text)' }}>
-                {statusModal.status === 'ditolak' ? 'Tolak Berkas' : 'Terima Berkas'} — {data.namaLengkap}
+                Tolak Berkas — {data.namaLengkap}
               </h3>
               <button onClick={() => setStatusModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--adm-text-faint)' }}><XIcon size={18} /></button>
             </div>
             <div style={{ padding: '18px 20px' }}>
-              {statusModal.status === 'ditolak' ? (
-                <div style={{ background: 'var(--adm-warning-weak)', borderRadius: 10, padding: 14, border: '1px solid var(--adm-warning-border)' }}>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--adm-warning)', display: 'block', marginBottom: 8 }}>Alasan penolakan (dikirim ke siswa) *</label>
-                  <textarea
-                    autoFocus
-                    style={{ width: '100%', minHeight: 120, padding: '9px 12px', border: '1.5px solid var(--adm-border-strong)', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'vertical' }}
-                    value={statusModal.alasan}
-                    onChange={e => setStatusModal(m => m && { ...m, alasan: e.target.value })}
-                    placeholder="Contoh: Scan Kartu Keluarga tidak terbaca, mohon unggah ulang."
-                  />
-                </div>
-              ) : (
-                <div style={{ background: 'var(--adm-success-weak)', borderRadius: 10, padding: 14, border: '1px solid var(--adm-success-border)' }}>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--adm-success)', display: 'block', marginBottom: 8 }}>Pesan untuk siswa (tampil di dashboard)</label>
-                  <textarea
-                    autoFocus
-                    style={{ width: '100%', minHeight: 120, padding: '9px 12px', border: '1.5px solid var(--adm-border-strong)', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'vertical' }}
-                    value={statusModal.pesan}
-                    onChange={e => setStatusModal(m => m && { ...m, pesan: e.target.value })}
-                    placeholder="Selamat! Berkas Anda diterima. Silakan tunggu informasi daftar ulang..."
-                  />
-                </div>
-              )}
+              <div style={{ background: 'var(--adm-warning-weak)', borderRadius: 10, padding: 14, border: '1px solid var(--adm-warning-border)' }}>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--adm-warning)', display: 'block', marginBottom: 8 }}>Alasan penolakan (dikirim ke siswa) *</label>
+                <textarea
+                  autoFocus
+                  style={{ width: '100%', minHeight: 120, padding: '9px 12px', border: '1.5px solid var(--adm-border-strong)', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', resize: 'vertical' }}
+                  value={statusModal.alasan}
+                  onChange={e => setStatusModal(m => m && { ...m, alasan: e.target.value })}
+                  placeholder="Contoh: Scan Kartu Keluarga tidak terbaca, mohon unggah ulang."
+                />
+              </div>
             </div>
             <div style={{ display: 'flex', gap: 8, padding: '14px 20px', borderTop: '1px solid var(--adm-border)' }}>
               <button onClick={() => setStatusModal(null)} disabled={savingStatus} style={{ flex: 1, padding: '10px', background: 'var(--adm-neutral-weak)', border: '1px solid var(--adm-border)', borderRadius: 8, color: 'var(--adm-text)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -1306,12 +1401,21 @@ export default function DetailPendaftarPage() {
               <button
                 onClick={handleKirimStatus}
                 disabled={savingStatus}
-                style={{ flex: 1, padding: '10px', background: statusModal.status === 'ditolak' ? 'var(--adm-danger)' : 'var(--adm-success)', border: 'none', borderRadius: 8, color: 'var(--adm-text-invert)', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: savingStatus ? 0.7 : 1 }}>
+                style={{ flex: 1, padding: '10px', background: 'var(--adm-danger)', border: 'none', borderRadius: 8, color: 'var(--adm-text-invert)', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: savingStatus ? 0.7 : 1 }}>
                 {savingStatus ? 'Mengirim...' : 'Simpan & Kirim'}
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {mutasiBuka && (
+        <MutasiModal
+          pendaftarId={data.id}
+          nama={data.namaLengkap}
+          onTutup={() => setMutasiBuka(false)}
+          onBerhasil={pesan => { setMutasiBuka(false); showToast(pesan); load(); }}
+        />
       )}
     </div>
   );

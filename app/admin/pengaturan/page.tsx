@@ -138,7 +138,7 @@ function PengaturanInner() {
                   </p>
                 </div>
                 <div>
-                  <label className="adm-label" htmlFor="mc">Minimal cicilan</label>
+                  <label className="adm-label" htmlFor="mc">Minimal angsuran</label>
                   <input
                     id="mc"
                     className="adm-input"

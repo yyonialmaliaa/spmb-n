@@ -18,7 +18,7 @@ export const JENJANG_LABEL: Record<Jenjang, string> = {
 // yang sebenarnya sebelum dipakai!
 // ---------------------------------------------------------------------
 export const BANK_TUJUAN = {
-  bank: 'BANK BRI',
+  bank: 'BANK BJB',
   nomorRekening: '00830101404505',
   atasNama: 'YAYASAN AT-TAQWA KEMIRI JAYA',
 };

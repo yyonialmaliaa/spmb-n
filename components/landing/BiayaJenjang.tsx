@@ -19,8 +19,14 @@ export function BiayaJenjang({ data }: { data: DataJenjang }) {
 
   if (data.harga.length === 0) return null
 
-  const potongan = data.gelombangAktif?.diskonPersen ?? 0
-  const setelah = (n: number) => Math.round(n * (1 - potongan / 100))
+  // potonganNominal (Rupiah) adalah yang SUNGGUHAN memotong harga — identik
+  // dengan cara tagihan pendaftar dihitung di lib/keuangan.ts. potonganPersen
+  // HANYA label tampilan (mis. "−20%") dan sengaja TIDAK dipakai untuk
+  // menghitung angka apa pun di bawah ini.
+  const potonganNominal = data.gelombangAktif?.diskonNominal ?? 0
+  const potonganPersen = data.gelombangAktif?.diskonPersen ?? 0
+  const adaPotongan = potonganNominal > 0
+  const setelah = (n: number) => Math.max(n - potonganNominal, 0)
   const terendah = Math.min(...data.harga.map(h => h.nominal))
   const tertinggi = Math.max(...data.harga.map(h => h.nominal))
 
@@ -65,13 +71,13 @@ export function BiayaJenjang({ data }: { data: DataJenjang }) {
                   )}
                 </div>
                 <span className="lp-biaya-nominal">
-                  {potongan > 0 && <span className="lp-coret">{formatRupiah(h.nominal)}</span>}
+                  {adaPotongan && <span className="lp-coret">{formatRupiah(h.nominal)}</span>}
                   {formatRupiah(setelah(h.nominal))}
                 </span>
               </div>
             ))}
 
-            {potongan > 0 && data.gelombangAktif && (
+            {adaPotongan && data.gelombangAktif && (
               <div className="lp-biaya-baris" style={{ borderBottom: 'none' }}>
                 <div>
                   <div style={{ fontWeight: 650, color: 'var(--lp-hijau)' }}>
@@ -81,7 +87,9 @@ export function BiayaJenjang({ data }: { data: DataJenjang }) {
                     Berlaku selama gelombang ini berjalan
                   </div>
                 </div>
-                <span className="lp-biaya-nominal" style={{ color: 'var(--lp-hijau)' }}>−{potongan}%</span>
+                <span className="lp-biaya-nominal" style={{ color: 'var(--lp-hijau)' }}>
+                  {potonganPersen > 0 ? `−${potonganPersen}%` : `−${formatRupiah(potonganNominal)}`}
+                </span>
               </div>
             )}
 

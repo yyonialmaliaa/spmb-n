@@ -3,6 +3,7 @@ import { useState, useEffect, Fragment } from 'react';
 import { useParams } from 'next/navigation';
 import { Printer } from 'lucide-react';
 import { formatRupiah, YAYASAN_INFO, JENJANG_LABEL, Jenjang } from '@/lib/biaya';
+import TeksKode from '@/components/TeksKode';
 
 // Format resmi "SPMB/0001/SMP/2026-2027/A7K9" (lihat lib/nomorPendaftaran.ts)
 // dibuat SEKALI saat formulir dikirim dan disimpan di noPendaftaran — jadi
@@ -132,10 +133,11 @@ export default function KwitansiPage() {
 
   // Baris "label : nilai" — DUA per baris berdampingan. Grid 6 kolom
   // (label-kolon-nilai, dua kali) membuat browser sendiri yang menghitung
-  // lebar kolom label & kolon dari isi TERLEBARnya — kolonnya otomatis
-  // sejajar, tidak peduli "No.Pendaftaran" jauh lebih panjang dari "Nama".
+  // lebar kolom label & kolon dari isi TERLEBARnya, jadi kolonnya otomatis
+  // sejajar di semua baris. No.Pendaftaran & Tahun Ajaran ditulis LANGSUNG
+  // di JSX (bukan lewat array ini) karena keduanya butuh tata letak khusus
+  // di grid yang sama — lihat komentar di tempat grid dirender.
   const BARIS: [string, React.ReactNode, string, React.ReactNode][] = [
-    ['No.Pendaftaran', getRegNo(data), 'Tahun Ajaran', data.tahunAjaran?.nama || '-'],
     ['Nama', data.namaLengkap, 'Gelombang', data.gelombang || '-'],
     ['Jenis Kelamin', data.jenisKelamin, 'Jenjang', `${JENJANG_LABEL[jenjang]}${data.kelas ? ` - ${data.kelas}` : ''}`],
     ['Asal Sekolah', data.asalSMP || data.asalSekolah || '-',
@@ -146,7 +148,7 @@ export default function KwitansiPage() {
   ];
 
   return (
-    <div style={{ background: 'var(--adm-neutral-weak)', minHeight: '100vh', padding: '32px 16px' }}>
+    <div className="kwitansi-halaman" style={{ background: 'var(--adm-neutral-weak)', minHeight: '100vh', padding: '32px 16px' }}>
       <style>{`
         /* Setiap ukuran teks/jarak di kwitansi ini SENGAJA lewat variabel CSS
            (bukan angka literal langsung), supaya versi CETAK bisa benar-benar
@@ -173,8 +175,10 @@ export default function KwitansiPage() {
           --kw-mb-kop: 16px;
           --kw-mb-judul: 18px;
           --kw-mb-data: 18px;
-          --kw-gap-data-col: 8px;
+          --kw-gap-data-col: 4px;
           --kw-gap-data-row: 4px;
+          --kw-pad-label: 3px;
+          --kw-pad-val: 2px;
           --kw-mb-label-bayar: 8px;
           --kw-pad-sel: 6px 8px;
           --kw-mt-ttd: 40px;
@@ -189,11 +193,20 @@ export default function KwitansiPage() {
           @page { size: A5 portrait; margin: 0; }
           .no-print { display: none !important; }
           html, body { background: white !important; margin: 0 !important; }
+          /* Pembungkus di luar kertas (.adm-root dari layout admin & latar abu
+             halaman ini) setinggi 100vh + padding di layar. Saat cetak 100vh =
+             tinggi A5, jadi ditambah padding totalnya melebihi satu halaman
+             (keluar halaman kedua kosong) dan kertasnya tergeser ke kanan-bawah
+             sejauh padding itu. Di kertas keduanya harus lenyap total. */
+          .adm-root, .kwitansi-halaman {
+            min-height: 0 !important;
+            padding: 0 !important;
+            background: none !important;
+          }
           .kwitansi-sheet {
             box-shadow: none !important;
             margin: 0 !important;
             width: 148mm;
-            min-height: 210mm;
             max-width: none !important;
             padding: 9mm 8mm !important;
             /* Diciutkan proporsional (bukan cuma font, tapi jarak & logo
@@ -216,12 +229,17 @@ export default function KwitansiPage() {
             --kw-mb-kop: 8px;
             --kw-mb-judul: 8px;
             --kw-mb-data: 8px;
-            --kw-gap-data-col: 5px;
+            --kw-gap-data-col: 2px;
             --kw-gap-data-row: 1.5px;
+            --kw-pad-label: 2px;
+            --kw-pad-val: 1px;
             --kw-mb-label-bayar: 4px;
             --kw-pad-sel: 2.5px 5px;
-            --kw-mt-ttd: 10px;
-            --kw-h-ttd-kosong: 18px;
+            /* Pengecualian dari "dirapatkan": ruang kosong tanda tangan
+               harus cukup tinggi untuk benar-benar ditandatangani di kertas
+               (60px ~ 16mm). */
+            --kw-mt-ttd: 16px;
+            --kw-h-ttd-kosong: 60px;
           }
         }
       `}</style>
@@ -233,11 +251,12 @@ export default function KwitansiPage() {
       </div>
 
       <div className="kwitansi-sheet" style={{ maxWidth: 700, margin: '0 auto', background: 'var(--adm-surface)', padding: 40, boxShadow: '0 1px 6px rgba(0,0,0,0.1)', fontFamily: 'Georgia, serif', color: '#111' }}>
-        {/* Kop Surat — logo di kiri, nama & alamat yayasan mengisi sisa
-            lebar dan rata tengah, gaya kop surat resmi. */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--kw-gap-kop)', borderBottom: '2px solid #111', paddingBottom: 'var(--kw-pad-kop-b)', marginBottom: 'var(--kw-mb-kop)' }}>
+        {/* Kop Surat — logo di KIRI, dirapatkan ke tulisan (bukan dipisah ke
+            ujung baris): keduanya dibungkus jadi satu kelompok yang rata
+            tengah bersama, jaraknya cuma --kw-gap-kop. */}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 'var(--kw-gap-kop)', borderBottom: '2px solid #111', paddingBottom: 'var(--kw-pad-kop-b)', marginBottom: 'var(--kw-mb-kop)' }}>
           <img src="/images/logo-yayasan.png" alt="Logo Yayasan" style={{ width: 'var(--kw-logo)', height: 'var(--kw-logo)', objectFit: 'contain', flexShrink: 0 }} />
-          <div style={{ textAlign: 'center', flex: 1 }}>
+          <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 'var(--kw-fs-yayasan)', fontWeight: 700, letterSpacing: 0.5 }}>{YAYASAN_INFO.nama}</div>
             <div style={{ fontSize: 'var(--kw-fs-alamat)', marginTop: 2 }}>{YAYASAN_INFO.alamat}</div>
             <div style={{ fontSize: 'var(--kw-fs-alamat)' }}>Email: {YAYASAN_INFO.email} &nbsp;Telp: {YAYASAN_INFO.telp}</div>
@@ -246,23 +265,44 @@ export default function KwitansiPage() {
 
         <h2 style={{ textAlign: 'center', fontSize: 'var(--kw-fs-judul)', textDecoration: 'underline', fontWeight: 700, marginBottom: 'var(--kw-mb-judul)' }}>KWITANSI PEMBAYARAN</h2>
 
-        {/* Data pendaftar — lima baris x (label, kolon, nilai) x 2 kolom. */}
+        {/* Data pendaftar — SATU grid untuk semuanya (termasuk No.Pendaftaran
+            & Tahun Ajaran) supaya label & titik duanya benar-benar sejajar
+            dengan baris lain, bukan tata letak terpisah yang cuma mirip.
+            No.Pendaftaran & Tahun Ajaran satu baris berdampingan sama
+            seperti pasangan label lain (Nama/Gelombang, dst) — bukan baris
+            sendiri — supaya keduanya sejajar horizontal. Nilai No.Pendaftaran
+            SENGAJA tidak dipaksa nowrap: kalau kepanjangan (mis. nama tahun
+            ajaran custom yang tidak biasa), dia boleh turun ke baris kedua
+            di dalam kolomnya sendiri (overflowWrap) daripada meluber keluar
+            kertas. Kolom nilai KIRI dibuat sedikit lebih lebar (1.3fr vs 1fr)
+            drpd kolom nilai KANAN karena isinya (No.Pendaftaran) biasanya
+            lebih panjang dari isi kolom kanan (Gelombang/Jenjang/dst) — tanpa
+            ini, di mode CETAK (font & padding lebih kecil) nomor pendaftaran
+            yg panjangnya wajar pun masih terpaksa turun baris walau di layar
+            sudah muat satu baris. */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'max-content max-content minmax(0, 1fr) max-content max-content minmax(0, 1fr)',
+            gridTemplateColumns: 'max-content max-content minmax(0, 1.3fr) max-content max-content minmax(0, 1fr)',
             columnGap: 'var(--kw-gap-data-col)',
             rowGap: 'var(--kw-gap-data-row)',
             fontSize: 'var(--kw-fs-data)',
             marginBottom: 'var(--kw-mb-data)',
           }}
         >
+          <span style={{ whiteSpace: 'nowrap', paddingRight: 'var(--kw-pad-label)' }}>No.Pendaftaran</span>
+          <span>:</span>
+          <span style={{ paddingRight: 'var(--kw-pad-val)', overflowWrap: 'anywhere' }}><TeksKode teks={getRegNo(data)} /></span>
+          <span style={{ whiteSpace: 'nowrap', paddingRight: 'var(--kw-pad-label)' }}>Tahun Ajaran</span>
+          <span>:</span>
+          <span>{data.tahunAjaran?.nama || '-'}</span>
+
           {BARIS.map(([labelKiri, nilaiKiri, labelKanan, nilaiKanan], i) => (
             <Fragment key={i}>
-              <span style={{ whiteSpace: 'nowrap', paddingRight: 12 }}>{labelKiri}</span>
+              <span style={{ whiteSpace: 'nowrap', paddingRight: 'var(--kw-pad-label)' }}>{labelKiri}</span>
               <span>:</span>
-              <span style={{ paddingRight: 20 }}>{nilaiKiri}</span>
-              <span style={{ whiteSpace: 'nowrap', paddingRight: 12 }}>{labelKanan}</span>
+              <span style={{ paddingRight: 'var(--kw-pad-val)' }}>{nilaiKiri}</span>
+              <span style={{ whiteSpace: 'nowrap', paddingRight: 'var(--kw-pad-label)' }}>{labelKanan}</span>
               <span>:</span>
               <span>{nilaiKanan}</span>
             </Fragment>
@@ -313,7 +353,7 @@ export default function KwitansiPage() {
             <div>{YAYASAN_INFO.kota}, {new Date(tanggalTerakhir).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}.</div>
             <div>Diterima Oleh</div>
             <div style={{ height: 'var(--kw-h-ttd-kosong)' }} />
-            <div style={{ borderTop: '1px solid #111', paddingTop: 4, minWidth: 160 }}>Admin SPMB</div>
+            <div style={{ borderTop: '1px solid #111', minWidth: 160 }} />
           </div>
         </div>
       </div>

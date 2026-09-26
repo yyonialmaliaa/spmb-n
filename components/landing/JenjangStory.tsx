@@ -4,8 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
 import { Muncul, JudulBaris, Lorong } from './gerak'
-import { GAMBAR_JENJANG } from '@/lib/landing'
-import type { Jenjang } from '@/lib/labels'
+import { GAMBAR_JENJANG, type Jenjang } from '@/lib/labels'
 
 /**
  * Ringkasan naratif tiap jenjang. Sengaja disimpan di sini dan bukan di

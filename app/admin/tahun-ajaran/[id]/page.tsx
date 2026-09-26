@@ -115,7 +115,7 @@ export default function LihatDataTahunAjaranPage() {
       ['Total Diskon', data.keuangan.totalDiskonNominal],
       ['Total Dikembalikan (Refund)', data.keuangan.totalRefund],
       ['Total Sisa Pembayaran', data.keuangan.totalSisaBayar],
-      ['Jumlah Cicilan Terverifikasi', data.keuangan.jumlahCicilanTerverifikasi],
+      ['Jumlah Angsuran Terverifikasi', data.keuangan.jumlahCicilanTerverifikasi],
       ['Jumlah Menunggu Verifikasi', data.keuangan.jumlahMenungguVerifikasi],
       ['Jumlah Jenis Diskon Tersedia', data.diskon.length],
       ['Jumlah Dokumen Persyaratan', data.dokumenCount],
@@ -191,7 +191,7 @@ export default function LihatDataTahunAjaranPage() {
             <div style={statCard('var(--adm-warning-weak)', 'var(--adm-warning-border)')}><div style={{ ...statLabel, color: 'var(--adm-warning)' }}>SISA PEMBAYARAN</div><div style={{ ...statValue, fontSize: 15, color: 'var(--adm-warning)' }}>{formatRupiah(keuangan.totalSisaBayar)}</div></div>
             <div style={statCard('var(--adm-info-weak)', 'var(--adm-info-border)')}><div style={{ ...statLabel, color: 'var(--adm-info)' }}>TOTAL DISKON</div><div style={{ ...statValue, fontSize: 15, color: 'var(--adm-info)' }}>{formatRupiah(keuangan.totalDiskonNominal)}</div></div>
             <div style={statCard('var(--adm-warning-weak)', 'var(--adm-warning-border)')}><div style={{ ...statLabel, color: 'var(--adm-warning)' }}>TOTAL DIKEMBALIKAN</div><div style={{ ...statValue, fontSize: 15, color: 'var(--adm-warning)' }}>{formatRupiah(keuangan.totalRefund)}</div></div>
-            <div style={statCard('var(--adm-ungu-weak)', 'var(--adm-ungu-weak)')}><div style={{ ...statLabel, color: 'var(--adm-ungu)' }}>CICILAN TERVERIFIKASI</div><div style={{ ...statValue, fontSize: 15, color: 'var(--adm-ungu)' }}>{keuangan.jumlahCicilanTerverifikasi}</div></div>
+            <div style={statCard('var(--adm-ungu-weak)', 'var(--adm-ungu-weak)')}><div style={{ ...statLabel, color: 'var(--adm-ungu)' }}>ANGSURAN TERVERIFIKASI</div><div style={{ ...statValue, fontSize: 15, color: 'var(--adm-ungu)' }}>{keuangan.jumlahCicilanTerverifikasi}</div></div>
           </div>
         </div>
 

@@ -981,8 +981,8 @@
 
 .lp-jadwal-baris {
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: clamp(1rem, 3vw, 2.5rem);
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem clamp(1rem, 3vw, 2.5rem);
   align-items: baseline;
   padding: clamp(1.5rem, 3vw, 2.4rem) 0;
   border-top: 1px solid var(--lp-garis);
@@ -990,10 +990,16 @@
 .lp-jadwal-baris:last-child {
   border-bottom: 1px solid var(--lp-garis);
 }
+/* Di HP rentang tanggal turun ke bawah judul gelombang — satu baris
+   "1 Agu 2026 — 31 Agu 2026" tidak muat di samping judul pada layar sempit. */
 .lp-jadwal-tanggal {
+  grid-column: 2;
   font-family: var(--lp-serif);
   font-size: clamp(1.1rem, 1.8vw, 1.6rem);
-  white-space: nowrap;
+}
+@media (min-width: 640px) {
+  .lp-jadwal-baris { grid-template-columns: auto 1fr auto; }
+  .lp-jadwal-tanggal { grid-column: auto; white-space: nowrap; }
 }
 
 /* --- Biaya (tersembunyi sampai diklik) ----------------------------------- */

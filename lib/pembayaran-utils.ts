@@ -33,6 +33,45 @@ export function hitungRingkasan(pembayaranList: { jenis?: string; nominal: numbe
   return { totalBayar, totalRefund, totalAlokasi, totalDibayar, sisaBayar, kelebihanBayar }
 }
 
+export type SyaratTerima = {
+  boleh: boolean
+  /** Kalimat siap-tampil kenapa belum boleh, null kalau boleh. */
+  alasan: string | null
+  menunggu: number
+  dibayar: number
+  wajib: number
+}
+
+// Syarat keuangan sebelum berkas boleh DITERIMA (Terima Berkas / Setujui
+// Semua): kirim formulir cukup dengan bukti bayar yang disetor, tapi
+// menerima pendaftar harus menunggu Loket Keuangan memverifikasinya dulu.
+// `wajib` = uang pendaftaran minimal, atau total tagihan kalau lebih kecil.
+export function syaratKeuanganTerima(params: {
+  pembayaranList: { jenis?: string; nominal: number; status: string }[]
+  totalTagihan: number
+  hargaTersedia: boolean
+  minimalAwal: number
+}): SyaratTerima {
+  const { pembayaranList, totalTagihan, hargaTersedia, minimalAwal } = params
+  const menunggu = pembayaranList
+    .filter(p => (p.jenis || 'bayar') === 'bayar' && p.status === 'menunggu_verifikasi')
+    .reduce((s, p) => s + p.nominal, 0)
+  const { totalDibayar: dibayar } = hitungRingkasan(pembayaranList, totalTagihan)
+  const wajib = totalTagihan > 0 ? Math.min(minimalAwal, totalTagihan) : 0
+
+  let alasan: string | null = null
+  if (!hargaTersedia) {
+    alasan = 'Tagihan belum bisa dihitung: harga untuk pilihan pendaftar ini belum diatur di Panel Harga.'
+  } else if (menunggu > 0) {
+    alasan = `Masih ada pembayaran ${formatRupiah(menunggu)} yang menunggu verifikasi Loket Keuangan.`
+  } else if (dibayar < wajib) {
+    alasan = dibayar === 0
+      ? `Belum ada pembayaran yang diverifikasi Loket Keuangan (minimal ${formatRupiah(wajib)}).`
+      : `Pembayaran terverifikasi baru ${formatRupiah(dibayar)} dari minimal ${formatRupiah(wajib)}.`
+  }
+  return { boleh: alasan === null, alasan, menunggu, dibayar, wajib }
+}
+
 // Total yang sudah DISETOR user (menunggu_verifikasi ATAU lunas, bukan
 // ditolak) — dipakai khusus untuk syarat "boleh kirim formulir" (section
 // A2: gerbang dibuka begitu bukti pembayaran DISETOR, tidak perlu menunggu

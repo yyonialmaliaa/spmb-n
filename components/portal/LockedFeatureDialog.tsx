@@ -2,11 +2,11 @@
 
 // =====================================================================
 // Dialog kecil untuk menu yang terkunci (Pendaftaran/Pembayaran/Dokumen)
-// saat formulir pendaftaran belum MULAI diisi — jenjang sudah ditentukan
-// sejak registrasi akun, jadi yang kurang di sini bukan "pilih jenjang"
-// lagi, melainkan "isi formulirnya" (section 6: jenjang tidak ditanya
-// ulang di mana pun). CTA-nya karena itu langsung ke formulir sesuai
-// jenjang akun (ctaHref dikirim oleh PortalShell), bukan ke Dashboard.
+// selama field wajib formulir pendaftaran belum lengkap — jenjang sudah
+// ditentukan sejak registrasi akun, jadi yang kurang di sini bukan "pilih
+// jenjang" lagi, melainkan "isi formulirnya" (section 6: jenjang tidak
+// ditanya ulang di mana pun). CTA-nya karena itu langsung ke formulir
+// sesuai jenjang akun (ctaHref dikirim oleh PortalShell), bukan ke Dashboard.
 // =====================================================================
 
 import { useEffect } from 'react';
@@ -28,8 +28,10 @@ const KONTEN: Record<'pendaftaran' | 'pembayaran' | 'dokumen', { title: string; 
   },
 };
 
-export default function LockedFeatureDialog({ jenis, ctaHref, onClose }: { jenis: 'pendaftaran' | 'pembayaran' | 'dokumen'; ctaHref: string; onClose: () => void }) {
-  const isi = KONTEN[jenis];
+export default function LockedFeatureDialog({ jenis, ctaHref, sudahMulai, onClose }: { jenis: 'pendaftaran' | 'pembayaran' | 'dokumen'; ctaHref: string; sudahMulai?: boolean; onClose: () => void }) {
+  const isi = jenis === 'pendaftaran' && sudahMulai
+    ? { title: 'Formulir Belum Lengkap', message: 'Formulir pendaftaran Anda belum lengkap. Lengkapi semua data dan berkas wajib terlebih dahulu.' }
+    : KONTEN[jenis];
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -68,7 +70,7 @@ export default function LockedFeatureDialog({ jenis, ctaHref, onClose }: { jenis
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <Link href={ctaHref} onClick={onClose} className="btn-primary" style={{ textAlign: 'center', fontSize: 14 }}>
-            Mulai Pendaftaran
+            {sudahMulai ? 'Lanjutkan Mengisi Formulir' : 'Mulai Pendaftaran'}
           </Link>
           <button
             onClick={onClose}

@@ -26,7 +26,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const data: Record<string, any> = {}
     if (body.nama !== undefined) data.nama = body.nama
+    // diskonPersen: label tampilan landing page saja. diskonNominal: potongan
+    // Rupiah sesungguhnya yang dipakai lib/keuangan.ts menghitung tagihan.
     if (body.diskonPersen !== undefined) data.diskonPersen = parseFloat(body.diskonPersen) || 0
+    if (body.diskonNominal !== undefined) data.diskonNominal = parseInt(body.diskonNominal) || 0
     if (body.aktif !== undefined) data.aktif = body.aktif
     if (body.tanggalMulai !== undefined) data.tanggalMulai = body.tanggalMulai ? new Date(body.tanggalMulai) : null
     if (body.tanggalSelesai !== undefined) data.tanggalSelesai = body.tanggalSelesai ? new Date(body.tanggalSelesai) : null

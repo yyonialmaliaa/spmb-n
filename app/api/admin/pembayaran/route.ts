@@ -5,7 +5,7 @@ import { scopePendaftarUang, isJenjangValid } from '@/lib/pendaftarQuery'
 import { prisma } from '@/lib/db'
 import {
   recalculatePembayaran, hitungRingkasan, lockTagihanJikaBelum, formatRupiah,
-  getMinimalPembayaranAwal, getMinimalCicilan, HargaTidakDitemukanError,
+  getMinimalPembayaranAwal, getMinimalCicilan, cekOtomatisVerifikasiOffline, HargaTidakDitemukanError,
 } from '@/lib/keuangan'
 import { kirimNotifikasi } from '@/lib/notifikasi'
 
@@ -214,6 +214,11 @@ export async function POST(req: Request) {
 
     const updated = await recalculatePembayaran(pendaftaranId)
 
+    // Pembayaran baru bisa jadi syarat TERAKHIR yang tadinya kurang (dokumen
+    // sudah duluan lengkap) — cek transisi otomatis draft -> verified untuk
+    // pendaftar offline (lib/keuangan.ts: cekOtomatisVerifikasiOffline).
+    const autoVerified = jenisFinal === 'bayar' ? await cekOtomatisVerifikasiOffline(pendaftaranId) : null
+
     // Notifikasi ke pendaftar untuk setiap transaksi yang admin catatkan.
     if (jenisFinal === 'bayar') {
       await kirimNotifikasi(pendaftaranId, `Admin mencatat pembayaran sebesar ${formatRupiah(nominalNum)} untuk Anda.`)
@@ -223,7 +228,7 @@ export async function POST(req: Request) {
       await kirimNotifikasi(pendaftaranId, `Kelebihan bayar sebesar ${formatRupiah(nominalNum)} telah dialokasikan untuk ${kategoriAlokasi}.`)
     }
 
-    return NextResponse.json({ success: true, data: updated })
+    return NextResponse.json({ success: true, data: autoVerified ? { ...updated, ...autoVerified } : updated })
   } catch (err) {
     if (err instanceof HargaTidakDitemukanError) {
       return NextResponse.json({ error: err.message }, { status: 400 })

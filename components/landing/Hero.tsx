@@ -11,10 +11,11 @@ import { useKeluar } from './gerak'
 const VIDEO_HERO = '/videos/hero.mp4'
 /** Dipakai sebagai bingkai pertama (sebelum video siap) DAN sebagai latar
  *  untuk pengguna yang meminta gerak dikurangi — lihat catatan di bawah.
- *  BUKAN citter.jpg: itu poster promosi ramai (banyak teks/stiker/kode QR
- *  yang ditumpuk), bukan foto tenang. Sama seperti futsalcn1.jpg yang
- *  sudah diganti voli.jpg untuk FinalCTA. */
-const POSTER_HERO = '/images/irma.jpg'
+ *  Ini frame PERTAMA hero.mp4 itu sendiri, jadi saat video mulai berputar
+ *  tidak ada pergantian gambar yang terlihat. Poster berupa foto lain
+ *  (dulu foto hadroh) sempat tampil sekilas setiap halaman dimuat. Kalau
+ *  videonya diganti, ambil ulang frame pertamanya sebagai poster. */
+const POSTER_HERO = '/images/hero-poster.jpg'
 
 /**
  * Hero setinggi satu layar penuh.

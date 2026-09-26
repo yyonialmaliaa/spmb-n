@@ -122,6 +122,32 @@ export function notifPendaftarBaru(p: {
   })
 }
 
+/**
+ * Pendaftar OFFLINE (diinput admin langsung di sekolah) otomatis lolos ke
+ * "Sedang Diverifikasi" begitu dokumen wajib lengkap + pembayaran minimal
+ * sudah disetor — tidak melalui "Kirim Formulir" seperti jalur online, jadi
+ * kalimatnya HARUS beda dari notifPendaftarBaru (lihat lib/keuangan.ts:
+ * cekOtomatisVerifikasiOffline).
+ */
+export function notifPendaftarOfflineSiapVerifikasi(p: {
+  id: string
+  namaLengkap: string | null
+  jenjang: string | null
+  tahunAjaranId: string
+}) {
+  const jj = labelJenjang(p.jenjang)
+  return kirimNotifikasiAdmin({
+    jenis: 'pendaftar_baru',
+    judul: 'Pendaftar offline siap diverifikasi',
+    pesan: `${p.namaLengkap || 'Pendaftar'}${jj ? ` (${jj})` : ''} (offline) sudah lengkap dokumen & pembayaran, siap diverifikasi.`,
+    tautan: tautanVerifikasi(p.jenjang),
+    jenjang: p.jenjang,
+    tahunAjaranId: p.tahunAjaranId,
+    entitas: 'pendaftaran',
+    entitasId: p.id,
+  })
+}
+
 /** Pendaftar yang berkasnya ditolak mengirim ulang perbaikan. */
 export function notifRevisiMasuk(p: {
   id: string

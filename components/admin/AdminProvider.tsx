@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useCallback, useContext, useMemo } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { can as bolehkan, canAny, isReadOnly, type Action, type Resource, type Role } from '@/lib/permissions'
 import { buildAdminHref, type KonteksAdmin } from '@/lib/adminHref'
@@ -65,7 +65,11 @@ const Ctx = createContext<NilaiAdmin | null>(null)
 export interface AwalAdmin {
   user: PenggunaAdmin
   tahunAjaranList: TahunAjaranRingkas[]
+  /** Isi cookie `adm_jenjang` saat halaman dimuat penuh (dibaca server). */
+  jenjangTerakhir?: string | null
 }
+
+const COOKIE_JENJANG = 'adm_jenjang'
 
 const JENJANG_SAH = ['smp', 'sma', 'smk']
 const isJenjang = (v: unknown): v is Jenjang =>
@@ -106,28 +110,43 @@ export function AdminProvider({
     return aktifTA
   }, [searchParams, tahunAjaranList, aktifTA])
 
-  // Jenjang: query -> segmen path (/admin/dashboard/[jenjang]) -> scope akun
-  // -> bawaan. Cookie sengaja TIDAK dibaca di sini supaya render server dan
-  // client tidak berbeda.
-  //
-  // TIDAK LAGI berakhir di `null`: sebelumnya, begitu ketiga sumber di atas
-  // kosong, tiap halaman jenjang-aware (Harga, Persyaratan, Tagihan, dst.)
-  // terpaksa menampilkan layarnya sendiri-sendiri meminta jenjang dipilih
-  // dulu — padahal "Ganti Jenjang" di sidebar (lihat KartuKonteks) hanya
-  // muncul KETIKA jenjang sudah terisi, jadi akun yang baru login dan belum
-  // pernah membuka /admin/dashboard bisa macet tidak punya jalan memilih
-  // sama sekali. Sekarang akun yang bebas memilih (tidak di-scope) langsung
-  // mendapat SMP sebagai bawaan begitu tiba di halaman apa pun — bisa
-  // langsung bekerja, dan tinggal pakai "Ganti Jenjang" di sidebar (yang
-  // sekarang juga selalu tampil) kalau maksudnya jenjang lain.
-  const jenjang = useMemo<Jenjang>(() => {
+  // Jenjang yang DISEBUT langsung oleh URL: query ?jenjang= atau segmen path
+  // (/admin/dashboard/[jenjang]).
+  const jenjangEksplisit = useMemo<Jenjang | null>(() => {
     const dariQuery = searchParams.get('jenjang')
     if (isJenjang(dariQuery)) return dariQuery
     const dariPath = routeParams?.jenjang
     if (isJenjang(dariPath)) return dariPath
+    return null
+  }, [searchParams, routeParams])
+
+  // Jenjang terakhir yang dibuka lewat URL. Halaman global (Tahun Ajaran,
+  // Pengaturan, Pengguna, Bantuan) sengaja tidak membawa ?jenjang=, dan
+  // dulu begitu admin mampir ke sana konteksnya jatuh ke bawaan SMP — lalu
+  // klik Pembayaran/Transaksi berikutnya ikut membawa SMP padahal admin
+  // sedang bekerja di SMK. State ini bertahan selama navigasi client (provider
+  // hidup di layout), cookie-nya menjaga nilai yang sama setelah refresh.
+  const [jenjangTerakhir, setJenjangTerakhir] = useState<Jenjang | null>(
+    isJenjang(initial.jenjangTerakhir) ? initial.jenjangTerakhir : null,
+  )
+
+  useEffect(() => {
+    if (!jenjangEksplisit || jenjangEksplisit === jenjangTerakhir) return
+    setJenjangTerakhir(jenjangEksplisit)
+    document.cookie = `${COOKIE_JENJANG}=${jenjangEksplisit}; path=/admin; max-age=31536000; samesite=lax`
+  }, [jenjangEksplisit, jenjangTerakhir])
+
+  // URL -> scope akun -> jenjang terakhir -> bawaan. Scope mendahului jenjang
+  // terakhir supaya akun ber-scope tidak mewarisi cookie petugas lain yang
+  // sebelumnya memakai komputer yang sama. Tidak pernah null: akun yang baru
+  // pertama kali login langsung bisa bekerja di SMP dan tinggal pakai
+  // "Ganti Jenjang" di sidebar kalau maksudnya jenjang lain.
+  const jenjang = useMemo<Jenjang>(() => {
+    if (jenjangEksplisit) return jenjangEksplisit
     if (isJenjang(user.scopeJenjang)) return user.scopeJenjang
+    if (jenjangTerakhir) return jenjangTerakhir
     return JENJANG_BAWAAN
-  }, [searchParams, routeParams, user.scopeJenjang])
+  }, [jenjangEksplisit, user.scopeJenjang, jenjangTerakhir])
 
   const ctx: KonteksAdmin = useMemo(
     () => ({

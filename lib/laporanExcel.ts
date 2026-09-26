@@ -110,7 +110,7 @@ export async function buatWorkbookLaporan(data: LaporanData): Promise<ExcelJS.Bu
   tambahBaris('Total Tagihan', formatRupiah(data.pembayaran.totalTagihan), true)
   tambahBaris('Total Pembayaran Masuk', formatRupiah(data.pembayaran.totalDibayar), true)
   tambahBaris('Lunas', data.pembayaran.lunas)
-  tambahBaris('Cicilan Berjalan', data.pembayaran.cicilan)
+  tambahBaris('Angsuran Berjalan', data.pembayaran.cicilan)
   tambahBaris('Menunggu Verifikasi', data.pembayaran.menunggu)
   tambahBaris('Belum Bayar', data.pembayaran.belumBayar)
   tambahBaris('Dikembalikan', data.pembayaran.dikembalikan)
@@ -209,7 +209,7 @@ export async function buatWorkbookLaporan(data: LaporanData): Promise<ExcelJS.Bu
     const p = data.pembayaran
     const baris: [string, number, number][] = [
       ['Lunas', p.lunas, p.totalDibayar],
-      ['Cicilan Berjalan', p.cicilan, 0],
+      ['Angsuran Berjalan', p.cicilan, 0],
       ['Menunggu Verifikasi', p.menunggu, 0],
       ['Belum Bayar', p.belumBayar, 0],
       ['Ditolak', p.ditolakBayar, 0],

@@ -76,7 +76,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         aksi: status === 'lunas' ? 'verify' : status === 'ditolak' ? 'reject' : 'update',
         entitas: 'pembayaran',
         entitasId: id,
-        ringkasan: `${aksiLabel} pembayaran ${formatRupiah(cicilan.nominal)} (cicilan ke-${cicilan.angsuranKe}) atas nama ${pendaftar?.namaLengkap || 'pendaftar'}`,
+        ringkasan: `${aksiLabel} pembayaran ${formatRupiah(cicilan.nominal)} (angsuran ke-${cicilan.angsuranKe}) atas nama ${pendaftar?.namaLengkap || 'pendaftar'}`,
         sebelum: { status: cicilan.status },
         sesudah: { status, catatanAdmin: catatanAdmin ?? null },
         jenjang: pendaftar?.jenjang ?? null,
@@ -92,8 +92,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       await kirimNotifikasi(
         cicilan.pendaftaranId,
         status === 'lunas'
-          ? `Pembayaran cicilan ke-${cicilan.angsuranKe} sebesar ${formatRupiah(cicilan.nominal)} telah diverifikasi.`
-          : `Bukti pembayaran cicilan ke-${cicilan.angsuranKe} ditolak.${catatanAdmin ? ` Catatan: ${catatanAdmin}` : ''}`
+          ? `Pembayaran angsuran ke-${cicilan.angsuranKe} sebesar ${formatRupiah(cicilan.nominal)} telah diverifikasi.`
+          : `Bukti pembayaran angsuran ke-${cicilan.angsuranKe} ditolak.${catatanAdmin ? ` Catatan: ${catatanAdmin}` : ''}`
       )
     }
 

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { GraduationCap, ChevronRight, ChevronLeft, CheckCircle, Upload, X, Loader } from 'lucide-react';
 import Image from 'next/image';
 import { JENJANG_LABEL, Jenjang } from '@/lib/biaya';
-import { getKelasMasukOptions, getKelasMasukBaru, pecahKelasHarga, labelTier, filterKelasByTingkat } from '@/lib/kelas';
+import { getKelasMasukOptions, getKelasMasukBaru, pecahKelasHarga, labelTier, filterKelasByTingkat, asalDariSD } from '@/lib/kelas';
 import { Suspense, useRef } from 'react';
 import FormAlertModal, { AlertModalState } from '@/components/spmb/FormAlertModal';
 
@@ -269,25 +269,45 @@ function DaftarPageInner() {
     }
   };
 
-  const handleNext = () => {
-    if (step === 0 && !setuju) { setAlertModal({ kind: 'warning', title: 'Periksa Data Anda', message: 'Anda perlu menyetujui ketentuan pendaftaran terlebih dahulu sebelum melanjutkan.', focusId: 'field-setuju' }); return; }
-    if (step === 1 && !form.namaLengkap) { setAlertModal({ kind: 'error', message: 'Nama lengkap wajib diisi sebelum melanjutkan.', focusId: 'field-namaLengkap' }); return; }
-    if (step === 1 && !form.jenisKelamin) { setAlertModal({ kind: 'error', message: 'Jenis kelamin wajib dipilih sebelum melanjutkan.', focusId: 'field-jenisKelamin' }); return; }
-    if (step === 1 && !form.noPribadi) { setAlertModal({ kind: 'error', message: 'Nomor WhatsApp wajib diisi sebelum formulir dapat disimpan.', focusId: 'field-noPribadi' }); return; }
-    if (step === 1 && !form.nik) { setAlertModal({ kind: 'error', message: 'NIK wajib diisi sebelum melanjutkan.', focusId: 'field-nik' }); return; }
-    if (step === 1 && form.nik.length !== 16) { setAlertModal({ kind: 'error', message: 'NIK harus terdiri dari 16 digit.', focusId: 'field-nik' }); return; }
-    if (step === 3 && !form.tipePendaftaran) { setAlertModal({ kind: 'error', message: 'Tipe pendaftaran wajib dipilih sebelum melanjutkan.', focusId: 'field-tipePendaftaran' }); return; }
-    if (step === 3 && form.tipePendaftaran === 'pindahan' && !form.kelasMasuk) { setAlertModal({ kind: 'error', message: 'Kelas masuk wajib dipilih untuk pendaftaran pindahan.', focusId: 'field-kelasMasuk' }); return; }
-    if (step === 3 && isSMK && !form.jurusan) { setAlertModal({ kind: 'error', message: 'Jurusan wajib dipilih sebelum melanjutkan.', focusId: 'field-jurusan' }); return; }
-    if (step === 3 && !form.kelas) { setAlertModal({ kind: 'error', message: 'Kelas wajib dipilih sebelum melanjutkan.', focusId: 'field-kelas' }); return; }
-    if (step === 3 && jenjang === 'smp' && !form.asalSD) { setAlertModal({ kind: 'error', message: 'Asal SD/MI wajib diisi sebelum melanjutkan.', focusId: 'field-asalSD' }); return; }
-    if (step === 3 && jenjang !== 'smp' && !form.asalSMP) { setAlertModal({ kind: 'error', message: 'Asal SMP/MTs wajib diisi sebelum melanjutkan.', focusId: 'field-asalSMP' }); return; }
-    if (step === 3 && jenjang !== 'smp' && !form.alumniSmpCitraNegara) { setAlertModal({ kind: 'error', message: 'Mohon jawab pertanyaan alumni SMP Citra Negara terlebih dahulu.', focusId: 'field-alumniSmp' }); return; }
-    if (step === 4) {
-      const missing = FILE_FIELDS.filter(f => f.required && !files[f.key].path);
-      if (missing.length > 0) { setAlertModal({ kind: 'error', title: 'Berkas Belum Lengkap', message: `Masih ada berkas wajib yang belum diupload: ${missing.map(m => m.label.split(' ').slice(0,2).join(' ')).join(', ')}.`, focusId: `file-${missing[0].key}` }); return; }
-      if (FILE_FIELDS.some(f => files[f.key].uploading)) { setAlertModal({ kind: 'info', title: 'Mohon Tunggu', message: 'Proses upload berkas masih berlangsung, silakan tunggu sebentar.' }); return; }
+  // Semua kolom bertanda * per langkah, urut sesuai tampilan supaya yang
+  // disorot selalu kolom kosong paling atas. Harus mencakup semua isian di
+  // kekuranganFormulir (lib/kelas.ts) — kalau tidak, "Selesai" bisa lolos
+  // tapi dashboard tetap menganggap formulir belum lengkap.
+  const cekLangkah = (n: number): AlertModalState => {
+    const galat = (message: string, focusId: string): AlertModalState => ({ kind: 'error', message, focusId });
+    if (n === 0 && !setuju) return { kind: 'warning', title: 'Periksa Data Anda', message: 'Anda perlu menyetujui ketentuan pendaftaran terlebih dahulu sebelum melanjutkan.', focusId: 'field-setuju' };
+    if (n === 1) {
+      if (!form.namaLengkap.trim()) return galat('Nama lengkap wajib diisi sebelum melanjutkan.', 'field-namaLengkap');
+      if (!form.noPribadi.trim()) return galat('Nomor WhatsApp wajib diisi sebelum melanjutkan.', 'field-noPribadi');
+      if (!form.jenisKelamin) return galat('Jenis kelamin wajib dipilih sebelum melanjutkan.', 'field-jenisKelamin');
+      if (!form.agama) return galat('Agama wajib dipilih sebelum melanjutkan.', 'field-agama');
+      if (form.agama === 'Lainnya' && !form.agamaLainnya.trim()) return galat('Sebutkan agama Anda sebelum melanjutkan.', 'field-agamaLainnya');
+      if (!form.tempatLahir.trim()) return galat('Tempat lahir wajib diisi sebelum melanjutkan.', 'field-tempatLahir');
+      if (!form.tanggalLahir) return galat('Tanggal lahir wajib diisi sebelum melanjutkan.', 'field-tanggalLahir');
+      if (!form.nik) return galat('NIK wajib diisi sebelum melanjutkan.', 'field-nik');
+      if (form.nik.length !== 16) return galat('NIK harus terdiri dari 16 digit.', 'field-nik');
+      if (!form.alamat.trim()) return galat('Alamat wajib diisi sebelum melanjutkan.', 'field-alamat');
     }
+    if (n === 3) {
+      if (!form.tipePendaftaran) return galat('Tipe pendaftaran wajib dipilih sebelum melanjutkan.', 'field-tipePendaftaran');
+      if (form.tipePendaftaran === 'pindahan' && !form.kelasMasuk) return galat('Kelas masuk wajib dipilih untuk pendaftaran pindahan.', 'field-kelasMasuk');
+      if (isSMK && !form.jurusan) return galat('Jurusan wajib dipilih sebelum melanjutkan.', 'field-jurusan');
+      if (!form.kelas) return galat('Kelas wajib dipilih sebelum melanjutkan.', 'field-kelas');
+      if (asalDariSD(jenjang, form.tipePendaftaran) && !form.asalSD.trim()) return galat('Asal SD/MI wajib diisi sebelum melanjutkan.', 'field-asalSD');
+      if (!asalDariSD(jenjang, form.tipePendaftaran) && !form.asalSMP.trim()) return galat('Asal SMP/MTs wajib diisi sebelum melanjutkan.', 'field-asalSMP');
+      if (jenjang !== 'smp' && !form.alumniSmpCitraNegara) return galat('Mohon jawab pertanyaan alumni SMP Citra Negara terlebih dahulu.', 'field-alumniSmp');
+    }
+    if (n === 4) {
+      const missing = FILE_FIELDS.filter(f => f.required && !files[f.key].path);
+      if (missing.length > 0) return { kind: 'error', title: 'Berkas Belum Lengkap', message: `Masih ada berkas wajib yang belum diupload: ${missing.map(m => m.label.split(' ').slice(0,2).join(' ')).join(', ')}.`, focusId: `file-${missing[0].key}` };
+      if (FILE_FIELDS.some(f => files[f.key].uploading)) return { kind: 'info', title: 'Mohon Tunggu', message: 'Proses upload berkas masih berlangsung, silakan tunggu sebentar.' };
+    }
+    return null;
+  };
+
+  const handleNext = () => {
+    const masalah = cekLangkah(step);
+    if (masalah) { setAlertModal(masalah); return; }
     setStep(s => s + 1);
   };
 
@@ -301,7 +321,10 @@ function DaftarPageInner() {
     // dibuka lagi, pengguna lanjut dari sini, bukan balik ke Ketentuan
     // Pendaftaran (step 0).
     lastStep: step,
-    alumniSmpCitraNegara: jenjang === 'smp' ? null : form.alumniSmpCitraNegara === 'ya',
+    // Belum dijawab = null, BUKAN false — false berarti "Tidak", dan akan
+    // tampil terpilih "Tidak" saat draft dibuka lagi walau belum pernah
+    // dijawab (sama dengan formulir offline admin).
+    alumniSmpCitraNegara: jenjang === 'smp' || !form.alumniSmpCitraNegara ? null : form.alumniSmpCitraNegara === 'ya',
     ttl: `${form.tempatLahir}, ${form.tanggalLahir}`,
     namaOrtu: form.namaAyah || form.namaIbu || form.namaWali,
     noOrtu: form.noHpAyah || form.noHpIbu || form.noHpWali,
@@ -314,7 +337,9 @@ function DaftarPageInner() {
   });
 
   // Simpan Sementara — boleh dipanggil kapan saja, dengan data sekadarnya
-  // sekalipun, tanpa validasi. Formulir tetap berstatus draft/belum dikirim.
+  // sekalipun, tanpa validasi. Formulir tetap berstatus draft/belum dikirim,
+  // lalu pengguna kembali ke Dashboard (yang menunjukkan apa yang masih
+  // kurang); pengisian dilanjutkan dari langkah terakhir kapan saja.
   const handleSaveDraft = async () => {
     setSaving(true);
     try {
@@ -326,7 +351,8 @@ function DaftarPageInner() {
       const data = await res.json();
       if (!res.ok) { setAlertModal({ kind: 'error', title: 'Gagal Menyimpan', message: data.error || 'Data gagal disimpan, silakan coba lagi.' }); setSaving(false); return; }
       setPendaftaranId(data.data.id);
-      setAlertModal({ kind: 'success', title: 'Data Berhasil Disimpan', message: 'Perubahan formulir Anda telah tersimpan.' });
+      afterAlertCloseRef.current = () => router.push('/dashboard');
+      setAlertModal({ kind: 'success', title: 'Data Berhasil Disimpan', message: 'Formulir Anda telah tersimpan sebagai draft. Anda akan diarahkan ke dashboard — lanjutkan pengisian formulir kapan saja dari sana.' });
     } catch {
       setAlertModal({ kind: 'error', title: 'Gagal Menyimpan', message: 'Terjadi kesalahan jaringan, silakan coba lagi.' });
     } finally {
@@ -334,22 +360,31 @@ function DaftarPageInner() {
     }
   };
 
-  // Selesai isi formulir -> simpan draft terakhir kali, lalu lanjut ke
-  // dashboard untuk pembayaran. Formulir BELUM masuk ke admin di sini —
-  // baru masuk setelah "Kirim Formulir" di dashboard (syarat: sudah bayar
+  // Tombol "Selesai" -> simpan draft terakhir kali, lalu lanjut ke dashboard
+  // untuk pembayaran. Formulir BELUM masuk ke admin di sini — baru masuk
+  // setelah "Kirim Formulir ke Admin" di dashboard (syarat: sudah bayar
   // minimal uang pendaftaran).
   const handleFinishAndGoToPayment = async () => {
+    // Jaring terakhir: draft yang dilanjutkan langsung di langkah Konfirmasi
+    // tidak melewati validasi langkah-langkah sebelumnya. Kalau masih ada
+    // kolom wajib yang kosong, buka langkahnya — kolomnya disorot begitu
+    // pop-up ditutup (focusId).
+    for (const n of [1, 2, 3, 4]) {
+      const masalah = cekLangkah(n);
+      if (masalah) { setStep(n); setAlertModal(masalah); return; }
+    }
+    const payload = buildPayload();
     setLoading(true);
     try {
       const res = await fetch('/api/pendaftaran', {
         method: pendaftaranId ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildPayload()),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) { setAlertModal({ kind: 'error', title: 'Gagal Menyimpan', message: data.error || 'Data gagal disimpan, silakan coba lagi.' }); setLoading(false); return; }
       afterAlertCloseRef.current = () => router.push('/dashboard');
-      setAlertModal({ kind: 'success', title: 'Data Berhasil Disimpan', message: 'Formulir Anda telah tersimpan. Selanjutnya Anda akan diarahkan ke halaman pembayaran.' });
+      setAlertModal({ kind: 'success', title: 'Formulir Selesai Diisi', message: 'Formulir Anda telah tersimpan. Selanjutnya Anda akan diarahkan ke dashboard untuk melihat total tagihan dan membayar uang pendaftaran.' });
     } catch {
       setAlertModal({ kind: 'error', title: 'Gagal Menyimpan', message: 'Terjadi kesalahan jaringan, silakan coba lagi.' });
       setLoading(false);
@@ -452,18 +487,18 @@ function DaftarPageInner() {
                     </select>
                   </div>
                   <div><label style={lbl}>Agama *</label>
-                    <select style={inp} value={form.agama} onChange={set('agama')} onFocus={onFocus} onBlur={onBlur}>
+                    <select id="field-agama" style={inp} value={form.agama} onChange={set('agama')} onFocus={onFocus} onBlur={onBlur}>
                       <option value="">Pilih...</option>
                       {AGAMA_OPTIONS.map(a => <option key={a}>{a}</option>)}
                     </select>
                   </div>
                   {form.agama === 'Lainnya' && (
-                    <div><label style={lbl}>Sebutkan Agama *</label><input style={inp} value={form.agamaLainnya} onChange={set('agamaLainnya')} placeholder="Sebutkan agama" onFocus={onFocus} onBlur={onBlur} /></div>
+                    <div><label style={lbl}>Sebutkan Agama *</label><input id="field-agamaLainnya" style={inp} value={form.agamaLainnya} onChange={set('agamaLainnya')} placeholder="Sebutkan agama" onFocus={onFocus} onBlur={onBlur} /></div>
                   )}
                 </div>
                 <div style={grid2}>
-                  <div><label style={lbl}>Tempat Lahir *</label><input style={inp} value={form.tempatLahir} onChange={e => { const val = e.target.value.replace(/[^a-zA-Z\s]/g, ''); set('tempatLahir')({ ...e, target: { ...e.target, value: val } }); }} placeholder="Kota tempat lahir" onFocus={onFocus} onBlur={onBlur} /></div>
-                  <div><label style={lbl}>Tanggal Lahir *</label><input style={inp} type="date" value={form.tanggalLahir} onChange={set('tanggalLahir')} onFocus={onFocus} onBlur={onBlur} /></div>
+                  <div><label style={lbl}>Tempat Lahir *</label><input id="field-tempatLahir" style={inp} value={form.tempatLahir} onChange={e => { const val = e.target.value.replace(/[^a-zA-Z\s]/g, ''); set('tempatLahir')({ ...e, target: { ...e.target, value: val } }); }} placeholder="Kota tempat lahir" onFocus={onFocus} onBlur={onBlur} /></div>
+                  <div><label style={lbl}>Tanggal Lahir *</label><input id="field-tanggalLahir" style={inp} type="date" value={form.tanggalLahir} onChange={set('tanggalLahir')} onFocus={onFocus} onBlur={onBlur} /></div>
                 </div>
                 <div style={grid3}>
                   <div><label style={lbl}>Anak Ke-</label><input style={inp} type="number" value={form.anakKe} onChange={set('anakKe')} placeholder="1" onFocus={onFocus} onBlur={onBlur} /></div>
@@ -479,7 +514,7 @@ function DaftarPageInner() {
                     )}
                   </div>
                 </div>
-                <div><label style={lbl}>Alamat *</label><input style={inp} value={form.alamat} onChange={set('alamat')} placeholder="Nama jalan dan nomor" onFocus={onFocus} onBlur={onBlur} /></div>
+                <div><label style={lbl}>Alamat *</label><input id="field-alamat" style={inp} value={form.alamat} onChange={set('alamat')} placeholder="Nama jalan dan nomor" onFocus={onFocus} onBlur={onBlur} /></div>
                 <div style={grid3}>
   <div><label style={lbl}>RT</label><input style={inp} value={form.rt} onChange={e => { const val = e.target.value.replace(/\D/g, ''); set('rt')({ ...e, target: { ...e.target, value: val } }); }} placeholder="001" onFocus={onFocus} onBlur={onBlur} /></div>
   <div><label style={lbl}>RW</label><input style={inp} value={form.rw} onChange={e => { const val = e.target.value.replace(/\D/g, ''); set('rw')({ ...e, target: { ...e.target, value: val } }); }} placeholder="001" onFocus={onFocus} onBlur={onBlur} /></div>
@@ -560,7 +595,7 @@ function DaftarPageInner() {
                       <option value="">Pilih kelas...</option>
                       {getKelasMasukOptions(jenjang).map(k => <option key={k}>{k}</option>)}
                     </select>
-                    <p style={{ fontSize: 11, color: 'var(--adm-text-faint)', marginTop: 4 }}>Pendaftaran pindahan hanya dibuka untuk tingkat 1–2, tidak untuk kelas terakhir ({jenjang === 'smp' ? '9' : '12'}).</p>
+                    <p style={{ fontSize: 11, color: 'var(--adm-text-faint)', marginTop: 4 }}>Kelas yang akan dimasuki di sekolah ini.</p>
                   </div>
                 )}
                 {isSMK && (
@@ -594,7 +629,7 @@ function DaftarPageInner() {
                     </div>
                   );
                 })()}
-                {jenjang === 'smp' ? (
+                {asalDariSD(jenjang, form.tipePendaftaran) ? (
                   <div><label style={lbl}>Asal SD/MI *</label><input id="field-asalSD" style={inp} value={form.asalSD} onChange={set('asalSD')} placeholder="Nama SD/MI asal" onFocus={onFocus} onBlur={onBlur} /></div>
                 ) : (
                   <div><label style={lbl}>Asal SMP/MTs *</label><input id="field-asalSMP" style={inp} value={form.asalSMP} onChange={set('asalSMP')} placeholder="Nama SMP/MTs asal" onFocus={onFocus} onBlur={onBlur} /></div>
@@ -671,7 +706,7 @@ function DaftarPageInner() {
               <p style={{ color: 'var(--adm-text-muted)', fontSize: 13, marginBottom: 24 }}>Periksa kembali semua data sebelum mengirim</p>
               {[
                 { title: 'Data Pribadi', items: [['Nama Lengkap',form.namaLengkap],['Nama Panggilan',form.namaPanggilan],['Tempat Lahir',form.tempatLahir],['Tanggal Lahir',form.tanggalLahir],['Jenis Kelamin',form.jenisKelamin],['Agama',form.agama === 'Lainnya' ? form.agamaLainnya : form.agama],['NIK',form.nik],['NISN',form.nisn],['Alamat',`${form.alamat}, RT ${form.rt}/RW ${form.rw}`],['Kecamatan',form.kecamatan],['Kab/Kota',form.kabupaten]] },
-                { title: 'Data Akademik', items: [['Jenjang', JENJANG_LABEL[jenjang]], ['Tipe Pendaftaran', form.tipePendaftaran === 'pindahan' ? 'Pindahan' : 'Baru'], ...(form.tipePendaftaran === 'pindahan' ? [['Kelas Masuk', form.kelasMasuk]] : []), ...(isSMK ? [['Jurusan',form.jurusan]] : []), ['Kelas',form.kelas], jenjang === 'smp' ? ['Asal SD/MI', form.asalSD] : ['Asal SMP/MTs', form.asalSMP], ...(jenjang !== 'smp' ? [['Alumni SMP Citra Negara', form.alumniSmpCitraNegara === 'ya' ? 'Ya' : form.alumniSmpCitraNegara === 'tidak' ? 'Tidak' : '']] : [])] },
+                { title: 'Data Akademik', items: [['Jenjang', JENJANG_LABEL[jenjang]], ['Tipe Pendaftaran', form.tipePendaftaran === 'pindahan' ? 'Pindahan' : 'Baru'], ...(form.tipePendaftaran === 'pindahan' ? [['Kelas Masuk', form.kelasMasuk]] : []), ...(isSMK ? [['Jurusan',form.jurusan]] : []), ['Kelas',form.kelas], asalDariSD(jenjang, form.tipePendaftaran) ? ['Asal SD/MI', form.asalSD] : ['Asal SMP/MTs', form.asalSMP], ...(jenjang !== 'smp' ? [['Alumni SMP Citra Negara', form.alumniSmpCitraNegara === 'ya' ? 'Ya' : form.alumniSmpCitraNegara === 'tidak' ? 'Tidak' : '']] : [])] },
                 { title: 'Data Orang Tua', items: [['Nama Ayah',form.namaAyah],['Pekerjaan Ayah',form.pekerjaanAyah],['Nama Ibu',form.namaIbu],['Pekerjaan Ibu',form.pekerjaanIbu],['No. HP Ortu',form.noHpAyah||form.noHpIbu]] },
                 { title: 'Berkas Upload', items: FILE_FIELDS.map((f, i) => [`${i+1}. ${f.label.split(' ').slice(1,3).join(' ')}`, files[f.key].path ? '✓ Sudah diupload' : f.required ? '✗ Belum diupload' : '— (opsional)']) },
               ].map(section => (
@@ -688,7 +723,7 @@ function DaftarPageInner() {
                 </div>
               ))}
               <div style={{ background: 'var(--adm-warning-weak)', border: '1px solid var(--adm-warning-border)', borderRadius: 10, padding: 14 }}>
-                <p style={{ fontSize: 12, color: 'var(--adm-warning)', lineHeight: 1.6 }}>✓ Dengan menekan tombol <strong>"Kirim Pendaftaran"</strong>, saya menyatakan bahwa semua data yang diisikan adalah benar dan dapat dipertanggungjawabkan.</p>
+                <p style={{ fontSize: 12, color: 'var(--adm-warning)', lineHeight: 1.6 }}>✓ Dengan menekan tombol <strong>"Selesai"</strong>, saya menyatakan bahwa semua data yang diisikan adalah benar dan dapat dipertanggungjawabkan.</p>
               </div>
             </div>
           )}
@@ -700,23 +735,26 @@ function DaftarPageInner() {
                 <ChevronLeft size={16} /> Sebelumnya
               </button>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <button onClick={handleSaveDraft} disabled={saving} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'transparent', border: '1.5px solid #C8973A', color: 'var(--cn-hijau)', padding: '10px 18px', borderRadius: 8, cursor: saving ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', opacity: saving ? 0.7 : 1 }}>
-                  {saving ? 'Menyimpan...' : 'Simpan'}
-                </button>
+                {/* Langkah Ketentuan belum berisi data apa pun untuk disimpan. */}
+                {step > 0 && (
+                  <button onClick={handleSaveDraft} disabled={saving} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'transparent', border: '1.5px solid #C8973A', color: 'var(--cn-hijau)', padding: '10px 18px', borderRadius: 8, cursor: saving ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', opacity: saving ? 0.7 : 1 }}>
+                    {saving ? 'Menyimpan...' : 'Simpan'}
+                  </button>
+                )}
                 {step < 5 ? (
                   <button onClick={handleNext} className="btn-primary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 14 }}>
                     Selanjutnya <ChevronRight size={16} />
                   </button>
                 ) : (
                   <button onClick={handleFinishAndGoToPayment} disabled={loading} className="btn-primary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 14, opacity: loading ? 0.7 : 1 }}>
-                    <CheckCircle size={16} /> {loading ? 'Menyimpan...' : 'Simpan'}
+                    <CheckCircle size={16} /> {loading ? 'Menyimpan...' : 'Selesai'}
                   </button>
                 )}
               </div>
             </div>
             {step === 5 && (
               <p style={{ fontSize: 11, color: 'var(--adm-text-faint)', marginTop: 10 }}>
-                Formulir belum terkirim ke admin. Setelah ini Anda akan diarahkan ke halaman pembayaran — formulir baru masuk ke admin setelah Anda membayar uang pendaftaran minimal dan menekan tombol &quot;Kirim Formulir&quot;.
+                Formulir belum terkirim ke admin. Setelah menekan &quot;Selesai&quot;, Anda akan diarahkan ke dashboard untuk pembayaran — formulir baru masuk ke admin setelah Anda membayar uang pendaftaran minimal dan menekan tombol &quot;Kirim Formulir ke Admin&quot;.
               </p>
             )}
           </div>

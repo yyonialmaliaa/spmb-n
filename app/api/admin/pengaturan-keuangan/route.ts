@@ -47,7 +47,7 @@ export async function PUT(req: Request) {
     }
     if (body.minimalCicilan !== undefined) {
       const v = Math.round(Number(body.minimalCicilan) || 0)
-      if (!v || v <= 0) return NextResponse.json({ error: 'Minimal cicilan tidak valid' }, { status: 400 })
+      if (!v || v <= 0) return NextResponse.json({ error: 'Minimal angsuran tidak valid' }, { status: 400 })
       data.minimalCicilan = v
     }
 

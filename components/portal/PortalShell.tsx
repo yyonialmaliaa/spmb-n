@@ -22,6 +22,8 @@ import HelpFloatingButton from './HelpFloatingButton';
 import LockedFeatureDialog from './LockedFeatureDialog';
 import { isAdminRole, normalizeRole } from '@/lib/permissions';
 import { useTema } from '@/components/TemaProvider';
+import { namaSekolah } from '@/lib/labels';
+import { perluLengkapiFormulir } from '@/lib/kelas';
 
 export type Session = { userId: string; email: string; role: string; namaLengkap?: string };
 
@@ -29,6 +31,9 @@ export type Pendaftaran = {
   id: string; namaLengkap: string; jurusan: string; jenjang?: string; kelas?: string;
   noPendaftaran?: string | null;
   asalSD?: string; asalSMP?: string; asalSekolah?: string; gelombang?: string;
+  tipePendaftaran?: string;
+  jenisKelamin?: string; agama?: string; nik?: string; noPribadi?: string; kelasMasuk?: string;
+  tempatLahir?: string; tanggalLahir?: string; alamat?: string; alumniSmpCitraNegara?: boolean | null;
   status: string; nilaiSeleksi?: number;
   catatan?: string; alasanPenolakan?: string;
   waVerified?: boolean;
@@ -85,7 +90,7 @@ const CSS = `
   .portal-nav-link:focus-visible, .portal-icon-btn:focus-visible, .portal-bottom-link:focus-visible {
     outline: 2px solid var(--cn-hijau); outline-offset: 2px;
   }
-  .portal-icon-btn:hover { background: var(--adm-neutral-weak) !important; }
+  .portal-icon-btn:hover { color: var(--adm-text) !important; border-color: var(--adm-border-strong) !important; }
   .portal-avatar-btn:hover, .portal-avatar-btn:focus-visible { filter: brightness(1.06); outline: 2px solid var(--cn-hijau); outline-offset: 2px; }
   .portal-bottom-link:active { opacity: 0.7; }
 `;
@@ -196,17 +201,26 @@ export default function PortalShell({
   // Ditambah pengingat yang diturunkan langsung dari kondisi saat ini
   // (bukan tersimpan sebagai baris notifikasi) — cuma menyorot hal yang
   // masih perlu diperhatikan sekarang.
+  // Formulir sesuai jenjang akun — jenjang sudah pasti diketahui sejak
+  // registrasi. Draft yang dibuka di sana dilanjutkan dari langkah terakhir.
+  const hrefFormulir = pendaftaran?.jenjang ? `/spmb/daftar?jenjang=${pendaftaran.jenjang}` : '/dashboard';
+  const formulirBelumLengkap = !!pendaftaran && perluLengkapiFormulir(pendaftaran);
+
   const notifPengingat: { text: string; href: string; waktu?: string; baru?: boolean }[] = [];
   if (pendaftaran) {
     if (pendaftaran.status === 'ditolak') {
       notifPengingat.push({ text: 'Berkas Anda ditolak — perlu direvisi & dikirim ulang', href: '/spmb/revisi' });
     }
-    if (pendaftaran.status === 'draft') {
+    if (formulirBelumLengkap) {
+      notifPengingat.push({ text: 'Formulir pendaftaran belum lengkap — lengkapi data & berkas wajib', href: hrefFormulir });
+    } else if (pendaftaran.status === 'draft') {
       notifPengingat.push({ text: 'Formulir Anda masih draft, belum dikirim ke admin', href: '/dashboard' });
     }
+    // Untuk draft, berkas yang kurang sudah tercakup di pengingat "formulir
+    // belum lengkap" di atas (dan halaman Dokumen memang masih terkunci).
     const wajib = [pendaftaran.fileIjazah, pendaftaran.fileAkte, pendaftaran.fileKK, pendaftaran.fileKtpOrtu, pendaftaran.fileFoto];
     const kurangWajib = wajib.filter(f => !f).length;
-    if (kurangWajib > 0 && pendaftaran.status !== 'ditolak') {
+    if (kurangWajib > 0 && pendaftaran.status !== 'ditolak' && pendaftaran.status !== 'draft') {
       notifPengingat.push({ text: `${kurangWajib} dokumen wajib belum dilengkapi`, href: '/dashboard/dokumen' });
     }
     if (riwayat && riwayat.sisaBayar > 0 && pendaftaran.status !== 'draft') {
@@ -218,21 +232,25 @@ export default function PortalShell({
   const adaNotifBaru = belumDibaca > 0 || notifPengingat.length > 0;
 
   const initial = (session?.namaLengkap || session?.email || '?').trim().charAt(0).toUpperCase();
+  const labelSekolah = namaSekolah(pendaftaran?.jenjang);
 
   // Sejak jenjang dipilih saat REGISTRASI (bukan lagi di dashboard), akun
   // baru langsung punya baris Pendaftaran (draft kosong) — jadi menu tidak
   // lagi bisa dikunci berdasarkan "pendaftaran === null" (hampir selalu
-  // ada). Aturan gembok sekarang: terkunci selama formulir belum MULAI
-  // diisi (namaLengkap masih kosong) — sama dengan syarat "Belum Ada
-  // Pendaftaran" di Dashboard. Selama masih memuat, anggap dulu "sudah
-  // mulai isi" (default aman) supaya menu tidak sempat kelihatan terkunci
-  // sesaat untuk pengguna yang datanya belum selesai di-fetch.
-  const punyaPendaftaran = loading ? true : !!pendaftaran?.namaLengkap;
+  // ada). Aturan gembok: terkunci selama formulir masih draft dan field
+  // WAJIB-nya belum lengkap (perluLengkapiFormulir — definisi yang sama
+  // dengan endpoint pembayaran & kirim formulir). Selama masih memuat,
+  // anggap dulu "tidak terkunci" supaya menu tidak sempat kelihatan
+  // terkunci sesaat untuk pengguna yang datanya belum selesai di-fetch.
+  const punyaPendaftaran = loading ? true : !!pendaftaran && !formulirBelumLengkap;
 
-  // Tujuan tombol "Mulai Pendaftaran" pada dialog terkunci — langsung ke
-  // formulir sesuai jenjang akun (bukan ke Dashboard lagi), karena jenjang
-  // sudah pasti diketahui sejak registrasi.
-  const ctaHrefMulaiPendaftaran = pendaftaran?.jenjang ? `/spmb/daftar?jenjang=${pendaftaran.jenjang}` : '/dashboard';
+  // Gembok di menu saja tidak cukup: halaman terkunci masih bisa dibuka
+  // lewat URL atau tautan lama, dan halaman Pembayaran menampilkan tagihan
+  // + formulir bayar. Alihkan ke Dashboard, yang menjelaskan apa yang kurang.
+  const halamanTerkunci = (active === 'pendaftaran' || active === 'pembayaran' || active === 'dokumen') && !punyaPendaftaran;
+  useEffect(() => {
+    if (halamanTerkunci) router.replace('/dashboard');
+  }, [halamanTerkunci, router]);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--adm-bg)' }}>
@@ -243,9 +261,9 @@ export default function PortalShell({
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24 }}>
           <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 }}>
             <div style={{ width: 32, height: 32, borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
-              <Image src="/images/logo.png" alt="Logo SMK Citra Negara" width={32} height={32} style={{ objectFit: 'cover' }} />
+              <Image src="/images/logo.png" alt={`Logo ${labelSekolah}`} width={32} height={32} style={{ objectFit: 'cover' }} />
             </div>
-            <span style={{ color: 'white', fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap' }}>SMK Citra Negara</span>
+            <span style={{ color: 'var(--adm-text)', fontWeight: 800, fontSize: 14, whiteSpace: 'nowrap' }}>{labelSekolah}</span>
           </Link>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -264,11 +282,11 @@ export default function PortalShell({
                     className="portal-nav-link"
                     style={{
                       display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8,
-                      fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.42)',
+                      fontSize: 13, fontWeight: 600, color: 'var(--adm-text-muted)',
                       background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                     }}
                   >
-                    <item.icon size={15} /> {item.label} <Lock size={11} />
+                    <item.icon size={15} /> {item.label} <Lock size={11} color="var(--adm-warning)" />
                   </button>
                 );
               }
@@ -301,9 +319,9 @@ export default function PortalShell({
                 aria-expanded={notifOpen}
                 title="Notifikasi"
                 className="portal-icon-btn"
-                style={{ position: 'relative', background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 8, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                style={{ position: 'relative', background: 'var(--adm-neutral-weak)', border: '1px solid var(--adm-border)', color: 'var(--adm-text-muted)', borderRadius: 8, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
               >
-                <Bell size={16} color="white" />
+                <Bell size={16} />
                 {adaNotifBaru && <span aria-hidden style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', background: '#DC2626', border: '1.5px solid var(--adm-surface)' }} />}
               </button>
               {notifOpen && <NotifDropdown items={notifGabungan} onNavigate={() => setNotifOpen(false)} />}
@@ -317,7 +335,7 @@ export default function PortalShell({
                 aria-expanded={accountOpen}
                 title="Menu akun"
                 className="portal-icon-btn"
-                style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 8, padding: '5px 10px 5px 5px', cursor: 'pointer' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--adm-neutral-weak)', border: '1px solid var(--adm-border)', borderRadius: 8, padding: '4px 10px 4px 4px', cursor: 'pointer' }}
               >
                 <span style={{ width: 26, height: 26, borderRadius: '50%', background: 'var(--cn-hijau)', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>{initial}</span>
                 <span style={{ color: 'var(--adm-text)', fontSize: 12.5, fontWeight: 600, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session?.namaLengkap || 'Akun'}</span>
@@ -347,9 +365,9 @@ export default function PortalShell({
       <header className="portal-mobile-header" style={{ background: 'var(--adm-kaca-pekat)', backdropFilter: 'var(--adm-blur)', WebkitBackdropFilter: 'var(--adm-blur)', borderBottom: '1px solid var(--adm-border)', position: 'sticky', top: 0, zIndex: 100, alignItems: 'center', justifyContent: 'space-between', height: 56, padding: '0 16px' }}>
         <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
           <div style={{ width: 28, height: 28, borderRadius: 7, overflow: 'hidden', flexShrink: 0 }}>
-            <Image src="/images/logo.png" alt="Logo SMK Citra Negara" width={28} height={28} style={{ objectFit: 'cover' }} />
+            <Image src="/images/logo.png" alt={`Logo ${labelSekolah}`} width={28} height={28} style={{ objectFit: 'cover' }} />
           </div>
-          <span style={{ color: 'white', fontWeight: 700, fontSize: 13.5 }}>SMK Citra Negara</span>
+          <span style={{ color: 'var(--adm-text)', fontWeight: 800, fontSize: 13.5 }}>{labelSekolah}</span>
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div ref={notifRefMobile} style={{ position: 'relative' }}>
@@ -360,9 +378,9 @@ export default function PortalShell({
               aria-expanded={notifOpen}
               title="Notifikasi"
               className="portal-icon-btn"
-              style={{ position: 'relative', background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 8, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+              style={{ position: 'relative', background: 'var(--adm-neutral-weak)', border: '1px solid var(--adm-border)', color: 'var(--adm-text-muted)', borderRadius: 8, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
             >
-              <Bell size={16} color="white" />
+              <Bell size={16} />
               {adaNotifBaru && <span aria-hidden style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', background: '#DC2626', border: '1.5px solid var(--adm-surface)' }} />}
             </button>
             {notifOpen && <NotifDropdown items={notifGabungan} onNavigate={() => setNotifOpen(false)} />}
@@ -399,7 +417,7 @@ export default function PortalShell({
 
       {/* ── Konten halaman ── */}
       <main className="portal-main" style={{ maxWidth: 1240, margin: '0 auto' }}>
-        {loading ? (
+        {loading || halamanTerkunci ? (
           <div style={{ minHeight: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ width: 36, height: 36, border: '4px solid var(--adm-border)', borderTopColor: 'var(--cn-hijau)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
@@ -430,7 +448,7 @@ export default function PortalShell({
                 style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
                   flex: 1, height: '100%', justifyContent: 'center',
-                  color: 'var(--adm-text-faint)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                  color: 'var(--adm-text-muted)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                 }}
               >
                 <span style={{ position: 'relative', display: 'inline-flex' }}>
@@ -453,7 +471,7 @@ export default function PortalShell({
               style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
                 textDecoration: 'none', flex: 1, height: '100%', justifyContent: 'center',
-                color: isActive ? 'var(--cn-hijau)' : 'var(--adm-text-faint)',
+                color: isActive ? 'var(--cn-hijau)' : 'var(--adm-text-muted)',
               }}
             >
               <item.icon size={20} strokeWidth={isActive ? 2.4 : 2} />
@@ -466,7 +484,7 @@ export default function PortalShell({
       {/* Bantuan — mengambang, sekunder (bukan card permanen di konten). */}
       <HelpFloatingButton jenjang={pendaftaran?.jenjang} />
 
-      {lockedDialog && <LockedFeatureDialog jenis={lockedDialog} ctaHref={ctaHrefMulaiPendaftaran} onClose={() => setLockedDialog(null)} />}
+      {lockedDialog && <LockedFeatureDialog jenis={lockedDialog} ctaHref={hrefFormulir} sudahMulai={!!pendaftaran?.namaLengkap} onClose={() => setLockedDialog(null)} />}
     </div>
   );
 }
@@ -478,7 +496,7 @@ function NotifDropdown({ items, onNavigate }: { items: NotifDropdownItem[]; onNa
     <div style={{ position: 'absolute', top: '120%', right: 0, background: 'var(--adm-surface)', borderRadius: 12, boxShadow: 'var(--adm-shadow-md)', border: '1px solid var(--adm-border)', width: 300, maxWidth: '85vw', maxHeight: 380, overflowY: 'auto', zIndex: 200 }}>
       <div style={{ padding: '10px 14px', fontSize: 12, fontWeight: 700, color: 'var(--adm-text-muted)', borderBottom: '1px solid var(--adm-border)', background: 'var(--adm-surface-alt)', position: 'sticky', top: 0 }}>NOTIFIKASI</div>
       {items.length === 0 ? (
-        <div style={{ padding: '20px 14px', textAlign: 'center', fontSize: 12.5, color: 'var(--adm-text-faint)' }}>Tidak ada notifikasi</div>
+        <div style={{ padding: '20px 14px', textAlign: 'center', fontSize: 12.5, color: 'var(--adm-text-muted)' }}>Tidak ada notifikasi</div>
       ) : (
         items.map((n, i) => {
           const isi = (
@@ -487,7 +505,7 @@ function NotifDropdown({ items, onNavigate }: { items: NotifDropdownItem[]; onNa
                 {n.baru && <span aria-hidden style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--cn-hijau)', marginTop: 5, flexShrink: 0 }} />}
                 <span style={{ flex: 1 }}>{n.text}</span>
               </div>
-              {n.waktu && <div style={{ fontSize: 10.5, color: 'var(--adm-text-faint)', marginTop: 3 }}>{formatWaktuNotif(n.waktu)}</div>}
+              {n.waktu && <div style={{ fontSize: 10.5, color: 'var(--adm-text-muted)', marginTop: 3 }}>{formatWaktuNotif(n.waktu)}</div>}
             </>
           );
           // BUG lama: teks fixed abu-gelap di atas latar 'transparent' —

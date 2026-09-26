@@ -6,6 +6,8 @@ import { XCircle, Edit3 } from 'lucide-react';
 import PortalShell, { PortalContext } from '@/components/portal/PortalShell';
 import { STATUS_CONFIG, TAHAPAN, teksSelanjutnya } from '@/components/portal/statusConfig';
 import { JENJANG_LABEL, Jenjang } from '@/lib/biaya';
+import { asalDariSD } from '@/lib/kelas';
+import TeksKode from '@/components/TeksKode';
 
 // Format resmi "SPMB/0001/SMP/2026-2027/A7K9" (lihat lib/nomorPendaftaran.ts)
 // dibuat sekali saat formulir dikirim dan disimpan di noPendaftaran — harus
@@ -40,10 +42,11 @@ function PendaftaranContent({ pendaftaran }: PortalContext) {
   const isDitolak = pendaftaran.status === 'ditolak';
   const statusCfg = !isDraft ? (STATUS_CONFIG[pendaftaran.status] || STATUS_CONFIG['verified']) : null;
   const currentStep = statusCfg?.step || 0;
-  const selanjutnya = !isDraft ? teksSelanjutnya(pendaftaran.status, pendaftaran.sudahDaftarUlang) : '';
+  const selanjutnya = !isDraft ? teksSelanjutnya(pendaftaran.status, pendaftaran.sudahDaftarUlang, pendaftaran.jenjang) : '';
   const jenjang = (pendaftaran.jenjang || 'smk') as Jenjang;
-  const asalSekolahLabel = jenjang === 'smp' ? 'Asal SD/MI' : 'Asal Sekolah';
-  const asalSekolahNilai = (jenjang === 'smp' ? pendaftaran.asalSD : pendaftaran.asalSMP) || pendaftaran.asalSekolah || '-';
+  const dariSD = asalDariSD(jenjang, pendaftaran.tipePendaftaran);
+  const asalSekolahLabel = dariSD ? 'Asal SD/MI' : 'Asal Sekolah';
+  const asalSekolahNilai = (dariSD ? pendaftaran.asalSD : pendaftaran.asalSMP) || pendaftaran.asalSekolah || '-';
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -69,7 +72,7 @@ function PendaftaranContent({ pendaftaran }: PortalContext) {
         {isDraft ? (
           <div>
             <p style={{ fontSize: 13.5, color: 'var(--adm-text-muted)', lineHeight: 1.7, marginBottom: 16 }}>
-              Formulir Anda tersimpan sebagai draft dan belum masuk ke admin. Lengkapi data & berkas, lalu selesaikan pembayaran untuk dapat mengirim formulir.
+              Formulir Anda sudah lengkap, tetapi belum masuk ke admin. Bayar uang pendaftaran minimal, lalu kirim formulir ke admin dari Dashboard.
             </p>
             {/* Jenjang ikut dibawa supaya formulir langsung terbuka pada
                 jenjang pendaftar ini — tanpa itu formulir sempat memakai
@@ -134,7 +137,7 @@ function PendaftaranContent({ pendaftaran }: PortalContext) {
       <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 24, border: '1px solid var(--adm-border)' }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 16 }}>Data Pendaftaran</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
-          <DataField label="No. Pendaftaran" value={getRegNo(pendaftaran)} />
+          <DataField label="No. Pendaftaran" value={<TeksKode teks={getRegNo(pendaftaran)} />} />
           <DataField label="Jenjang" value={`${JENJANG_LABEL[jenjang]}${pendaftaran.kelas ? ' - ' + pendaftaran.kelas : ''}`} />
           {jenjang === 'smk' && <DataField label="Jurusan" value={pendaftaran.jurusan || '-'} />}
           <DataField label="Gelombang" value={pendaftaran.gelombang || '-'} />
@@ -147,7 +150,7 @@ function PendaftaranContent({ pendaftaran }: PortalContext) {
       <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 24, border: '1px solid var(--adm-border)' }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 8 }}>Bukti Pendaftaran</h3>
         <p style={{ fontSize: 13, color: 'var(--adm-text-muted)', lineHeight: 1.6, marginBottom: 12 }}>
-          Nomor pendaftaran Anda adalah <strong style={{ color: 'var(--adm-text)' }}>{getRegNo(pendaftaran)}</strong>. Simpan nomor ini sebagai bukti Anda telah mendaftar.
+          Nomor pendaftaran Anda adalah <strong style={{ color: 'var(--adm-text)' }}><TeksKode teks={getRegNo(pendaftaran)} /></strong>. Simpan nomor ini sebagai bukti Anda telah mendaftar.
         </p>
         <Link href="/dashboard/dokumen" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: 'var(--adm-secondary)', textDecoration: 'none', background: 'var(--adm-secondary-weak)', padding: '9px 16px', borderRadius: 8 }}>
           Lihat Status Berkas Terupload
@@ -157,7 +160,7 @@ function PendaftaranContent({ pendaftaran }: PortalContext) {
   );
 }
 
-function DataField({ label, value }: { label: string; value: string }) {
+function DataField({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div style={{ background: 'var(--adm-surface-alt)', borderRadius: 10, padding: '12px 14px' }}>
       <div style={{ fontSize: 11, color: 'var(--adm-text-faint)', fontWeight: 600, marginBottom: 4 }}>{label}</div>

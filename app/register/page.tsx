@@ -67,7 +67,7 @@ export default function RegisterPage() {
               <Image src="/images/logo.png" alt="Logo SMK Citra Negara" width={48} height={48} style={{ objectFit: 'cover' }} />
             </div>
             <div style={{ textAlign: 'left' }}>
-              <div style={{ color: 'var(--adm-text)', fontWeight: 800, fontSize: 17 }}>SMK Citra Negara</div>
+              <div style={{ color: 'var(--adm-text)', fontWeight: 800, fontSize: 17 }}>Citra Negara</div>
               <div style={{ color: 'var(--cn-hijau)', fontSize: 12 }}>Registrasi SPMB</div>
             </div>
           </Link>

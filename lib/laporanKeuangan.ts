@@ -2,6 +2,8 @@ import { prisma } from './db'
 import { resolveTahunAjaran } from './tahunAjaran'
 import { scopePendaftarUang } from './pendaftarQuery'
 import { hitungRingkasan } from './pembayaran-utils'
+import { hitungRincianPendaftar, type RincianPendaftar } from './rincianKeuangan'
+export type { RincianPendaftar, BarisAngsuran } from './rincianKeuangan'
 
 // Laporan Keuangan — kembaran lib/laporanSpmb.ts untuk sisi uang.
 //
@@ -16,7 +18,7 @@ export type JenjangLaporan = 'smp' | 'sma' | 'smk'
 const LABEL_BAYAR: Record<string, string> = {
   belum_bayar: 'Belum Bayar',
   menunggu_verifikasi: 'Menunggu Verifikasi',
-  cicilan_berjalan: 'Cicilan Berjalan',
+  cicilan_berjalan: 'Angsuran Berjalan',
   lunas: 'Lunas',
   ditolak: 'Ditolak',
   dikembalikan: 'Dikembalikan',
@@ -44,6 +46,10 @@ export interface LaporanKeuanganData {
   metode: { label: string; jumlah: number; nominal: number }[]
   tunggakan: { rentang: string; jumlah: number; nominal: number }[]
   evaluasi: string[]
+  /** Satu baris per pendaftar, dengan riwayat angsuran lengkap — dipakai sheet detail Excel. */
+  rincianPendaftar: RincianPendaftar[]
+  /** Angsuran terbanyak di antara seluruh pendaftar — jumlah kolom "Angsuran N" di Excel mengikuti ini. */
+  maksAngsuran: number
 }
 
 export async function getLaporanKeuangan(
@@ -55,15 +61,23 @@ export async function getLaporanKeuangan(
 
   const rows = await prisma.pendaftaran.findMany({
     where: scopePendaftarUang({ tahunAjaranId: tahunAjaran.id, jenjang }),
+    orderBy: { createdAt: 'asc' },
     select: {
+      namaLengkap: true,
+      jenisKelamin: true,
+      asalSMP: true,
+      asalSekolah: true,
       jurusan: true,
       kelas: true,
       gelombang: true,
+      hargaPokok: true,
+      gelombangDiskonNominal: true,
+      diskonNominal: true,
       totalTagihan: true,
       statusPembayaran: true,
       createdAt: true,
       pembayaranList: {
-        select: { jenis: true, nominal: true, status: true, metodePembayaran: true, tanggalBayar: true },
+        select: { jenis: true, nominal: true, status: true, metodePembayaran: true, tanggalBayar: true, angsuranKe: true },
       },
     },
   })
@@ -189,6 +203,13 @@ export async function getLaporanKeuangan(
     if (menunggu) evaluasi.push(`${menunggu.jumlah} pembayaran masih menunggu verifikasi Admin Keuangan.`)
   }
 
+  // --- Rincian per pendaftar (satu baris + riwayat angsuran LENGKAP) ---
+  // Dipakai sheet detail Excel — bukan sekadar total, tapi Angsuran 1, 2, 3...
+  // masing-masing dengan nominal & tanggalnya sendiri. Logikanya di
+  // lib/rincianKeuangan.ts (murni, dipakai bareng tombol "Export Keuangan"
+  // di halaman Pendaftar — lihat komentar di sana).
+  const { rincianPendaftar, maksAngsuran } = hitungRincianPendaftar(rows, jenjang)
+
   return {
     jenjang,
     tahunAjaran: { id: tahunAjaran.id, nama: tahunAjaran.nama, aktif: tahunAjaran.aktif },
@@ -204,5 +225,7 @@ export async function getLaporanKeuangan(
     metode,
     tunggakan,
     evaluasi,
+    rincianPendaftar,
+    maksAngsuran,
   }
 }

@@ -20,7 +20,7 @@ import { prisma } from './db'
 import { resolveTahunAjaran } from './tahunAjaran'
 import { scopePendaftar } from './pendaftarQuery'
 import { hitungRingkasan } from './pembayaran-utils'
-import { pecahKelasHarga, labelTier } from './kelas'
+import { pecahKelasHarga, labelTier, asalDariSD } from './kelas'
 
 export type JenjangLaporan = 'smp' | 'sma' | 'smk'
 
@@ -58,6 +58,7 @@ export async function getLaporanData(jenjang: JenjangLaporan, tahunAjaranId?: st
       asalSD: true,
       asalSMP: true,
       asalSekolah: true,
+      tipePendaftaran: true,
       statusPembayaran: true,
       totalTagihan: true,
       gelombang: true,
@@ -134,7 +135,7 @@ export async function getLaporanData(jenjang: JenjangLaporan, tahunAjaranId?: st
   // ── 6. Asal Sekolah (agregat, top 10) ────────────────────────────────
   const asalCounts = new Map<string, number>()
   for (const r of rows) {
-    const asal = (jenjang === 'smp' ? r.asalSD : (r.asalSMP || r.asalSekolah)) || null
+    const asal = (asalDariSD(jenjang, r.tipePendaftaran) ? r.asalSD : (r.asalSMP || r.asalSekolah)) || null
     if (!asal || !asal.trim()) continue
     asalCounts.set(asal.trim(), (asalCounts.get(asal.trim()) || 0) + 1)
   }

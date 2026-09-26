@@ -684,7 +684,9 @@
   .adm-content { padding: 0 !important; }
 }
 
-/* Panel bawah halaman Pilih Jenjang jadi satu kolom di layar sempit. */
+/* Tata letak dua kolom (panel bawah Pilih Jenjang, detail pendaftar yang
+   kolom kanannya tetap 300px) jadi satu kolom di layar sempit — kalau
+   tidak, kolom kiri terjepit sampai tulisannya terpotong per huruf. */
 @media (max-width: 900px) {
-  .adm-bawah { grid-template-columns: 1fr !important; }
+  .adm-bawah, .adm-detail-grid { grid-template-columns: minmax(0, 1fr) !important; }
 }
