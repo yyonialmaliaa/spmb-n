@@ -62,11 +62,9 @@ export default function RegisterPage() {
     <div className="auth-shell" style={{ minHeight: '100vh', background: 'var(--adm-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 480 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
-            <div style={{ width: 48, height: 48, borderRadius: 10, overflow: 'hidden', position: 'relative' }}>
-              <Image src="/images/logo.png" alt="Logo SMK Citra Negara" width={48} height={48} style={{ objectFit: 'cover' }} />
-            </div>
-            <div style={{ textAlign: 'left' }}>
+          <Link href="/" style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+            <Image src="/images/logo-yatkj.png" alt="Logo Yayasan At-Taqwa Kemiri Jaya" width={900} height={362} priority style={{ width: 190, height: 'auto', maxWidth: '100%' }} />
+            <div style={{ textAlign: 'center' }}>
               <div style={{ color: 'var(--adm-text)', fontWeight: 800, fontSize: 17 }}>Citra Negara</div>
               <div style={{ color: 'var(--cn-hijau)', fontSize: 12 }}>Registrasi SPMB</div>
             </div>
@@ -75,7 +73,7 @@ export default function RegisterPage() {
 
         <div className="auth-card" style={{ background: 'var(--adm-surface)', borderRadius: 16, padding: 36, border: '1px solid rgba(200,151,58,0.15)', boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }}>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 6 }}>Buat Akun SPMB</h1>
-          <p style={{ color: 'var(--adm-text-muted)', fontSize: 13.5, lineHeight: 1.6, marginBottom: 28 }}>Daftarkan akun untuk memulai proses penerimaan murid baru SMK Citra Negara.</p>
+          <p style={{ color: 'var(--adm-text-muted)', fontSize: 13.5, lineHeight: 1.6, marginBottom: 28 }}>Daftarkan akun untuk memulai proses penerimaan murid baru SMP-SMA-SMK Citra Negara.</p>
 
           {error && (
             <div style={{ background: 'var(--adm-danger-weak)', border: '1px solid var(--adm-danger-border)', borderRadius: 8, padding: '12px 16px', marginBottom: 22, display: 'flex', alignItems: 'center', gap: 10 }}>

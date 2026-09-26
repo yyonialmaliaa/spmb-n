@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { getDataLanding } from '@/lib/landing'
 import { Pembuka } from '@/components/landing/Pembuka'
-import { JalurMendatar, Bab } from '@/components/landing/JalurMendatar'
 import { Navigation } from '@/components/landing/Navigation'
 import { Hero } from '@/components/landing/Hero'
 import { Intro } from '@/components/landing/Intro'
@@ -35,13 +34,8 @@ export const dynamic = 'force-dynamic'
  * sudah ada di HTML pertama, dibaca langsung dari database yang sama dengan
  * yang dikelola admin.
  *
- * SUMBU UTAMANYA MENDATAR di layar lebar — gulir ke bawah memajukan cerita ke
- * kanan, satu bab satu layar. Deretan yang tadinya bergerak mendatar (jenjang,
- * alur) otomatis membalik jadi menurun di dalam babnya, sehingga tidak ada
- * dua gulir mendatar yang saling berebut.
- *
- * Di ponsel dan bagi pengguna yang meminta gerak dikurangi, seluruhnya kembali
- * menurun seperti halaman biasa.
+ * Seluruh halaman bergulir MENURUN seperti halaman biasa, di semua ukuran
+ * layar — tidak ada bagian yang bergeser ke samping.
  *
  * Urutan bab tetap: hero → intro → nilai → jenjang → pengalaman → alur →
  * jadwal → biaya → persyaratan → mengapa → penutup → footer. Program keahlian
@@ -58,28 +52,22 @@ export default async function LandingSPMB() {
   const BAB: {
     kunci: string
     isi: React.ReactNode
-    lebar?: boolean
+    /** Ruang atas/bawah ekstra (Alur SPMB, Penutup+Footer). */
     tinggi?: boolean
     id?: string
   }[] = [
     { kunci: 'hero',        isi: <Hero tahunAjaran={namaTA} /> },
     { kunci: 'intro',       isi: <Intro /> },
-    { kunci: 'nilai',       lebar: true, isi: <Values /> },
-    { kunci: 'jenjang',     lebar: true, id: 'bab-jenjang',
+    { kunci: 'nilai',       isi: <Values /> },
+    { kunci: 'jenjang',     id: 'bab-jenjang',
       isi: <JenjangStory daftar={data.jenjang.map(j => ({ jenjang: j.jenjang, singkat: j.singkat, label: j.label }))} /> },
-    { kunci: 'pengalaman',  lebar: true, isi: <Experience /> },
-    { kunci: 'alur',        lebar: true, tinggi: true, isi: <AlurSPMB /> },
-    { kunci: 'jadwal',      lebar: true, isi: <JadwalSPMB jenjang={data.jenjang} /> },
-    { kunci: 'biaya',       lebar: true, isi: <Biaya jenjang={data.jenjang} /> },
-    { kunci: 'persyaratan', lebar: true, isi: <Persyaratan jenjang={data.jenjang} /> },
+    { kunci: 'pengalaman',  isi: <Experience /> },
+    { kunci: 'alur',        tinggi: true, isi: <AlurSPMB /> },
+    { kunci: 'jadwal',      isi: <JadwalSPMB jenjang={data.jenjang} /> },
+    { kunci: 'biaya',       isi: <Biaya jenjang={data.jenjang} /> },
+    { kunci: 'persyaratan', isi: <Persyaratan jenjang={data.jenjang} /> },
     { kunci: 'mengapa',     isi: <WhyCitraNegara /> },
-    // Penutup dan footer SATU bab, bukan dua. Sebelumnya footer punya bab
-    // sendiri, sehingga di mode mendatar ia terasa sebagai "layar kosong"
-    // yang berdiri sendirian setelah CTA. Digabung + ditandai `tinggi`
-    // (pola yang sama dipakai Alur SPMB), footer sekarang menyusul CTA di
-    // dalam bab yang sama — dicapai dengan menggulir sedikit lagi, bukan
-    // dengan berpindah ke "chapter" baru.
-    { kunci: 'penutup', lebar: true, tinggi: true,
+    { kunci: 'penutup', tinggi: true,
       isi: (
         <>
           <FinalCTA tahunAjaran={namaTA} />
@@ -95,18 +83,11 @@ export default async function LandingSPMB() {
       <Pembuka />
       <Navigation />
 
-      <JalurMendatar>
-        {BAB.map(b => (
-          <Bab
-            key={b.kunci}
-            id={b.id}
-            lebar={b.lebar}
-            tinggi={b.tinggi}
-          >
-            {b.isi}
-          </Bab>
-        ))}
-      </JalurMendatar>
+      {BAB.map(b => (
+        <div key={b.kunci} id={b.id} className={b.tinggi ? 'lp-bab-tegak lp-bab--tinggi' : 'lp-bab-tegak'}>
+          {b.isi}
+        </div>
+      ))}
     </div>
   )
 }

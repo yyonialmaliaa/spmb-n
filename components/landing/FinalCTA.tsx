@@ -140,7 +140,7 @@ export function FinalCTA({ tahunAjaran }: { tahunAjaran: string | null }) {
           style={{ opacity: munculTeks, transform: `translateY(${(1 - munculTeks) * 28}px)` }}
         >
           <p className="lp-label lp-label--terang">
-            SPMB Citra Negara{tahunAjaran ? ` · TA ${tahunAjaran}` : ''}
+            SPMB SMP-SMA-SMK Citra Negara{tahunAjaran ? ` · TA ${tahunAjaran}` : ''}
           </p>
 
           <h2 className="lp-judul-raksasa lp-penutup-judul">

@@ -52,7 +52,7 @@ export function Footer({ tahunAjaran }: { tahunAjaran: string | null }) {
                 <li key={b.id}>
                   {diLandingUtama
                     ? <a href={`#${b.id}`}>{b.label}</a>
-                    : <Link href={`/spmb#${b.id}`} scroll={false}>{b.label}</Link>}
+                    : <Link href={`/spmb#${b.id}`}>{b.label}</Link>}
                 </li>
               ))}
             </ul>

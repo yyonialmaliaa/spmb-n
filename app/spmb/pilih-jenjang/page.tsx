@@ -88,13 +88,13 @@ export default function PilihJenjangPage() {
           {/* SMK */}
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--cn-hijau)', marginBottom: 8 }}>SMK — Program Keahlian</div>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, overflowWrap: 'anywhere' }}>
                 <thead>
                   <tr style={{ background: 'var(--adm-surface-alt)' }}>
-                    <th style={{ textAlign: 'left', padding: '8px 12px', fontWeight: 700, color: 'var(--adm-text)' }}>Program Keahlian</th>
-                    <th style={{ textAlign: 'left', padding: '8px 12px', fontWeight: 700, color: 'var(--adm-text)' }}>Kelas</th>
-                    <th style={{ textAlign: 'right', padding: '8px 12px', fontWeight: 700, color: 'var(--adm-text)' }}>Biaya</th>
+                    <th style={{ textAlign: 'left', padding: '8px 10px', fontWeight: 700, color: 'var(--adm-text)' }}>Program Keahlian</th>
+                    <th style={{ textAlign: 'left', padding: '8px 10px', fontWeight: 700, color: 'var(--adm-text)' }}>Kelas</th>
+                    <th style={{ textAlign: 'right', padding: '8px 10px', fontWeight: 700, color: 'var(--adm-text)' }}>Biaya</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -102,9 +102,9 @@ export default function PilihJenjangPage() {
                     <Fragment key={jurusan}>
                       {rows.map((h, i) => (
                         <tr key={h.id} style={{ borderBottom: '1px solid var(--adm-border)' }}>
-                          {i === 0 && <td rowSpan={rows.length} style={{ padding: '8px 12px', color: 'var(--adm-text)', verticalAlign: 'top' }}>{jurusan}</td>}
-                          <td style={{ padding: '8px 12px', color: 'var(--adm-text-muted)' }}>{h.kelas}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--adm-text)' }}>{formatRupiah(h.nominal)}</td>
+                          {i === 0 && <td rowSpan={rows.length} style={{ padding: '8px 10px', color: 'var(--adm-text)', verticalAlign: 'top' }}>{jurusan}</td>}
+                          <td style={{ padding: '8px 10px', color: 'var(--adm-text-muted)' }}>{h.kelas}</td>
+                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: 'var(--adm-text)', whiteSpace: 'nowrap' }}>{formatRupiah(h.nominal)}</td>
                         </tr>
                       ))}
                     </Fragment>

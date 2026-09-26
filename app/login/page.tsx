@@ -92,11 +92,9 @@ function LoginInner() {
 
       <div style={{ width: '100%', maxWidth: 420 }}>
         <div style={{ textAlign: 'center', marginBottom: 26 }}>
-          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
-            <span style={{ width: 46, height: 46, borderRadius: 12, overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
-              <Image src="/images/logo.png" alt="" width={46} height={46} style={{ objectFit: 'cover' }} />
-            </span>
-            <span style={{ textAlign: 'left' }}>
+          <Link href="/" style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+            <Image src="/images/logo-yatkj.png" alt="Logo Yayasan At-Taqwa Kemiri Jaya" width={900} height={362} priority style={{ width: 190, height: 'auto', maxWidth: '100%' }} />
+            <span style={{ textAlign: 'center' }}>
               <span style={{ display: 'block', color: 'var(--adm-text)', fontWeight: 800, fontSize: 17, letterSpacing: '-0.02em' }}>
                 {NAMA_INSTITUSI.toUpperCase()}
               </span>

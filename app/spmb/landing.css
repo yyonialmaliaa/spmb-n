@@ -59,8 +59,6 @@
   --lp-emas: #d8a94a;
 }
 
-/* Menahan overflow horizontal global. Track horizontal di dalam section
-   bergerak dengan transform, jadi tidak pernah menambah lebar dokumen. */
 .lp-root * {
   box-sizing: border-box;
 }
@@ -490,46 +488,21 @@
   margin-top: 2.4rem;
 }
 
-/* --- Panel horizontal (jenjang, program, alur) ---------------------------- */
-
-.lp-lorong {
-  position: relative;
+/* Panel jenjang: gambar penuh, judul raksasa, seluruh panel bisa diklik.
+   Di HP bertumpuk menurun, di layar lebar berjajar tiga — tidak pernah
+   digeser ke samping. */
+.lp-panel-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(1rem, 2vw, 1.5rem);
+  padding-bottom: clamp(4rem, 8vw, 7rem);
 }
-.lp-lorong-layar {
-  position: sticky;
-  top: 0;
-  height: 100svh;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
+@media (min-width: 900px) {
+  .lp-panel-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
-.lp-lorong-rel {
-  display: flex;
-  gap: clamp(1rem, 2vw, 2rem);
-  padding-inline: clamp(1.5rem, 6vw, 7rem);
-  will-change: transform;
-}
-
-/* Mode sentuh: dipakai di layar sempit dan saat pengguna meminta gerak
-   dikurangi. Kerangkanya sama dengan mode lorong -- hanya penggeraknya yang
-   berganti dari transform menjadi gulir mendatar biasa. */
-.lp-lorong-geser {
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 1.5rem;
-}
-.lp-lorong-geser .lp-lorong-rel {
-  will-change: auto;
-}
-
-/* Panel jenjang: gambar penuh, judul raksasa, seluruh panel bisa diklik. */
 .lp-panel {
   position: relative;
-  flex: 0 0 auto;
-  width: min(78vw, 46rem);
-  height: min(74svh, 40rem);
+  height: clamp(24rem, 62svh, 36rem);
   border-radius: 10px;
   overflow: hidden;
   display: flex;
@@ -777,10 +750,7 @@
 
    Struktur: judul + subjudul di atas (memakai token typografi bersama), lalu
    SATU daftar vertikal penuh lebar (bukan lagi heading-di-samping seperti
-   .lp-nilai-*) — ini dipakai apa adanya baik saat halaman bergulir menurun
-   (ponsel) maupun mendatar (desktop, lihat override .lp-bab di bawah), jadi
-   perilaku "accordion" pada kedua mode konsisten dan tidak perlu ditulis dua
-   kali.
+   .lp-nilai-*).
    --------------------------------------------------------------------------- */
 
 .lp-pegang-daftar {
@@ -921,16 +891,6 @@
   transform: none;
   transition-delay: 0.1s;
 }
-
-/* Mode mendatar (desktop, satu bab = satu layar): dipadatkan supaya enam
-   baris + judul + subjudul tetap muat dalam satu layar, sama seperti bab
-   lain di halaman ini. */
-.lp-bab .lp-pegang-daftar { margin-top: clamp(1.2rem, 3vh, 2rem) !important; }
-.lp-bab .lp-pegang-tombol { padding-block: clamp(0.65rem, 1.8vh, 1.05rem); gap: clamp(0.8rem, 2vw, 1.6rem); }
-.lp-bab .lp-pegang-no { font-size: clamp(1rem, 1.5vw, 1.35rem); }
-.lp-bab .lp-pegang-nama { font-size: clamp(1.05rem, 2vw, 1.55rem); }
-.lp-bab .lp-pegang-caption-teks { font-size: 0.86rem; }
-.lp-bab .lp-pegang-caption-isi { max-width: 62ch; padding-bottom: clamp(0.65rem, 1.8vh, 1rem); }
 
 @media (prefers-reduced-motion: reduce) {
   .lp-pegang-item .lp-pegang-no,
@@ -1238,234 +1198,6 @@
   }
 }
 
-/* ===========================================================================
-   SUMBU MENDATAR — hanya di layar lebar.
-
-   Halaman bergerak ke kanan mengikuti gulir ke bawah. Karena memakai gulir
-   asli browser (bukan membajak roda mouse), papan ketik, bilah gulir, dan
-   penggulir halus bawaan sistem tetap berfungsi.
-   =========================================================================== */
-
-.lp-panggung {
-  position: sticky;
-  top: 0;
-  height: 100svh;
-  overflow: hidden;
-}
-
-.lp-jalur {
-  display: flex;
-  align-items: stretch;
-  height: 100svh;
-  width: max-content;
-  will-change: transform;
-}
-
-/* Satu bab = satu layar penuh. Isi yang kepanjangan bergulir MENURUN di
-   dalam babnya sendiri — inilah pembalikan arahnya: sumbu utama mendatar,
-   detail di dalamnya menurun. */
-.lp-bab {
-  flex: 0 0 auto;
-  width: 100vw;
-  height: 100svh;
-  overflow-y: auto;
-  overflow-x: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  /* TANPA overscroll-behavior: contain.
-     Dengan 'contain', bab menjadi wadah gulir yang MENELAN roda mouse dan
-     tidak meneruskannya ke halaman — akibatnya gulir mendatar mati total
-     (terbukti di uji browser: scrollY tetap 0). Dibiarkan meneruskan, roda
-     mouse langsung memajukan cerita ketika isi bab sudah muat, dan menggulir
-     isinya dulu ketika bab itu memang lebih tinggi dari layar. */
-}
-/* margin auto (bukan justify-content: center) supaya isi yang lebih tinggi
-   dari layar tidak terpotong di bagian atas ketika digulir. */
-.lp-bab > * {
-  margin-block: auto;
-  width: 100%;
-  flex: 0 0 auto;
-}
-
-/* SEMUA bab selebar layar persis — termasuk yang isinya padat.
-   Bab yang lebih lebar dari layar membuat pengunjung melihat satu bab dalam
-   dua "setengah langkah", dan kartu terakhirnya terpotong di tepi. Satu bab
-   satu layar penuh memberi irama yang jauh lebih rapi. */
-.lp-bab--lebar {
-  width: 100vw;
-}
-
-.lp-bab .lp-hero,
-.lp-bab .lp-penutup {
-  height: 100svh;
-  min-height: 0;
-}
-
-/* ---------------------------------------------------------------------------
-   Tata letak di dalam bab.
-
-   Aturannya satu: SETIAP BAB HARUS MUAT DALAM SATU LAYAR. Bab yang isinya
-   lebih tinggi dari layar akan menjadi wadah gulir sendiri, dan roda mouse
-   akan menghabiskan putarannya di dalam bab itu sebelum halaman sempat maju —
-   pengguna merasa halamannya macet. Karena itu deret di sini dijajarkan
-   mendatar (bukan bertumpuk) dan ritme vertikalnya dipadatkan.
-   --------------------------------------------------------------------------- */
-
-.lp-tumpuk {
-  width: 100%;
-}
-.lp-tumpuk .lp-lorong-rel {
-  flex-direction: row;
-  flex-wrap: nowrap;
-  align-items: stretch;
-  width: 100%;
-  padding-inline: clamp(1.5rem, 4vw, 4rem);
-  gap: clamp(0.75rem, 1.2vw, 1.25rem);
-  will-change: auto;
-}
-/* Tinggi kartu memakai svh murni (bukan batas rem) supaya ikut mengecil di
-   layar pendek seperti laptop 1366x768 dan tetap muat satu layar. */
-.lp-tumpuk .lp-panel {
-  width: auto;
-  flex: 1 1 0;
-  height: 52svh;
-}
-.lp-tumpuk .lp-langkah {
-  width: auto;
-  flex: 1 1 0;
-  min-height: 0;
-  height: 40svh;
-  overflow: hidden;
-}
-.lp-tumpuk .lp-langkah .lp-teks {
-  font-size: 0.85rem;
-}
-
-/* Bagian dengan padding/margin dari atribut style (Jenjang, Program SMK,
-   Alur) dipadatkan. !important diperlukan justru karena nilainya inline. */
-.lp-bab section {
-  padding-block: clamp(0.8rem, 2.4vh, 1.8rem) !important;
-}
-.lp-bab section > .lp-wadah {
-  margin-bottom: clamp(0.5rem, 1.6vh, 1.2rem) !important;
-}
-.lp-bab .lp-hero,
-.lp-bab .lp-penutup {
-  padding-block: 0 !important;
-}
-.lp-tumpuk .lp-panel-judul {
-  font-size: clamp(1.9rem, 3.4vw, 3.6rem);
-}
-.lp-tumpuk .lp-panel-teks {
-  font-size: 0.88rem;
-  max-width: none;
-}
-
-/* Ritme vertikal dipadatkan supaya isi bab tidak melampaui tinggi layar. */
-.lp-bab .lp-bagian {
-  padding-block: clamp(1rem, 3vh, 2.4rem);
-}
-.lp-bab .lp-judul-besar {
-  font-size: clamp(1.9rem, 3.4vw, 3.6rem);
-}
-.lp-bab .lp-judul-raksasa {
-  font-size: clamp(2rem, 4vw, 4rem);
-}
-.lp-bab .lp-teks {
-  font-size: clamp(0.9rem, 0.95vw, 1.02rem);
-  line-height: 1.6;
-}
-.lp-bab .lp-angka {
-  font-size: clamp(2rem, 3.4vw, 3.6rem);
-}
-
-/* Empat nilai berjajar, mengikuti pola "01 02 03 04" pada rujukan. */
-.lp-bab .lp-nilai-grid {
-  grid-template-columns: 1fr;
-  gap: clamp(1.2rem, 2.5vw, 2.2rem);
-}
-.lp-bab .lp-nilai-lengket {
-  position: static;
-}
-.lp-bab .lp-nilai-daftar {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: clamp(1rem, 2vw, 2rem);
-}
-.lp-bab .lp-nilai-item {
-  grid-template-columns: 1fr;
-  gap: 0.5rem;
-  padding: 1rem 0 0;
-  border-top: 1px solid var(--lp-garis);
-  border-bottom: none !important;
-}
-.lp-bab .lp-nilai-item .lp-judul-sedang {
-  font-size: clamp(1.05rem, 1.5vw, 1.5rem);
-}
-.lp-bab .lp-nilai-item .lp-teks {
-  max-width: none;
-}
-
-/* Tiga bab pengalaman berjajar: gambar di atas, kata besar di bawahnya. */
-.lp-bab .lp-pengalaman {
-  grid-template-columns: repeat(3, 1fr);
-  gap: clamp(1rem, 2vw, 2rem) !important;
-}
-.lp-bab .lp-pengalaman .lp-editorial {
-  grid-template-columns: 1fr;
-  gap: 1rem;
-}
-.lp-bab .lp-pengalaman .lp-editorial--balik > *:first-child {
-  order: 0;
-}
-.lp-bab .lp-pengalaman .lp-bingkai {
-  aspect-ratio: 4 / 3;
-}
-.lp-bab .lp-pengalaman .lp-judul-raksasa {
-  font-size: clamp(1.5rem, 2.6vw, 2.6rem) !important;
-}
-
-/* Persyaratan & jadwal dibagi dua kolom supaya tidak memanjang ke bawah. */
-.lp-bab .lp-syarat-daftar,
-.lp-bab .lp-jadwal-daftar {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  column-gap: clamp(1.5rem, 3vw, 3rem);
-}
-.lp-bab .lp-syarat-baris {
-  padding-block: 0.75rem;
-}
-.lp-bab .lp-jadwal-baris {
-  padding-block: 0.75rem;
-}
-
-/* Editorial dua kolom dirapatkan. */
-.lp-bab .lp-editorial {
-  gap: clamp(1.5rem, 3vw, 3rem);
-}
-.lp-bab .lp-bingkai {
-  aspect-ratio: 1 / 1;
-}
-.lp-bab .lp-bingkai--lebar {
-  aspect-ratio: 16 / 10;
-}
-
-/* Kartu langkah alur — dulu bergaya inline, kini berkelas supaya bisa
-   menyesuaikan diri saat arahnya dibalik. */
-.lp-langkah {
-  flex: 0 0 auto;
-  width: min(76vw, 22rem);
-  scroll-snap-align: center;
-  padding: clamp(1.4rem, 3vw, 2.2rem);
-  border: 1px solid var(--lp-garis);
-  border-radius: 10px;
-  background: var(--lp-kertas-hangat);
-  min-height: min(48svh, 22rem);
-  display: flex;
-  flex-direction: column;
-}
-
 /* Umpan balik saat ditekan — halaman ini banyak yang bisa diklik, dan
    setiap klik harus terasa. */
 .lp-panel:active,
@@ -1691,40 +1423,15 @@
   }
 }
 
-/* ===========================================================================
-   SATU KANVAS PANJANG — jembatan warna antar bab.
-
-   Tiap bab mengambil warna intinya di tengah, lalu meluruh ke warna bab
-   tetangganya di kedua tepi. Karena tepi kanan bab N memakai warna inti bab
-   N+1 dan sebaliknya, sambungannya tidak pernah menghasilkan garis potong.
-   Nilai --bab-kiri/--bab-inti/--bab-kanan dikirim komponen <Bab>.
-   =========================================================================== */
-
-/* Margin samping bab dibuat lega di mode mendatar. Selain memberi napas
-   editorial, ruang inilah yang ditempati peluruhan warna antar bab — jadi
-   peralihannya selesai sebelum sampai ke teks, dan tidak pernah ada tulisan
-   yang duduk di atas rona setengah jalan. */
-.lp-bab .lp-wadah {
-  width: min(1200px, 100% - clamp(5rem, 15vw, 15rem));
-}
-
 /* Bab tidak melukis latar sama sekali — seluruh halaman satu warna dari
    .lp-root, yang mengikuti tema. */
-.lp-bab,
 .lp-bab-tegak {
   background: transparent;
 }
 
-/* Bab yang isinya memang lebih tinggi dari layar (Alur SPMB) boleh bergulir
-   menurun di dalam dirinya; roda mouse meneruskan ke halaman setelah habis. */
-.lp-bab--tinggi {
-  justify-content: flex-start;
-}
-.lp-bab--tinggi > * {
-  margin-block: 0;
-}
 /* Ruang di atas supaya butir pertama tidak tertutup navbar yang mengambang,
-   dan ruang di bawah supaya butir terakhir tidak mentok di tepi layar. */
+   dan ruang di bawah supaya butir terakhir tidak mentok di tepi layar
+   (Alur SPMB, Penutup). */
 .lp-bab--tinggi .lp-bagian {
   padding-top: clamp(5.5rem, 13vh, 8rem) !important;
   padding-bottom: clamp(4.5rem, 11vh, 7rem) !important;
@@ -1958,7 +1665,6 @@
    FOOTER — bagian akhir yang berdiri sendiri, bukan lapisan di atas penutup.
    =========================================================================== */
 
-.lp-bab .lp-footer,
 .lp-bab-tegak .lp-footer {
   background: transparent;
   width: 100%;

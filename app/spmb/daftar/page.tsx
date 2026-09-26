@@ -418,16 +418,17 @@ function DaftarPageInner() {
 
       <main className="form-shell-main" style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px' }}>
         {/* Steps */}
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 32, overflowX: 'auto', paddingBottom: 4 }}>
+        {/* Selalu muat selebar layar (tidak digeser ke samping di HP): satu
+            kolom per langkah, garis penghubung digambar di kiri/kanan lingkaran. */}
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${STEPS.length}, minmax(0, 1fr))`, marginBottom: 32 }}>
           {STEPS.map((s, i) => (
-            <div key={s} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', background: i <= step ? 'linear-gradient(135deg,var(--cn-emas),var(--cn-emas-terang))' : 'var(--adm-neutral-weak)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, color: i <= step ? '#0A1628' : 'var(--adm-text-faint)', marginBottom: 5 }}>
-                  {i < step ? '✓' : i + 1}
-                </div>
-                <span style={{ fontSize: 10, fontWeight: i === step ? 700 : 400, color: i === step ? 'var(--cn-emas)' : i < step ? 'var(--adm-text)' : 'var(--adm-text-faint)', whiteSpace: 'nowrap' }}>{s}</span>
+            <div key={s} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 0 }}>
+              {i > 0 && <div style={{ position: 'absolute', top: 15, left: 0, right: '50%', marginRight: 18, height: 2, background: i <= step ? 'var(--cn-emas)' : 'var(--adm-border)' }} />}
+              {i < STEPS.length - 1 && <div style={{ position: 'absolute', top: 15, left: '50%', right: 0, marginLeft: 18, height: 2, background: i < step ? 'var(--cn-emas)' : 'var(--adm-border)' }} />}
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: i <= step ? 'linear-gradient(135deg,var(--cn-emas),var(--cn-emas-terang))' : 'var(--adm-neutral-weak)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, color: i <= step ? '#0A1628' : 'var(--adm-text-faint)', marginBottom: 5, flexShrink: 0 }}>
+                {i < step ? '✓' : i + 1}
               </div>
-              {i < STEPS.length - 1 && <div style={{ width: 32, height: 2, background: i < step ? 'var(--cn-emas)' : 'var(--adm-border)', margin: '0 4px', marginBottom: 18, flexShrink: 0 }} />}
+              <span style={{ fontSize: 10, lineHeight: 1.25, textAlign: 'center', padding: '0 2px', fontWeight: i === step ? 700 : 400, color: i === step ? 'var(--cn-emas)' : i < step ? 'var(--adm-text)' : 'var(--adm-text-faint)' }}>{s}</span>
             </div>
           ))}
         </div>

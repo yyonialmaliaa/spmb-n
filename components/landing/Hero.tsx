@@ -95,7 +95,7 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
       >
         <div className="lp-wadah">
           <p className="lp-label lp-label--terang lp-hero-label">
-            SPMB Citra Negara{tahunAjaran ? ` · TA ${tahunAjaran}` : ''}
+            SPMB SMP-SMA-SMK Citra Negara{tahunAjaran ? ` · TA ${tahunAjaran}` : ''}
           </p>
 
           <h1 className="lp-hero-judul">

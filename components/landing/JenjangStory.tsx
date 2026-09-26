@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
-import { Muncul, JudulBaris, Lorong } from './gerak'
+import { Muncul, JudulBaris } from './gerak'
 import { GAMBAR_JENJANG, type Jenjang } from '@/lib/labels'
 
 /**
@@ -43,13 +43,12 @@ export function JenjangStory({ daftar }: { daftar: PanelJenjang[] }) {
         </Muncul>
       </div>
 
-      <Lorong label="Jenjang pendidikan Citra Negara">
+      <div className="lp-wadah lp-panel-grid" role="region" aria-label="Jenjang pendidikan Citra Negara">
         {daftar.map(j => (
           <Link
             key={j.jenjang}
             href={`/spmb/jenjang/${j.jenjang}`}
             className="lp-panel"
-            style={{ scrollSnapAlign: 'center' }}
             aria-label={`Pelajari ${j.label}`}
           >
             <div className="lp-panel-media">
@@ -57,7 +56,7 @@ export function JenjangStory({ daftar }: { daftar: PanelJenjang[] }) {
                 src={GAMBAR_JENJANG[j.jenjang]}
                 alt=""
                 fill
-                sizes="(max-width: 900px) 80vw, 46rem"
+                sizes="(max-width: 900px) 100vw, 33vw"
                 style={{ objectFit: 'cover' }}
               />
             </div>
@@ -71,7 +70,7 @@ export function JenjangStory({ daftar }: { daftar: PanelJenjang[] }) {
             </div>
           </Link>
         ))}
-      </Lorong>
+      </div>
     </section>
   )
 }
