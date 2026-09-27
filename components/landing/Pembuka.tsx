@@ -32,11 +32,11 @@ import { FOTO_HERO } from "./Hero";
 
 /** Deret foto kiri → kanan. */
 const DERET = [
-  "/images/paskibra.jpg",
-  "/images/band.jpg",
+  "/images/17agst-112.jpg",
+  "/images/cn beersholawat-261.jpg",
   FOTO_HERO,
-  "/images/basket.jpg",
-  "/images/pramuka.jpg",
+  "/images/bkst sma-8.jpg",
+  "/images/AWS03774.jpg",
 ];
 /** Indeks foto tengah — yang membesar menjadi latar hero. */
 const TENGAH = 2;

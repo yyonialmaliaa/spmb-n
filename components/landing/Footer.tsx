@@ -32,7 +32,7 @@ const SOSIAL: { kode: string; nama: string; href: string; ikon: ReactNode }[] = 
   {
     kode: 'instagram',
     nama: 'Instagram',
-    href: '', // masukkan link Instagram di sini, contoh: 'https://instagram.com/akun'
+    href: 'https://www.instagram.com/smkcitranegaradepok', // masukkan link Instagram di sini, contoh: 'https://instagram.com/akun'
     ikon: ikon(
       <g fill="none" stroke="currentColor" strokeWidth="2">
         <rect x="3" y="3" width="18" height="18" rx="5" />
@@ -55,7 +55,7 @@ const SOSIAL: { kode: string; nama: string; href: string; ikon: ReactNode }[] = 
   {
     kode: 'youtube',
     nama: 'YouTube',
-    href: '', // masukkan link YouTube di sini
+    href: 'https://www.youtube.com/@citranegaratv9070', // masukkan link YouTube di sini
     ikon: ikon(
       <path
         fill="currentColor"
@@ -67,7 +67,7 @@ const SOSIAL: { kode: string; nama: string; href: string; ikon: ReactNode }[] = 
   {
     kode: 'whatsapp',
     nama: 'WhatsApp',
-    href: `https://wa.me/${NOMOR_WA}`,
+    href: `https://wa.me/6281325269477`,
     ikon: ikon(
       <path
         fill="currentColor"

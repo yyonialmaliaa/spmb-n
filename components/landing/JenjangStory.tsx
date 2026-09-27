@@ -8,9 +8,9 @@ import { GAMBAR_JENJANG, type Jenjang } from '@/lib/labels'
  * hanya belum mengarah ke mana pun — tidak error.
  */
 const WEB_JENJANG: Record<Jenjang, string> = {
-  smp: '', // masukkan link web SMP di sini, contoh: 'https://smp.citranegara.sch.id'
-  sma: '', // masukkan link web SMA di sini
-  smk: '', // masukkan link web SMK di sini
+  smp: 'https://smp.citranegara.sch.id', // masukkan link web SMP di sini, contoh: 'https://smp.citranegara.sch.id'
+  sma: 'https://sma.citranegara.sch.id', // masukkan link web SMA di sini
+  smk: 'https://smk.citranegara.sch.id', // masukkan link web SMK di sini
 }
 
 /**
@@ -74,7 +74,7 @@ export function JenjangStory({ daftar }: { daftar: PanelJenjang[] }) {
         <div className="lp-cn-teks-isi">
           <p className="lp-cn-label">Tiga jenjang, satu naungan</p>
           <p className="lp-cn-paragraf">
-            Pilih salah satu untuk mengenal lebih jauh setiap jenjangnya.
+            Kenali setiap jenjang pendidikan dan temukan pilihan yang sesuai dengan rencana masa depanmu.
           </p>
         </div>
       </div>

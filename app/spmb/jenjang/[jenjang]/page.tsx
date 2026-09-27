@@ -39,7 +39,7 @@ const NASKAH: Record<Jenjang, {
     ],
     galeri: [
       { src: '/images/pramuka.jpg', alt: 'Kegiatan pramuka SMP Citra Negara' },
-      { src: '/images/voli.jpg', alt: 'Latihan bola voli peserta didik' },
+      { src: '/images/17agst-112.jpg', alt: 'Latihan bola voli peserta didik' },
       { src: '/images/tari.jpg', alt: 'Latihan seni tari peserta didik' },
     ],
   },
@@ -74,7 +74,7 @@ const NASKAH: Record<Jenjang, {
       { judul: 'Kesiapan melangkah', teks: 'Praktik kerja lapangan menjembatani sekolah dengan dunia kerja sesungguhnya.' },
     ],
     galeri: [
-      { src: '/images/tekon.jpg', alt: 'Praktik teknik peserta didik SMK Citra Negara' },
+      { src: '/images/sma-314.jpg', alt: 'Praktik teknik peserta didik SMK Citra Negara' },
       { src: '/images/esport.jpg', alt: 'Kegiatan esport peserta didik' },
       { src: '/images/gakuen.jpg', alt: 'Kegiatan kreatif peserta didik' },
     ],

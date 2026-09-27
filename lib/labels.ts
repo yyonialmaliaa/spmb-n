@@ -25,9 +25,9 @@ export const JENJANG_SINGKAT: Record<Jenjang, string> = {
  * komponen client yang mengimpornya ikut menyeret Prisma ke browser.
  */
 export const GAMBAR_JENJANG: Record<Jenjang, string> = {
-  smp: '/images/pramuka.jpg',
-  sma: '/images/paskibra.jpg',
-  smk: '/images/tekon.jpg',
+  smp: '/images/talent-217.jpg',
+  sma: '/images/sma-299.jpg',
+  smk: '/images/talent-587.jpg',
 }
 
 /** "SMP Citra Negara" — untuk kartu pilih jenjang & indikator konteks. */

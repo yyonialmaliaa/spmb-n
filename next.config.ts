@@ -5,7 +5,13 @@ const nextConfig: NextConfig = {
   // ikut di-bundle. Di Next 15+ key ini bernama `serverExternalPackages`
   // (dulu `experimental.serverComponentsExternalPackages`).
   serverExternalPackages: ["bcryptjs"],
+
   poweredByHeader: false,
+
+  images: {
+    qualities: [100, 75],
+  },
+
   async headers() {
     return [
       {

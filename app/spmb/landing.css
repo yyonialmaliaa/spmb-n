@@ -271,9 +271,6 @@
 
 /* --- Navigasi ------------------------------------------------------------ */
 
-/* Di atas foto: lambang & nama di tengah diapit garis emas tipis, deret
-   tautan berjajar di tengah pada baris kedua — komposisi situs sekolah
-   internasional. Begitu digulir: satu baris ringkas berlatar (is-lengket). */
 .lp-nav {
   position: fixed;
   inset: 0 0 auto 0;
@@ -294,8 +291,6 @@
     opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
     transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
 }
-/* Bayangan gelap halus di belakang navbar selama ia duduk di atas foto,
-   supaya tulisan putihnya tetap terbaca di atas bagian foto yang terang. */
 .lp-nav::before {
   content: "";
   position: absolute;
@@ -349,8 +344,6 @@
 .lp-nav.is-lengket .lp-nav-merek {
   text-shadow: none;
 }
-/* Spesifisitas sengaja dinaikkan: img[data-nimg] di globals.css membalikkan
-   tinggi gambar next/image ke ukuran aslinya. */
 .lp-nav .lp-nav-merek img {
   display: block;
   height: 46px;
@@ -425,7 +418,6 @@
   transform-origin: left;
 }
 
-/* HP: cukup lambang di tengah diapit garis, tanpa tulisan nama. */
 @media (max-width: 639px) {
   .lp-nav-merek span {
     display: none;
@@ -446,8 +438,6 @@
   .lp-nav.is-lengket {
     padding-block: 0.45rem 0.25rem;
   }
-  /* Ukuran huruf, jarak, dan tepi mengikuti lebar layar: keenam tautan muat
-     utuh dari layar 320 px sampai tablet, tanpa terpotong. */
   .lp-nav-tautan {
     display: flex;
     justify-content: flex-start;
@@ -468,7 +458,6 @@
     letter-spacing: 0.06em;
     padding-block: 0.32rem;
   }
-  /* Di tengah bila muat; rata kiri & bisa digeser bila tidak. */
   .lp-nav-tautan a:first-child {
     margin-left: auto;
   }
@@ -495,7 +484,6 @@
   }
 }
 
-/* Tombol menu & pencarian (garis menu dengan kaca pembesar). */
 .lp-nav-cari {
   display: inline-flex;
   align-items: center;
@@ -517,7 +505,6 @@
 .lp-nav-cari:hover {
   color: var(--lp-sorot);
 }
-/* Saat navbar sudah berlatar terang, kuning tak terbaca — pakai hijau. */
 .lp-nav.is-lengket .lp-nav-cari:hover {
   color: var(--lp-hijau);
 }
@@ -550,7 +537,6 @@
   animation: lp-cari-masuk 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
   isolation: isolate;
 }
-/* Tanda air lambang yayasan, samar di pojok bawah. */
 .lp-cari-panel::after {
   content: "";
   position: absolute;
@@ -709,8 +695,6 @@
   font-style: normal;
   color: var(--lp-sorot);
 }
-/* Menu utama di panel hanya untuk layar sempit — di layar lebar tautannya
-   sudah tampil di navbar. */
 @media (min-width: 1024px) {
   .lp-cari-menu {
     display: none;
@@ -742,9 +726,6 @@
   align-items: flex-end;
   overflow: hidden;
 }
-/* Bingkai foto + tirai gelapnya. Dipisah dari .lp-hero supaya bisa menyusut
-   jadi kartu saat digulir (blok PANGGUNG HERO) sementara halaman di
-   sekitarnya tetap berwarna latar biasa. */
 .lp-hero-bingkai {
   position: absolute;
   inset: 0;
@@ -761,19 +742,12 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* Video tidak punya "alt" yang bisa gagal render seperti gambar rusak,
-     tapi bisa tampil hitam sesaat sebelum frame pertama siap -- warna latar
-     .lp-hero yang gelap (var(--lp-hijau-gelap)) sudah menutupi jeda itu. */
   display: block;
 }
-/* Gelap di pita atas (navbar) dan di bawah (teks), terang di tengah supaya
-   fotonya tetap bercerita. */
 .lp-hero-tirai {
   position: absolute;
   inset: 0;
 }
-/* Juga dipakai lapisan zoom animasi pembuka, yang harus berakhir persis
-   sama dengan hero ini. */
 .lp-hero-tirai,
 .lp-pembuka-zoom-tirai {
   background: linear-gradient(
@@ -800,8 +774,6 @@
   padding-inline: clamp(1rem, 4vw, 3rem);
 }
 
-/* Deret nilai bersekat garis tipis tegak: 2 kolom di HP, 3 di tablet,
-   6 sejajar di layar lebar. Sekatnya tidak pernah muncul di awal baris. */
 .lp-hero-nilai {
   display: grid;
   grid-template-columns: repeat(2, auto);
@@ -815,7 +787,6 @@
   letter-spacing: 0.005em;
   text-shadow: 0 2px 22px rgba(0, 0, 0, 0.35);
 }
-/* Tiap nilai adalah tombol yang membuka panel penjelasannya (PanelNilai). */
 .lp-hero-nilai-tombol {
   position: relative;
   padding: 0.12em clamp(0.7rem, 1.7vw, 1.6rem);
@@ -831,8 +802,6 @@
   overflow-wrap: normal;
   -webkit-tap-highlight-color: transparent;
 }
-/* Disorot / disentuh: katanya saja yang terangkat sedikit — tanpa garis
-   bawah, tanpa ganti warna. */
 .lp-hero-nilai-kata {
   display: inline-block;
   transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
@@ -842,8 +811,6 @@
 .lp-hero-nilai-tombol:active .lp-hero-nilai-kata {
   transform: translateY(-0.16em);
 }
-/* Cincin fokus hanya untuk pengguna keyboard (tidak muncul saat diklik
-   atau disentuh). */
 .lp-hero-nilai-tombol:focus-visible {
   outline: 2px solid rgba(255, 255, 255, 0.7);
   outline-offset: 4px;
@@ -862,7 +829,6 @@
   .lp-hero-nilai-tombol:first-child { border-left-color: transparent; }
 }
 
-/* Judul & subjudul hero rata kiri — dipakai halaman detail jenjang. */
 .lp-hero-judul {
   font-family: var(--lp-serif);
   font-weight: 700;
@@ -880,9 +846,6 @@
   color: rgba(255, 255, 255, 0.82);
 }
 
-/* Panel jenjang: gambar penuh, judul raksasa, seluruh panel bisa diklik.
-   Di HP bertumpuk menurun, di layar lebar berjajar tiga — tidak pernah
-   digeser ke samping. */
 .lp-panel-sub {
   font-size: 0.95rem;
   letter-spacing: 0.14em;
@@ -892,7 +855,6 @@
   font-weight: 600;
 }
 
-/* Kartu program keahlian — lebih ramping dari panel jenjang. */
 .lp-program {
   position: relative;
   flex: 0 0 auto;
@@ -969,11 +931,6 @@
   transform: none;
 }
 
-/* Gambar tersingkap dari bawah + sedikit mengecil dari 1.08 → 1.
-   clip-path dipasang pada ANAK .lp-singkap, bukan pada elemen yang diamati
-   IntersectionObserver: Chrome/Edge terbaru ikut menghitung clip-path milik
-   target, jadi target yang terpotong penuh dianggap tidak pernah terlihat —
-   dan tidak pernah tersingkap. */
 .lp-singkap {
   overflow: hidden;
 }
@@ -992,7 +949,6 @@
   transform: scale(1);
 }
 
-/* Judul yang tersingkap baris demi baris. */
 .lp-baris {
   display: block;
   overflow: hidden;
@@ -1011,11 +967,6 @@
 .lp-baris:nth-child(3) > span {
   transition-delay: 0.18s;
 }
-
-/* --- .lp-nilai-grid / -lengket / -item : bagian "Fokus Pendidikan" di
-   halaman detail jenjang (app/spmb/jenjang/[jenjang]/page.tsx). Panel nilai
-   MANTAP di hero memakai kelas .lp-nilai-* lain (lihat PANEL NILAI MANTAP
-   di akhir berkas). --------------------------------------------------------- */
 
 .lp-nilai-grid {
   display: grid;
@@ -1089,8 +1040,6 @@
 .lp-jadwal-baris:last-child {
   border-bottom: 1px solid var(--lp-garis);
 }
-/* Di HP rentang tanggal turun ke bawah judul gelombang — satu baris
-   "1 Agu 2026 — 31 Agu 2026" tidak muat di samping judul pada layar sempit. */
 .lp-jadwal-tanggal {
   grid-column: 2;
   font-family: var(--lp-serif);
@@ -1210,7 +1159,6 @@
   background: var(--lp-merah);
   color: #ffffff;
 }
-/* "Sedang berjalan" pada jadwal gelombang. */
 .lp-lencana--aktif {
   background: var(--lp-aksen);
   color: #0d2008;
@@ -1224,41 +1172,26 @@
 
 .lp-penutup {
   position: relative;
-  min-height: 100svh;
+  height: 100svh;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Mengikuti tema situs seperti section lain (putih di mode terang, hijau
-     tua di mode gelap) — BUKAN lagi dipaksa hijau tua terus. Videonya
-     sekarang kartu kecil (lihat .lp-penutup-kartu), jadi warna di
-     SEKELILINGnya harus terang/gelap mengikuti tema, sama seperti bagian
-     lain di halaman ini. Nilai gelapnya tetap identik dengan
-     --lp-hijau-gelap yang lama (keduanya #071f16) — jadi pengguna mode
-     gelap tidak melihat perubahan apa pun. */
   background: var(--lp-kertas);
   color: var(--lp-tinta);
   text-align: center;
+  padding: 0;
+  margin: 0;
 }
-/* Kartu video: ukurannya TETAP (tidak lagi menyusut mengikuti gulir).
-   min-height dulu (ponsel, sebelum media query di bawah aktif) supaya teks
-   di dalamnya tidak sempit walau videonya belum berbentuk 16:10 lebar. */
 .lp-penutup-kartu {
   position: relative;
-  width: min(920px, 92vw);
-  min-height: 26rem;
-  border-radius: 22px;
+  width: 100vw;
+  height: 100svh;
+  border-radius: 0;
   overflow: hidden;
-  /* Warna dasar sebelum poster/video sempat terlukis, supaya tidak sempat
-     berkedip putih polos yang menyatu dengan latar barunya. */
   background: var(--lp-hijau-gelap);
-  box-shadow: 0 40px 80px -32px rgba(7, 28, 22, 0.45);
+  box-shadow: none;
 }
-@media (min-width: 640px) {
-  .lp-penutup-kartu {
-    aspect-ratio: 16 / 10;
-    min-height: 0;
-  }
-}
+
 .lp-penutup-media {
   position: absolute;
   inset: 0;
@@ -1271,10 +1204,6 @@
   object-fit: cover;
   display: block;
 }
-/* SENGAJA TANPA overlay gelap di atas foto. Fotonya berhak tampil apa
-   adanya — keterbacaan teks di atasnya ditangani lewat bayangan pada
-   TEKSNYA (lihat .lp-penutup-judul) dan tombol berlatar padat, bukan
-   dengan menggelapkan seluruh foto. */
 .lp-penutup-isi {
   position: absolute;
   inset: 0;
@@ -1288,9 +1217,6 @@
 
 /* --- Footer -------------------------------------------------------------- */
 
-/* Menyatu langsung di bawah CTA -- bukan lagi "chapter" tersendiri -- jadi
-   jarak atasnya dirapatkan (dulu berjarak lega karena diasumsikan berdiri
-   sendiri). */
 .lp-footer {
   background: var(--lp-kertas-hangat);
   color: var(--lp-tinta-lembut);
@@ -1304,7 +1230,6 @@
 .lp-footer a:hover {
   color: var(--lp-hijau);
 }
-/* Spesifisitas dinaikkan: img[data-nimg] di globals.css. */
 .lp-footer .lp-footer-logo {
   display: block;
   width: auto;
@@ -1405,7 +1330,6 @@
   color: var(--lp-tinta-lembut);
 }
 
-/* Deret paling bawah: logo business centre, abu-abu sampai disorot/diketuk. */
 .lp-footer-bc {
   padding: 1.5rem 0;
   border-top: 1px solid var(--lp-garis);
@@ -1454,7 +1378,6 @@
   opacity: 1;
   transform: scale(1.06);
 }
-/* Tema gelap: logo berteks gelap butuh alas terang. */
 [data-tema="gelap"] .lp-footer-bc-logo {
   padding: 0.4rem 0.55rem;
   background: #f6f8f5;
@@ -1471,8 +1394,6 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  /* Konten TIDAK boleh bergantung pada animasi untuk bisa dibaca: semua
-     elemen reveal langsung ditampilkan penuh. */
   .lp-muncul {
     opacity: 1 !important;
     transform: none !important;
@@ -1488,8 +1409,6 @@
   }
 }
 
-/* Umpan balik saat ditekan — halaman ini banyak yang bisa diklik, dan
-   setiap klik harus terasa. */
 .lp-program:active,
 .lp-tombol:active,
 .lp-tab:active {
@@ -1501,31 +1420,16 @@
 
 /* ===========================================================================
    ANIMASI PEMBUKA (components/landing/Pembuka.tsx)
-
-   Tahap 1–2 di sini, murni CSS, berjalan sejak bingkai pertama:
-     0,15–1,75 dtk  lima foto meluncur masuk dari KANAN ke kiri, berhenti
-                    tepat di tengah layar
-     2,15–3,55 dtk  deret foto turun sedikit dan menyingkap judul yang sejak
-                    awal menunggu di BELAKANGNYA; judul ikut naik pelan ke
-                    tengah layar
-   Setelah judul sempat terbaca, komponennya menjalankan tahap 3–4 (foto
-   tengah membesar jadi latar hero, kata-kata judul terbang ke label hero)
-   lewat Web Animations API.
    =========================================================================== */
 
 .lp-pembuka {
-  /* Ukuran kartu foto: mengikuti lebar layar, tapi tidak pernah lebih tinggi
-     dari ±1/3 tinggi layar (layar lebar yang pendek). */
   --w: min(clamp(9rem, 16.5vw, 20rem), 30vh);
   --h: calc(var(--w) * 1.1);
   --celah: clamp(0.6rem, 1.6vw, 1.75rem);
   --f: clamp(2rem, 4.1vw, 4.25rem);
   --baris-judul: 2;
-  /* Perkiraan tinggi judul (baris × line-height × ukuran huruf). */
   --tj: calc(var(--baris-judul) * 1.1 * var(--f));
   --celah-teks: clamp(1.25rem, 4vh, 2.5rem);
-  /* Pusat judul di 44% tinggi layar; deret foto turun dari tengah layar
-     sampai tepat di bawah judul. */
   --pusat-judul: 44;
   --turun: calc(var(--tj) / 2 + var(--celah-teks) + var(--h) / 2 - (50 - var(--pusat-judul)) * 1dvh);
 
@@ -1537,13 +1441,10 @@
 }
 @media (max-width: 640px) {
   .lp-pembuka {
-    /* Baris pertama judul membungkus jadi dua di HP. */
     --baris-judul: 3;
   }
 }
 
-/* Jaring pengaman: kalau JavaScript tidak pernah hidup, tirai tetap
-   menyingkir sendiri alih-alih menutupi halaman selamanya. */
 .lp-pembuka:not(.is-hidup) {
   animation: lp-pembuka-darurat 0.6s ease 12s forwards;
 }
@@ -1554,8 +1455,6 @@
   }
 }
 
-/* Disetel skrip di <head> sebelum halaman dilukis (app/layout.tsx): sesi yang
-   sudah pernah melihatnya tidak melihatnya lagi, tanpa kedipan. */
 [data-pembuka="lewat"] .lp-pembuka {
   display: none !important;
 }
@@ -1589,8 +1488,6 @@
   height: var(--h);
   animation: lp-pembuka-masuk 1.6s cubic-bezier(0.23, 1, 0.32, 1) 0.15s both;
 }
-/* Foto paling kanan berangkat paling jauh, jadi melaju paling cepat: deretnya
-   datang renggang lalu merapat saat mengerem. */
 @keyframes lp-pembuka-masuk {
   from {
     transform: translateX(calc(100vw + 3 * var(--w) + var(--i) * 9vw));
@@ -1606,21 +1503,16 @@
   height: 100%;
   overflow: hidden;
   border-radius: 3px;
-  /* Warna tunggu selagi fotonya dimuat. */
   background: color-mix(in srgb, var(--lp-hijau) 16%, var(--lp-kertas));
 }
 
 /* --- Judul ----------------------------------------------------------------- */
 
-/* Sejak awal sudah berada di tengah layar, TERTUTUP deret foto (lapisannya
-   di bawah deret sampai foto tengah mulai membesar). Deret yang turunlah
-   yang menyingkapnya; judul sendiri hanya naik sedikit sambil memudar masuk. */
 .lp-pembuka-judul {
   position: absolute;
   left: 0;
   right: 0;
   top: 0;
-  /* Isi dipusatkan di tinggi 2 × 44% = 88% → pusatnya tepat di 44%. */
   height: calc(2% * var(--pusat-judul));
   z-index: 1;
   display: flex;
@@ -1667,8 +1559,6 @@
   }
 }
 
-/* Tiap kata terbang sendiri ke label hero; titik tumpunya di tepi kiri
-   supaya jarak hurufnya bisa melebar tanpa menggeser posisi awal kata. */
 .lp-pembuka-kata {
   display: inline-block;
   white-space: nowrap;
@@ -1689,7 +1579,6 @@
 }
 .lp-pembuka-zoom-bingkai {
   position: absolute;
-  /* Ukuran bawaan sebelum diukur ulang dari gambar hero oleh Pembuka.tsx. */
   inset: 0;
   transform-origin: 50% 50%;
   will-change: transform;
@@ -1701,8 +1590,6 @@
 
 /* --- Serah terima ------------------------------------------------------------ */
 
-/* Lapisan foto disingkirkan pada bingkai yang sama dengan saat ukurannya
-   persis menyamai hero di bawahnya — yang tersisa hanya kata-kata judul. */
 .lp-pembuka.is-lepas {
   pointer-events: none;
 }
@@ -1713,15 +1600,11 @@
 .lp-pembuka.is-lepas:not(.is-lewati) .lp-pembuka-zoom {
   visibility: hidden;
 }
-/* Dilewati pengguna: seluruh tirai cukup memudar. */
 .lp-pembuka.is-lewati {
   opacity: 0;
   transition: opacity 0.45s ease;
 }
 
-/* Selama tirai berjalan, navbar dan isi hero ditahan, lalu masuk bersamaan
-   dengan serah terima. Hanya berlaku bila JavaScript hidup (.is-hidup) —
-   tanpa itu semuanya tampil seperti biasa. */
 .lp-pembuka.is-hidup:not(.is-lepas) ~ .lp-nav {
   opacity: 0;
   transform: translateY(-1.25rem);
@@ -1730,8 +1613,6 @@
   animation: none;
   opacity: 0;
 }
-/* Label hero tidak memakai animasi masuknya sendiri: kata-kata judul yang
-   terbang itulah yang menjadi label ini (Pembuka.tsx memudarkannya masuk). */
 .lp-pembuka.is-hidup ~ .lp-bab-tegak .lp-hero-label {
   animation: none;
   opacity: 0;
@@ -1746,20 +1627,13 @@
   }
 }
 
-/* Bab tidak melukis latar sama sekali — seluruh halaman satu warna dari
-   .lp-root, yang mengikuti tema. */
 .lp-bab-tegak {
   background: transparent;
 }
-/* Bab berlatar "Section" (#f6f8f5 / Surface) — memberi irama selang-seling
-   tanpa meninggalkan kesan dominan putih. */
 .lp-bab-tegak.lp-bab--lembut {
   background: var(--lp-kertas-hangat);
 }
 
-/* Ruang di atas supaya butir pertama tidak tertutup navbar yang mengambang,
-   dan ruang di bawah supaya butir terakhir tidak mentok di tepi layar
-   (Alur SPMB, Penutup). */
 .lp-bab--tinggi .lp-bagian {
   padding-top: clamp(5.5rem, 13vh, 8rem) !important;
   padding-bottom: clamp(4.5rem, 11vh, 7rem) !important;
@@ -1821,7 +1695,6 @@
   padding: 0;
   position: relative;
 }
-/* Garis waktu yang menyambungkan seluruh simpul. */
 .lp-alur-daftar::before {
   content: "";
   position: absolute;
@@ -1838,8 +1711,6 @@
   grid-template-columns: 36px 1fr;
   gap: clamp(1rem, 2.4vw, 1.8rem);
   padding: clamp(1rem, 2.4vh, 1.75rem) 0;
-  /* Yang belum aktif meredup dan sedikit turun — bukan hilang, hanya mundur
-     satu langkah supaya yang aktif jelas tanpa terasa ramai. */
   opacity: 0.38;
   transform: translateY(10px);
   transition:
@@ -1927,11 +1798,6 @@
   color: #fff;
   margin: 1.5rem auto 0;
   max-width: 14ch;
-  /* Efek timbul/3D: beberapa lapis bayangan padat 1px menumpuk ke bawah
-     (memberi kesan "tebal", seperti huruf yang diekstrusi) diakhiri satu
-     bayangan kabur yang mengangkatnya dari fotonya. Ini yang menggantikan
-     overlay gelap sebagai cara menjaga keterbacaan — bukan menggelapkan
-     fotonya, tapi menegaskan hurufnya sendiri. */
   text-shadow:
     0 1px 0 rgba(0, 0, 0, 0.35),
     0 2px 0 rgba(0, 0, 0, 0.32),
@@ -1964,8 +1830,6 @@
   will-change: transform, opacity;
 }
 
-/* Judul hero masuk cepat dan elegan: langsung terbaca, tanpa membuat
-   pengunjung menunggu. */
 .lp-hero-label {
   animation: lp-hero-masuk 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
 }
@@ -2008,9 +1872,6 @@
   }
 }
 
-/* Judul gelombang + lencana "sedang berjalan" dirapikan sebagai satu baris
-   yang boleh membungkus utuh — sebelumnya lencananya menyisip di tengah nama
-   dan memecah "Gelombang 1" jadi dua baris. */
 .lp-jadwal-baris h3 {
   display: flex;
   flex-wrap: wrap;
@@ -2020,11 +1881,6 @@
 
 /* ===========================================================================
    PANEL NILAI MANTAP (components/landing/PanelNilai.tsx)
-
-   Dibuka dari deret nilai di hero: panel foto setinggi layar di tengah,
-   latar kiri-kanan meredup hijau tua, kepala berlambang di atas, tombol
-   panah di kedua sisi. Membuka dengan "membelah" latar dari garis tengah;
-   animasi buka/tutup/pindahnya dijalankan komponennya lewat Web Animations API.
    =========================================================================== */
 
 .lp-nilai {
@@ -2037,16 +1893,10 @@
   visibility: hidden;
   pointer-events: none;
 }
-/* Panel punya kepala berlambangnya sendiri; navbar asli di belakangnya
-   disembunyikan supaya garis emas dan ikon menunya tidak tampak dobel.
-   Atributnya dipasang/dilepas PanelNilai.tsx (dilepas sejak awal menutup). */
 html[data-nilai-buka] .lp-nav {
   opacity: 0;
   pointer-events: none;
 }
-/* Mode gerak-dikurangi memberi SEMUA elemen .lp-root transisi 0,01 ms. Di
-   panel ini itu ikut mentransisikan `visibility`, sehingga tombol tutup masih
-   terhitung tersembunyi tepat saat panel dibuka dan tidak bisa menerima fokus. */
 @media (prefers-reduced-motion: reduce) {
   .lp-nilai,
   .lp-nilai * {
@@ -2054,8 +1904,6 @@ html[data-nilai-buka] .lp-nav {
   }
 }
 
-/* Tanpa backdrop-filter: blur layar penuh yang ikut dianimasikan terlalu berat
-   dan membuat buka-tutup tersendat. Warnanya sedikit lebih pekat sebagai ganti. */
 .lp-nilai-tirai {
   position: absolute;
   inset: 0;
@@ -2071,7 +1919,6 @@ html[data-nilai-buka] .lp-nav {
   width: var(--lebar-panel);
   margin-left: calc(var(--lebar-panel) / -2);
   overflow: hidden;
-  /* Geser kiri-kanan di HP dipakai untuk berpindah nilai. */
   touch-action: pan-y;
 }
 @media (max-width: 820px) {
@@ -2082,9 +1929,6 @@ html[data-nilai-buka] .lp-nav {
   }
 }
 
-/* Kilatan putih celah saat latar terbelah (buka) dan saat foto tertutup
-   sebelum celahnya menyempit (tutup). Dianimasikan lewat transform scaleX
-   dari garis tengah. Sengaja putih di kedua tema. */
 .lp-nilai-celah {
   position: absolute;
   inset: 0;
@@ -2097,9 +1941,6 @@ html[data-nilai-buka] .lp-nav {
   inset: 0;
   visibility: hidden;
 }
-/* `inherit`, BUKAN `visible`: keturunan yang memaksa visible tetap tampak
-   walau induknya (.lp-nilai.is-tertutup) tersembunyi — foto akan menimpa
-   hero padahal panelnya belum dibuka. */
 .lp-nilai-foto[data-tahap="lalu"] {
   visibility: inherit;
   z-index: 1;
@@ -2108,13 +1949,10 @@ html[data-nilai-buka] .lp-nav {
   visibility: inherit;
   z-index: 2;
 }
-/* Saat menutup, sisa foto dari perpindahan sebelumnya tidak boleh tampak di
-   balik foto aktif yang sedang memudar ke putih. */
 .lp-nilai.is-menutup .lp-nilai-foto[data-tahap="lalu"] {
   visibility: hidden;
 }
 
-/* Gelap di atas (kepala) dan di bawah (teks), foto tetap bercerita di tengah. */
 .lp-nilai-gelap {
   position: absolute;
   inset: 0;
@@ -2159,7 +1997,6 @@ html[data-nilai-buka] .lp-nav {
   text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
 }
 
-/* --- Kepala: lambang diapit garis emas, seperti navbar di atas hero --- */
 .lp-nilai-kepala {
   --tepi: clamp(1.25rem, 4.5vw, 3.5rem);
   position: absolute;
@@ -2171,8 +2008,6 @@ html[data-nilai-buka] .lp-nav {
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   column-gap: clamp(0.8rem, 1.6vw, 1.4rem);
-  /* Ruang yang sama di kiri-kanan untuk tombol tutup, supaya lambang tetap
-     tepat di tengah. */
   padding: 1.15rem calc(var(--tepi) + 3.4rem);
   pointer-events: none;
 }
@@ -2228,7 +2063,6 @@ html[data-nilai-buka] .lp-nav {
   transform: rotate(90deg);
 }
 
-/* --- Panah sebelum / berikutnya --- */
 .lp-nilai-panah {
   position: absolute;
   z-index: 6;
@@ -2240,8 +2074,6 @@ html[data-nilai-buka] .lp-nav {
   place-items: center;
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 50%;
-  /* Latar solid, bukan backdrop-filter: blur di atas foto yang sedang
-     bergerak harus dihitung ulang tiap bingkai dan membuat animasi tersendat. */
   background: rgba(7, 28, 22, 0.7);
   color: #fff;
   cursor: pointer;
@@ -2261,35 +2093,13 @@ html[data-nilai-buka] .lp-nav {
 
 /* ===========================================================================
    HERO → "SEBUAH TEMPAT" (Hero.tsx, Intro.tsx)
-
-   Transisi yang MENGIKUTI POSISI GULIR, maju maupun mundur — bukan animasi
-   yang diputar sekali, dan tanpa bagian yang "ditahan" di layar:
-     • Hero ikut tergulir naik seperti biasa, tetapi fotonya MENGECIL dari
-       kiri-kanan DAN dari bawah (tiga penutup berwarna latar halaman melebar
-       dari tepi — isi fotonya tidak diperkecil), sampai tinggal pita di atas
-       dan jarak ke bab berikutnya tampak jauh. Semboyan & tombol di bagian
-       bawahnya ikut terpotong naik sambil memudar.
-     • Bab berikutnya berupa kartu hijau tua di atas deretan foto kegiatan
-       yang lebih pendek dari kartunya. Foto-foto di belakang kartu BERJALAN
-       KE SAMPING mengikuti gulir (ke kiri saat turun, ke kanan saat naik)
-       dan mengecil pelan ke ukuran normal.
-     • Isi kartu muncul bergiliran: label → judul → paragraf → tombol, dan
-       tombolnya tersingkap dari blur.
-
-   Hanya transform, opacity, dan filter yang dianimasikan, lewat
-   animation-timeline — browser mengerjakannya di GPU tanpa JavaScript per
-   bingkai. Browser yang belum mendukungnya, dan pengguna yang meminta gerak
-   dikurangi, melihat tata letak yang sama dalam keadaan diam.
    =========================================================================== */
 
-/* --- Penutup sisi hero: diam = tidak tampak ----------------------------- */
 .lp-hero-sisi {
   --lebar-sisi: 30%;
   position: absolute;
   top: 0;
   bottom: 0;
-  /* Di atas teks hero (.lp-hero-isi, z-index 2): teks yang sedang memudar
-     ikut terpotong bingkai, tidak tampak menjorok ke area putih. */
   z-index: 3;
   width: calc(var(--lebar-sisi) + 1px);
   background: var(--lp-kertas);
@@ -2304,7 +2114,6 @@ html[data-nilai-buka] .lp-nav {
   right: -1px;
   transform-origin: 100% 50%;
 }
-/* Penutup bawah: memotong foto dari bawah ke atas. */
 .lp-hero-sisi--bawah {
   top: auto;
   left: -1px;
@@ -2328,16 +2137,9 @@ html[data-nilai-buka] .lp-nav {
   --lp-intro-geser: 30vw;
   position: relative;
   display: grid;
-  /* Satu kolom selebar layar — tanpa ini kolomnya ikut melebar mengikuti
-     deret foto (yang memang lebih lebar dari layar) dan kartu jadi tidak
-     di tengah. */
   grid-template-columns: minmax(0, 1fr);
   place-items: center;
-  /* Jarak lega dari hero di atasnya. */
-  padding-block: clamp(6.5rem, 17vh, 11rem) clamp(4.5rem, 12vh, 8rem);
-  /* clip, bukan hidden: deret foto sengaja lebih lebar dari layar, tapi
-     halaman tidak boleh bisa digulir ke samping — dan clip tidak membuat
-     wadah gulir baru (yang akan mematahkan garis waktu gulir di dalamnya). */
+  padding-block: clamp(5.5rem, 15vh, 9rem) clamp(4rem, 10vh, 7rem);
   overflow: clip;
 }
 
@@ -2351,7 +2153,7 @@ html[data-nilai-buka] .lp-nav {
 .lp-intro-foto {
   position: relative;
   flex: 0 0 auto;
-  width: clamp(9.5rem, 19vw, 18rem);
+  width: clamp(8.5rem, 16vw, 14rem);
   aspect-ratio: 3 / 4;
   overflow: hidden;
   border-radius: 4px;
@@ -2362,9 +2164,8 @@ html[data-nilai-buka] .lp-nav {
   grid-area: 1 / 1;
   position: relative;
   z-index: 1;
-  width: min(42rem, 100% - 2rem);
-  padding: clamp(2.5rem, 5vw, 4.25rem) clamp(1.5rem, 4.5vw, 4rem);
-  /* Datar, tanpa bayangan, bersudut tegas. */
+  width: min(680px, 88vw);
+  padding: clamp(2rem, 4vw, 3.5rem) clamp(1.25rem, 3.5vw, 3rem);
   border-radius: 4px;
   background: var(--lp-intro-kartu);
   color: #fff;
@@ -2379,32 +2180,32 @@ html[data-nilai-buka] .lp-nav {
   color: var(--lp-sorot);
 }
 .lp-intro-judul {
-  margin: 1rem 0 0;
+  margin: 0.85rem 0 0;
   font-family: var(--lp-serif);
   font-weight: 700;
-  font-size: clamp(2.3rem, 4.4vw, 4rem);
+  font-size: clamp(2rem, 4vw, 3.5rem);
   line-height: 1.04;
   letter-spacing: -0.02em;
   color: #fff;
 }
 .lp-intro-teks {
-  margin: 1.25rem auto 0;
+  margin: 1rem auto 0;
   max-width: 34rem;
-  font-size: clamp(1rem, 1.15vw, 1.1rem);
-  line-height: 1.7;
+  font-size: clamp(0.95rem, 1.1vw, 1.05rem);
+  line-height: 1.6;
   color: rgba(255, 255, 255, 0.86);
 }
 .lp-intro-tombol {
   display: inline-flex;
   align-items: center;
   gap: 0.9rem;
-  margin-top: 2rem;
+  margin-top: 1.6rem;
   padding: 0.5rem 0.55rem 0.5rem 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
   text-decoration: none;
   transition: background 0.3s ease;
@@ -2442,7 +2243,6 @@ html[data-nilai-buka] .lp-nav {
     grid-area: 2 / 1;
     margin-block: -24vw 0;
   }
-  /* Layar sempit: geser lebih jauh supaya gerak sampingnya tetap terasa. */
   .lp-intro {
     --lp-intro-geser: 55vw;
   }
@@ -2451,15 +2251,9 @@ html[data-nilai-buka] .lp-nav {
 /* --- Gerak mengikuti gulir ------------------------------------------------ */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
-    /* Hero: rentangnya selama hero keluar layar (posisi teratas → hero
-       sepenuhnya lewat). */
     .lp-hero-panggung {
       view-timeline: --lp-hero block;
     }
-    /* Hanya hero landing (di dalam panggung). Hero halaman detail jenjang
-       memakai kelas yang sama tanpa panggung: di sana --lp-hero tidak ada,
-       dan animasi tanpa garis waktu langsung jatuh ke keadaan akhirnya —
-       teks hero ikut tersembunyi. */
     .lp-hero-sisi,
     .lp-hero-panggung .lp-hero-media,
     .lp-hero-panggung .lp-hero-isi {
@@ -2481,9 +2275,6 @@ html[data-nilai-buka] .lp-nav {
       animation-name: lp-hero-isi-gulir;
     }
 
-    /* "Sebuah tempat": semua memakai garis waktu bab ini sendiri — foto di
-       dalam .lp-intro-foto (overflow:hidden) tidak bisa memakai view()
-       miliknya sendiri. */
     .lp-intro {
       view-timeline: --lp-intro block;
     }
@@ -2525,8 +2316,6 @@ html[data-nilai-buka] .lp-nav {
   }
 }
 
-/* Bawah: mula-mula pelan (sisi yang menyempit duluan), lalu makin cepat —
-   pita foto di atas makin tipis dan jarak putih di bawahnya makin jauh. */
 @keyframes lp-hero-bawah {
   0% {
     transform: scaleY(0);
@@ -2545,8 +2334,6 @@ html[data-nilai-buka] .lp-nav {
     transform: scaleX(1);
   }
 }
-/* Mulai dari skala yang sama dengan hero di posisi teratas (SKALA_HERO) —
-   Pembuka.tsx mengukur gambar ini saat serah terima. */
 @keyframes lp-hero-media-gulir {
   from {
     transform: scale(1.1);
@@ -2569,7 +2356,6 @@ html[data-nilai-buka] .lp-nav {
     visibility: hidden;
   }
 }
-/* Dinding foto berjalan ke kiri selama bab ini melintasi layar. */
 @keyframes lp-intro-deret {
   from {
     transform: translateX(var(--lp-intro-geser));
@@ -2580,7 +2366,7 @@ html[data-nilai-buka] .lp-nav {
 }
 @keyframes lp-intro-foto {
   from {
-    transform: scale(1.12);
+    transform: scale(1.05);
   }
   to {
     transform: none;
@@ -2611,42 +2397,20 @@ html[data-nilai-buka] .lp-nav {
 
 /* ===========================================================================
    JENJANG → ALUR: "Kenali jenjangmu di CN" (JenjangStory.tsx)
-
-   Satu wadah (flex kolom) dari judul bab Jenjang sampai judul bab Alur SPMB.
-   Tulisan raksasa "CN" adalah anak langsung wadah itu dengan position:
-   sticky, jadi ia menempel sepanjang wadah:
-     1. mula-mula ia bagian judul "Kenali jenjangmu di CN";
-     2. saat digulir ia tertahan, dan deretan kartu SMP/SMA/SMK (z-index lebih
-        tinggi) naik MENUTUPINYA — CN di belakang foto;
-     3. setelah kartu lewat, CN tampak di atas pita emas; pita itu lalu
-        MENYUSUT — selebar layar → persegi panjang → kotak — sampai tepat
-        menjadi kotak label "Alur SPMB";
-     4. di ujung wadah ia berhenti menempel tepat di baris "Alur SPMB" dan
-        bersama label itu menjadi judul bab tersebut.
-   Label "Kenali jenjangmu di" masuk seperti disapu stabilo dari kiri.
-   Semua ukuran CN diturunkan dari satu variabel (--cn-fs) supaya teks di
-   kanannya, label "Alur SPMB", dan baris akhirnya selalu pas dengannya.
    =========================================================================== */
 
 .lp-cn {
   --cn-fs: clamp(9rem, 21vw, 21rem);
-  /* Tinggi kotak CN (line-height 0.8). */
   --cn-tinggi: calc(var(--cn-fs) * 0.8);
-  /* Posisi CN di layar selama menempel. */
   --cn-atas: 28vh;
-  /* Tepi kiri .lp-wadah — CN sejajar dengan isi halaman lainnya. */
   --cn-kiri: calc((100% - min(1360px, 100% - clamp(1.5rem, 6vw, 7rem))) / 2);
   --cn-warna: var(--lp-hijau);
   --cn-pita: var(--lp-sorot);
   --cn-chip: var(--lp-sorot);
   --cn-chip-teks: var(--lp-atas-sorot);
-  /* Ukuran label emas. Kotak label "Alur SPMB" sengaja berukuran tetap
-     (dalam em) supaya kotak emas yang menyusut dari pita bisa berhenti tepat
-     di kotaknya — semua posisinya bisa dihitung di CSS, tanpa JavaScript. */
   --chip-fs: clamp(1.4rem, 3.4vw, 3.3rem);
   --chip-w: calc(var(--chip-fs) * 5.9);
   --chip-h: calc(var(--chip-fs) * 1.32);
-  /* Label "Alur SPMB" di kanan-bawah CN, sedikit menumpang huruf N. */
   --chip-kiri: calc(var(--cn-kiri) + var(--cn-fs) * 1.3);
   --pita-tinggi: clamp(22rem, 70vh, 44rem);
   position: relative;
@@ -2658,7 +2422,6 @@ html[data-nilai-buka] .lp-nav {
   --cn-pita: var(--lp-panel);
 }
 
-/* Label emas: "Kenali jenjangmu di" (atas) dan "Alur SPMB" (akhir). */
 .lp-cn-kepala {
   position: relative;
   z-index: 2;
@@ -2677,7 +2440,6 @@ html[data-nilai-buka] .lp-nav {
   letter-spacing: -0.01em;
 }
 
-/* Tulisan raksasa yang menempel. */
 .lp-cn-kata {
   position: sticky;
   top: var(--cn-atas);
@@ -2694,8 +2456,6 @@ html[data-nilai-buka] .lp-nav {
   pointer-events: none;
 }
 
-/* Penjelasan di kanan CN (desktop): ditarik naik sejajar CN, dan setinggi
-   CN supaya kartu di bawahnya mulai tepat setelah CN. */
 .lp-cn-teks {
   position: relative;
   z-index: 2;
@@ -2764,7 +2524,6 @@ html[data-nilai-buka] .lp-nav {
     rgba(7, 28, 22, 0.72) 100%
   );
 }
-/* Diam: nama jenjang di atas, garis emas kecil di bawah. */
 .lp-cn-kartu-atas {
   position: absolute;
   top: clamp(1.25rem, 3.5vh, 2.25rem);
@@ -2789,7 +2548,6 @@ html[data-nilai-buka] .lp-nav {
   background: var(--cn-chip);
   transition: opacity 0.35s ease;
 }
-/* Terbuka (disorot): tombol "+", nama lengkap, dan ringkasannya di bawah. */
 .lp-cn-kartu-bawah {
   position: absolute;
   left: 0;
@@ -2827,8 +2585,6 @@ html[data-nilai-buka] .lp-nav {
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.9);
 }
-/* Hanya perangkat berkursor & layar lebar: kartu yang disorot melebar,
-   kartu lainnya menyempit. */
 @media (hover: hover) and (min-width: 901px) {
   .lp-cn-kartu:hover .lp-cn-kartu-item,
   .lp-cn-kartu:focus-within .lp-cn-kartu-item {
@@ -2856,18 +2612,13 @@ html[data-nilai-buka] .lp-nav {
 }
 
 /* --- Pita emas & judul "CN · Alur SPMB" ------------------------------------ */
-/* Ruang pita di bawah kartu; warnanya dilukis .lp-cn-emas. */
 .lp-cn-pita {
   height: var(--pita-tinggi);
 }
-/* Setinggi CN: CN berhenti menempel tepat di baris ini. Saat dituju lewat
-   #alur, baris ini diletakkan di posisi CN menempel. */
 .lp-cn-akhir {
   height: var(--cn-tinggi);
   scroll-margin-top: var(--cn-atas);
 }
-/* Lapisan emas di belakang CN (di atas lapisan ini CN, lalu label). Dalam
-   keadaan diam ia hanya menutup ruang pita. */
 .lp-cn-emas {
   position: absolute;
   left: 0;
@@ -2877,8 +2628,6 @@ html[data-nilai-buka] .lp-nav {
   height: var(--pita-tinggi);
   background: var(--cn-pita);
 }
-/* Label "Alur SPMB": kotak berukuran tetap di dasar bagian ini, diukur dari
-   tepi bagian yang sama dengan lapisan emas. */
 .lp-cn-chip--akhir {
   position: absolute;
   left: var(--chip-kiri);
@@ -2899,11 +2648,8 @@ html[data-nilai-buka] .lp-nav {
     --cn-fs: clamp(8rem, 44vw, 15rem);
     --cn-atas: 16vh;
     --pita-tinggi: clamp(18rem, 55vh, 30rem);
-    /* Label "Alur SPMB" rata kanan dengan isi halaman. */
     --chip-kiri: calc(100% - var(--cn-kiri) - var(--chip-w));
   }
-  /* Penjelasan pindah ke bawah CN dengan latar halaman, sehingga saat
-     digulir ia (lalu kartu-kartunya) naik menutupi CN yang menempel. */
   .lp-cn-teks {
     margin-top: 0;
     min-height: 0;
@@ -2925,7 +2671,6 @@ html[data-nilai-buka] .lp-nav {
 /* --- Gerak mengikuti gulir ------------------------------------------------------ */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
-    /* CN memakai garis waktu baris label di atasnya (saudara, bukan induk). */
     .lp-cn {
       timeline-scope: --lp-cn-kepala, --lp-cn-akhir;
     }
@@ -2947,7 +2692,6 @@ html[data-nilai-buka] .lp-nav {
       animation-timeline: view();
       animation-range: entry 0% cover 30%;
     }
-    /* Kartu naik bergiliran; fotonya mengecil pelan ke ukuran normal. */
     .lp-cn-kartu-item {
       view-timeline: --lp-cn-kartu block;
       animation: lp-cn-kartu-naik linear both;
@@ -2965,10 +2709,6 @@ html[data-nilai-buka] .lp-nav {
       animation-timeline: --lp-cn-kartu;
       animation-range: entry 0% cover 60%;
     }
-    /* Pita emas menyusut menjadi kotak label "Alur SPMB". Lapisannya
-       diperpanjang sampai dasar bagian (baris akhir) supaya kotak label ada
-       di dalamnya; rentangnya: dari baris akhir mulai tampak di bawah layar
-       sampai ia tiba di posisi CN menempel. */
     .lp-cn-akhir {
       view-timeline: --lp-cn-akhir block;
     }
@@ -2979,8 +2719,6 @@ html[data-nilai-buka] .lp-nav {
       animation-timeline: --lp-cn-akhir;
       animation-range: entry 0% cover 55%;
     }
-    /* Kotak label kini dilukis lapisan emas; tulisannya makin tegas
-       selama kotak menyusut. */
     .lp-cn-chip--akhir {
       background: transparent;
       animation: lp-cn-chip-teks linear both;
@@ -2990,8 +2728,6 @@ html[data-nilai-buka] .lp-nav {
   }
 }
 
-/* Seperti disapu stabilo: kotak emas memanjang dari kiri sambil menyingkap
-   tulisannya, dari samar ke tegas. */
 @keyframes lp-cn-chip-sapu {
   from {
     clip-path: inset(0 100% 0 0 round 0.2em);
@@ -3028,17 +2764,12 @@ html[data-nilai-buka] .lp-nav {
     transform: none;
   }
 }
-/* Pita selebar layar → persegi panjang → tepat kotak label (sudut
-   membulatnya ikut). Warnanya beralih ke warna label — di tema terang
-   keduanya emas, di tema gelap pita hijau menjadi label emas. */
 @keyframes lp-cn-emas-kotak {
   from {
     clip-path: inset(0px 0px 0px 0px round 0px);
     background-color: var(--cn-pita);
     animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
   }
-  /* Warna baru berganti menjelang akhir: di tema gelap, peralihan hijau → emas
-     yang terlalu panjang sempat tampak hijau zaitun yang kusam. */
   70% {
     background-color: var(--cn-pita);
   }
@@ -3061,11 +2792,6 @@ html[data-nilai-buka] .lp-nav {
 
 /* ===========================================================================
    JADWAL & BIAYA — pola "profil siswa"
-   Tab SMP · SMA · SMK di atas garis tipis; lingkaran gelap bergeser ke tab
-   terpilih. Kiri: biaya jenjang. Kanan: foto peserta didik tanpa latar,
-   dikelilingi gelombang pendaftaran sebagai catatan tempel yang melayang.
-   Ketiga panel ditumpuk di sel grid yang sama (subgrid) dan berganti lewat
-   data-keadaan="kiri|aktif|kanan" — transisinya transform & opacity saja.
    =========================================================================== */
 
 .lp-jb {
@@ -3125,7 +2851,6 @@ html[data-nilai-buka] .lp-nav {
   height: var(--jb-lingkar);
   margin: clamp(1.8rem, 5vh, 3.5rem) 0 0 var(--jb-indent);
 }
-/* Garis tipis dari tepi kiri layar sampai sedikit melewati tab terakhir. */
 .lp-jb-tab::before {
   content: "";
   position: absolute;
@@ -3155,7 +2880,6 @@ html[data-nilai-buka] .lp-nav {
   border-radius: 50%;
   background: var(--jb-lingkar-warna);
 }
-/* Meregang sebentar selama bergeser — seperti tetesan yang berpindah. */
 .lp-jb-lingkar-isi.is-regang {
   animation: lp-jb-regang 0.75s cubic-bezier(0.45, 0, 0.1, 1);
 }
@@ -3229,7 +2953,6 @@ html[data-nilai-buka] .lp-nav {
   pointer-events: auto;
 }
 
-/* Teks: keluar cepat ke arah perpindahan, masuk berurutan dari sisi lain. */
 .lp-jb-teks {
   grid-area: 3 / 1;
   align-self: start;
@@ -3280,7 +3003,6 @@ html[data-nilai-buka] .lp-nav {
   color: #ffffff;
 }
 
-/* SMP & SMA: dua harga kelas awal berdampingan, dipisah garis tegak. */
 .lp-jb-pasangan {
   display: flex;
   flex-wrap: wrap;
@@ -3319,7 +3041,6 @@ html[data-nilai-buka] .lp-nav {
   color: #ffffff;
 }
 
-/* SMK: tabel program keahlian × Reguler/Plus. */
 .lp-jb-tabel {
   width: 100%;
   margin: 1.7rem 0 0;
@@ -3375,7 +3096,6 @@ html[data-nilai-buka] .lp-nav {
 .lp-jb-strip {
   color: var(--jb-teks-2);
 }
-/* Teks khusus pembaca layar. */
 .lp-jb-sr {
   position: absolute;
   width: 1px;
@@ -3429,7 +3149,6 @@ html[data-nilai-buka] .lp-nav {
   position: relative;
   min-height: 32rem;
 }
-/* Singkatan jenjang raksasa di belakang foto — gema huruf "CN" di atas. */
 .lp-jb-tanda {
   position: absolute;
   top: 2%;
@@ -3460,7 +3179,6 @@ html[data-nilai-buka] .lp-nav {
     transform 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.1s;
 }
 
-/* Foto: berdiri di tepi bawah bab, sedikit ke kanan dari tengah kolom. */
 .lp-jb-foto {
   position: absolute;
   bottom: 0;
@@ -3477,8 +3195,6 @@ html[data-nilai-buka] .lp-nav {
     transform 0.45s cubic-bezier(0.5, 0, 0.75, 0);
   will-change: transform, opacity;
 }
-/* Masuk setelah foto lama hampir hilang (0,22 dtk) — dua orang tidak pernah
-   tampak bertumpuk samar. */
 .lp-jb-panel[data-keadaan="aktif"] .lp-jb-foto {
   opacity: 1;
   transform: none;
@@ -3494,7 +3210,6 @@ html[data-nilai-buka] .lp-nav {
   filter: drop-shadow(0 24px 36px rgba(0, 0, 0, 0.32));
 }
 
-/* Tumpukan catatan: jalur umum di kiri foto, jalur alumni di kanan. */
 .lp-jb-kelompok {
   position: absolute;
   z-index: 2;
@@ -3504,13 +3219,10 @@ html[data-nilai-buka] .lp-nav {
   left: calc(var(--jb-catatan) * -0.2);
   bottom: clamp(2.5rem, 9%, 6rem);
 }
-/* Tumpukan kanan sengaja rendah: di atasnya ada tangan & wajah (mis. jempol
-   pada foto SMK) yang tidak boleh tertutup. */
 .lp-jb-kelompok--alumni {
   right: calc(var(--jb-catatan) * -0.1);
   bottom: clamp(2rem, 6%, 4.5rem);
 }
-/* Berlatar pil gelap: tetap terbaca walau jatuh di atas seragam putih. */
 .lp-jb-kelompok-judul {
   display: inline-block;
   margin: 0 0 0.95rem;
@@ -3549,8 +3261,6 @@ html[data-nilai-buka] .lp-nav {
   list-style: none;
 }
 
-/* Catatan: warna kertas = jalur (kuning umum, hijau muda alumni); pekat =
-   gelombang yang sedang berjalan, pucat = belum. */
 .lp-jb-catatan {
   --kertas: #fffbd1;
   position: relative;
@@ -3578,7 +3288,6 @@ html[data-nilai-buka] .lp-nav {
 .lp-jb-catatan:hover {
   z-index: 2;
 }
-/* Menempel: turun dari atas, sedikit memantul, berurutan. */
 .lp-jb-panel[data-keadaan="aktif"] .lp-jb-catatan {
   opacity: 1;
   transform: translate3d(0, 0, 0) rotate(var(--r)) scale(1);
@@ -3605,7 +3314,6 @@ html[data-nilai-buka] .lp-nav {
 .lp-jb.is-catatan .lp-jb-panel[data-keadaan="aktif"] .lp-jb-kertas {
   animation-play-state: running;
 }
-/* Selotip. */
 .lp-jb-kertas::before {
   content: "";
   position: absolute;
@@ -3694,10 +3402,6 @@ html[data-nilai-buka] .lp-nav {
   text-transform: uppercase;
 }
 
-/* Sebelum terlihat, catatan & foto jenjang aktif belum "ditempel"; begitu
-   terlihat (is-catatan / is-foto, lihat useMasuk), keduanya masuk dengan
-   transisi yang sama seperti saat berpindah tab. Setelah keluar layar
-   sepenuhnya: kembali diam-diam (durasi 0). */
 .lp-jb:not(.is-catatan) .lp-jb-panel[data-keadaan="aktif"] .lp-jb-catatan {
   opacity: 0;
   transform: translate3d(0, -1.4rem, 0) rotate(calc(var(--r) + 9deg)) scale(1.1);
@@ -3764,8 +3468,6 @@ html[data-nilai-buka] .lp-nav {
     display: flex;
     flex-direction: column;
   }
-  /* Hanya panel aktif yang mengisi alur; panel yang sedang memudar keluar
-     melayang di atasnya (grid-area yang sama sebagai blok acuannya). */
   .lp-jb-panel:not([data-keadaan="aktif"]) {
     position: absolute;
     top: 0;
@@ -3886,8 +3588,6 @@ html[data-nilai-buka] .lp-nav {
 
 /* ===========================================================================
    PERSYARATAN — kotak bernomor (gaya "WAB Difference")
-   Kotak hijau selang-seling bak papan catur, ikon berkas di pojok kanan atas,
-   nomor besar, nama berkas, dan garis bawah yang memanjang saat disorot.
    =========================================================================== */
 .lp-syarat-kotak-daftar {
   display: grid;
@@ -3905,7 +3605,6 @@ html[data-nilai-buka] .lp-nav {
   flex-direction: column;
   justify-content: flex-start;
   min-height: clamp(15rem, 21vw, 18rem);
-  /* Isi rata atas: nomor sejajar di satu baris, berapa pun panjang namanya. */
   padding: clamp(5.4rem, 7vw, 6.4rem) var(--tepi) clamp(3rem, 4vw, 3.6rem);
   overflow: hidden;
   color: #ffffff;
@@ -3916,7 +3615,6 @@ html[data-nilai-buka] .lp-nav {
     transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
     box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
-/* Papan catur: 3 kolom → genap gelap. */
 .lp-syarat-kotak:nth-child(even) {
   --warna: #063b2b;
 }
@@ -3924,7 +3622,6 @@ html[data-nilai-buka] .lp-nav {
   .lp-syarat-kotak-daftar {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  /* 2 kolom: gelap di posisi 2, 3, 6, 7, … */
   .lp-syarat-kotak:nth-child(even) {
     --warna: #0b6b3a;
   }
@@ -3973,7 +3670,6 @@ html[data-nilai-buka] .lp-nav {
   letter-spacing: -0.02em;
   font-variant-numeric: lining-nums;
 }
-/* Lingkaran gelap di belakang nomor. */
 .lp-syarat-kotak-no::before {
   content: "";
   position: absolute;
@@ -4038,8 +3734,6 @@ html[data-nilai-buka] .lp-nav {
 
 /* ===========================================================================
    MENGAPA CITRA NEGARA — kerja sama dengan industri
-   Dua deret logo mitra berjalan sendiri (berlawanan arah), abu-abu; berwarna
-   dan berhenti saat disorot kursor atau diketuk.
    =========================================================================== */
 .lp-mitra {
   overflow: clip;
@@ -4109,7 +3803,6 @@ html[data-nilai-buka] .lp-nav {
     transform: translate3d(-50%, 0, 0);
   }
 }
-/* padding-right = gap: sambungan antar-salinan berjarak sama persis. */
 .lp-mitra-deret {
   display: flex;
   align-items: center;
@@ -4153,7 +3846,6 @@ html[data-nilai-buka] .lp-nav {
   outline: 2px solid var(--lp-aksen);
   outline-offset: 6px;
 }
-/* Tema gelap: logo berteks gelap butuh alas terang. */
 [data-tema="gelap"] .lp-mitra-logo {
   padding: 0.45rem 0.7rem;
   background: #f6f8f5;

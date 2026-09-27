@@ -9,7 +9,7 @@ import { PanelNilai } from './PanelNilai'
 
 /** Foto udara gedung sekolah. Foto ini juga yang membesar di akhir animasi
  *  pembuka (Pembuka.tsx) lalu "menjadi" latar hero — keduanya harus sama. */
-export const FOTO_HERO = '/images/hero-sekolah.jpg'
+export const FOTO_HERO = '/images/hero baru.png'
 
 /** Skala latar saat halaman di posisi paling atas. Pembuka mengakhiri
  *  zoom-nya di angka yang sama supaya serah terimanya tidak bergeser. */

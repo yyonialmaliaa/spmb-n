@@ -1,16 +1,15 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import { useMasuk } from './gerak'
 
 /** Video udara sekolah — rekaman yang sama dengan asal foto latar hero. */
-const VIDEO_PENUTUP = '/videos/hero.mp4'
-/** Jaring pengaman: dipakai sebagai poster DAN latar kalau video gagal/tidak diputar. */
-const POSTER_PENUTUP = '/images/voli.jpg'
+const VIDEO_PENUTUP = '/videos/Video Project.mp4'
+/** Poster untuk video */
+const POSTER_PENUTUP = '/images/hero baru.png'
 
 /**
  * Penutup: kartu video yang MULAI selebar layar (persis video biasa) lalu
@@ -101,7 +100,7 @@ export function FinalCTA({ tahunAjaran }: { tahunAjaran: string | null }) {
         style={{ transform: `scale(${skalaKartu})`, borderRadius: `${radiusKartu}px` }}
       >
         <div className="lp-penutup-media" style={{ transform: `scale(${skala})` }}>
-          {pakaiVideo ? (
+          {pakaiVideo && !videoGagal && (
             <video
               ref={videoRef}
               key={VIDEO_PENUTUP}
@@ -112,26 +111,10 @@ export function FinalCTA({ tahunAjaran }: { tahunAjaran: string | null }) {
               preload="auto"
               poster={POSTER_PENUTUP}
               aria-hidden="true"
-              // Kalau videonya gagal dimuat, jatuh balik ke foto diam alih-alih
-              // membiarkan kartu penutup kosong.
               onError={() => setVideoGagal(true)}
             >
               <source src={VIDEO_PENUTUP} type="video/mp4" />
             </video>
-          ) : (
-            /* futsalcn1.jpg (dipakai sebelumnya) ternyata poster kejuaraan penuh
-               teks & stiker baked-in, bukan foto polos — tanpa overlay gelap,
-               teks CTA di atasnya bentrok dengan teks poster itu sendiri.
-               voli.jpg foto tim yang tenang, cukup lapang untuk judul di
-               atasnya terbaca lewat bayangan teks saja. */
-            <Image
-              src={POSTER_PENUTUP}
-              alt=""
-              fill
-              loading="lazy"
-              sizes="(max-width: 768px) 92vw, 880px"
-              style={{ objectFit: 'cover' }}
-            />
           )}
         </div>
 
@@ -151,10 +134,6 @@ export function FinalCTA({ tahunAjaran }: { tahunAjaran: string | null }) {
             <Link href="/register" className="lp-tombol lp-tombol--terang">
               Daftar Sekarang <ArrowRight size={18} />
             </Link>
-            {/* Padat, bukan transparan (lp-tombol--hantu): tanpa overlay gelap di
-                atas foto, tombol tembus pandang bisa hilang di bagian foto yang
-                terang. Latar padat menjamin tombolnya tetap terbaca di mana pun
-                ia jatuh di atas foto. */}
             <a href="#alur" className="lp-tombol lp-tombol--gelap">Lihat Alur</a>
           </div>
 
