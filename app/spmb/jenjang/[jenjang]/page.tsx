@@ -247,7 +247,7 @@ export default async function HalamanJenjang({ params }: Props) {
                       <h3 style={{ fontFamily: 'var(--lp-serif)', fontSize: 'clamp(1.2rem, 2vw, 1.7rem)', margin: 0 }}>
                         {g.nama}
                         {g.aktif && (
-                          <span className="lp-lencana lp-lencana--wajib" style={{ marginLeft: '0.8rem', verticalAlign: 'middle' }}>
+                          <span className="lp-lencana lp-lencana--aktif" style={{ marginLeft: '0.8rem', verticalAlign: 'middle' }}>
                             Sedang berjalan
                           </span>
                         )}

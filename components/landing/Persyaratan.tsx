@@ -1,8 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
+import { Camera, CreditCard, FileText, GraduationCap, IdCard, ScrollText, Users, type LucideIcon } from 'lucide-react'
 import { Muncul, JudulBaris } from './gerak'
 import type { DataJenjang } from '@/lib/landing'
+
+/** Ikon kotak persyaratan, ditebak dari nama berkasnya. */
+function ikonSyarat(nama: string): LucideIcon {
+  const n = nama.toLowerCase()
+  if (/ijazah|skl|lulus/.test(n)) return GraduationCap
+  if (/kip|pkh|kks|dtks|sktm/.test(n)) return CreditCard
+  if (/akte|akta|kelahiran/.test(n)) return ScrollText
+  if (/kartu keluarga|\bkk\b/.test(n)) return Users
+  if (/ktp|identitas/.test(n)) return IdCard
+  if (/foto|photo/.test(n)) return Camera
+  return FileText
+}
 
 /** Sidik jari isi persyaratan sebuah jenjang, untuk membandingkan antar-jenjang. */
 function sidik(j: DataJenjang) {
@@ -71,24 +84,25 @@ export function Persyaratan({ jenjang }: { jenjang: DataJenjang[] }) {
           </Muncul>
         )}
 
-        <div style={{ marginTop: '2.5rem' }} key={terpilih.jenjang} className="lp-biaya-panel">
-          <ol className="lp-syarat-daftar" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-            {terpilih.persyaratan.map((s, i) => (
-              <li key={s.id} className="lp-syarat-baris">
-                <span className="lp-syarat-no">{String(i + 1).padStart(2, '0')}</span>
-                <div>
-                  <div style={{ fontWeight: 650, lineHeight: 1.5 }}>{s.nama}</div>
-                  {s.deskripsi && (
-                    <p className="lp-teks" style={{ marginTop: '0.35rem', fontSize: '0.92rem' }}>{s.deskripsi}</p>
-                  )}
-                </div>
-                <span className={`lp-lencana lp-lencana--${s.wajib ? 'wajib' : 'opsional'}`}>
+        {/* Kotak bernomor: nomor urut membantu pendaftar mencentang berkasnya
+            satu per satu. */}
+        <ol key={terpilih.jenjang} className="lp-syarat-kotak-daftar lp-biaya-panel">
+          {terpilih.persyaratan.map((s, i) => {
+            const Ikon = ikonSyarat(s.nama)
+            return (
+              <li key={s.id} className="lp-syarat-kotak" style={{ '--i': i } as CSSProperties}>
+                <Ikon className="lp-syarat-kotak-ikon" size={40} strokeWidth={1.35} aria-hidden="true" />
+                <span className="lp-syarat-kotak-no" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+                <h3 className="lp-syarat-kotak-nama">{s.nama}</h3>
+                {s.deskripsi && <p className="lp-syarat-kotak-desk">{s.deskripsi}</p>}
+                <span className={`lp-syarat-kotak-status${s.wajib ? ' is-wajib' : ''}`}>
                   {s.wajib ? 'Wajib' : 'Bila ada'}
                 </span>
+                <span className="lp-syarat-kotak-garis" aria-hidden="true" />
               </li>
-            ))}
-          </ol>
-        </div>
+            )
+          })}
+        </ol>
       </div>
     </section>
   )

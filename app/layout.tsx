@@ -31,11 +31,14 @@ const inter = Inter({
 //
 // Dibatasi hanya berjalan di /spmb (bukan seluruh situs) supaya penanda
 // "sudah pernah lihat tirai pembuka" tidak ikut tersentuh saat pengunjung
-// membuka halaman login/admin/dashboard lebih dulu.
+// membuka halaman login/admin/dashboard lebih dulu. Kunjungan yang langsung
+// menuju satu bagian (/spmb#jadwal, dari hasil pencarian atau tautan yang
+// dibagikan) juga dilewatkan: halamannya sudah tergulir ke bagian itu, jadi
+// tidak ada hero yang bisa "dituju" animasinya.
 const SKRIP_PEMBUKA = `(function(){try{
 if (location.pathname !== '/spmb') return;
 var k='spmb-pembuka-tayang';
-if(sessionStorage.getItem(k)==='1'){document.documentElement.setAttribute('data-pembuka','lewat')}
+if(location.hash||sessionStorage.getItem(k)==='1'){document.documentElement.setAttribute('data-pembuka','lewat')}
 else{sessionStorage.setItem(k,'1')}
 }catch(x){}})();`
 

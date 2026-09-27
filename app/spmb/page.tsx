@@ -4,14 +4,11 @@ import { Pembuka } from '@/components/landing/Pembuka'
 import { Navigation } from '@/components/landing/Navigation'
 import { Hero } from '@/components/landing/Hero'
 import { Intro } from '@/components/landing/Intro'
-import { Values } from '@/components/landing/Values'
 import { JenjangStory } from '@/components/landing/JenjangStory'
-import { Experience } from '@/components/landing/Experience'
 import { AlurSPMB } from '@/components/landing/AlurSPMB'
-import { JadwalSPMB } from '@/components/landing/JadwalSPMB'
-import { Biaya } from '@/components/landing/Biaya'
+import { JadwalBiaya } from '@/components/landing/JadwalBiaya'
 import { Persyaratan } from '@/components/landing/Persyaratan'
-import { WhyCitraNegara } from '@/components/landing/WhyCitraNegara'
+import { MitraIndustri } from '@/components/landing/MitraIndustri'
 import { FinalCTA } from '@/components/landing/FinalCTA'
 import { Footer } from '@/components/landing/Footer'
 import './landing.css'
@@ -37,9 +34,10 @@ export const dynamic = 'force-dynamic'
  * Seluruh halaman bergulir MENURUN seperti halaman biasa, di semua ukuran
  * layar — tidak ada bagian yang bergeser ke samping.
  *
- * Urutan bab tetap: hero → intro → nilai → jenjang → pengalaman → alur →
- * jadwal → biaya → persyaratan → mengapa → penutup → footer. Program keahlian
- * SMK tidak lagi tampil sebagai bab tersendiri di sini — daftarnya masih bisa
+ * Urutan bab tetap: hero (termasuk deret nilai MANTAP) → intro → jenjang →
+ * alur → jadwal & biaya → persyaratan → mengapa → penutup → footer. Bab
+ * jenjang dan alur disambung satu tulisan raksasa "CN" (lihat JenjangStory).
+ * Program keahlian SMK tidak lagi tampil sebagai bab tersendiri di sini — daftarnya masih bisa
  * dilihat di halaman detail /spmb/jenjang/smk (yang punya markup sendiri,
  * tidak lewat komponen SMKPrograms — komponen itu sudah dihapus karena
  * setelah ini tidak dipakai di mana pun lagi).
@@ -54,19 +52,21 @@ export default async function LandingSPMB() {
     isi: React.ReactNode
     /** Ruang atas/bawah ekstra (Alur SPMB, Penutup+Footer). */
     tinggi?: boolean
+    /** Berlatar "Section" (#f6f8f5) — selang-seling dengan bab putih. */
+    lembut?: boolean
     id?: string
   }[] = [
-    { kunci: 'hero',        isi: <Hero tahunAjaran={namaTA} /> },
+    // id 'nilai': hasil pencarian "Nilai MANTAP" diarahkan ke hero, tempat
+    // deret nilai (yang bisa diklik) berada.
+    { kunci: 'hero',        id: 'nilai', isi: <Hero tahunAjaran={namaTA} /> },
     { kunci: 'intro',       isi: <Intro /> },
-    { kunci: 'nilai',       isi: <Values /> },
     { kunci: 'jenjang',     id: 'bab-jenjang',
       isi: <JenjangStory daftar={data.jenjang.map(j => ({ jenjang: j.jenjang, singkat: j.singkat, label: j.label }))} /> },
-    { kunci: 'pengalaman',  isi: <Experience /> },
     { kunci: 'alur',        tinggi: true, isi: <AlurSPMB /> },
-    { kunci: 'jadwal',      isi: <JadwalSPMB jenjang={data.jenjang} /> },
-    { kunci: 'biaya',       isi: <Biaya jenjang={data.jenjang} /> },
-    { kunci: 'persyaratan', isi: <Persyaratan jenjang={data.jenjang} /> },
-    { kunci: 'mengapa',     isi: <WhyCitraNegara /> },
+    // Jadwal & biaya satu bab (tab SMP/SMA/SMK) — id #jadwal & #biaya ada di dalamnya.
+    { kunci: 'jadwal-biaya', isi: <JadwalBiaya jenjang={data.jenjang} /> },
+    { kunci: 'persyaratan', lembut: true, isi: <Persyaratan jenjang={data.jenjang} /> },
+    { kunci: 'mengapa',     id: 'mengapa', isi: <MitraIndustri /> },
     { kunci: 'penutup', tinggi: true,
       isi: (
         <>
@@ -80,11 +80,11 @@ export default async function LandingSPMB() {
     <div className="lp-root">
       {/* Penanda anti-kedip tirai (data-pembuka) dipasang skrip di
           app/layout.tsx, bukan di sini — lihat komentar di sana. */}
-      <Pembuka />
+      <Pembuka tahunAjaran={namaTA} />
       <Navigation />
 
       {BAB.map(b => (
-        <div key={b.kunci} id={b.id} className={b.tinggi ? 'lp-bab-tegak lp-bab--tinggi' : 'lp-bab-tegak'}>
+        <div key={b.kunci} id={b.id} className={['lp-bab-tegak', b.tinggi && 'lp-bab--tinggi', b.lembut && 'lp-bab--lembut'].filter(Boolean).join(' ')}>
           {b.isi}
         </div>
       ))}

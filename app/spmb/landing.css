@@ -9,17 +9,26 @@
    =========================================================================== */
 
 .lp-root {
-  /* ---- MODE TERANG: latar PUTIH PENUH ---- */
-  --lp-tinta: #101512;
-  --lp-tinta-lembut: #4a554e;
-  --lp-tinta-samar: #8a958d;
-  --lp-kertas: #ffffff;
-  --lp-kertas-hangat: #f6f5f2;
-  --lp-garis: rgba(16, 21, 18, 0.12);
-  --lp-hijau: #0f6b45;
-  --lp-hijau-dalam: #0a4630;
-  --lp-hijau-gelap: #071f16;
-  --lp-emas: #b98a2e;
+  /* ---- MODE TERANG: dominan PUTIH (palet SPMB) ----
+     Hijau untuk tombol, tab, dan angka; kuning "stabilo" untuk label, pita,
+     dan penanda; hijau muda untuk garis kemajuan & cincin fokus; merah hanya
+     untuk yang wajib. Kuning tidak pernah dipakai sebagai warna teks di atas
+     putih (tidak terbaca) — hanya sebagai latar, atau di atas foto/gelap. */
+  --lp-kertas: #ffffff;          /* Background */
+  --lp-kertas-hangat: #f6f8f5;   /* Section */
+  --lp-tinta: #111111;           /* Text */
+  --lp-tinta-lembut: #46534c;
+  --lp-tinta-samar: #7a8880;
+  --lp-garis: #e3e8e4;           /* Border */
+  --lp-hijau: #0b6b3a;           /* Primary */
+  --lp-hijau-dalam: #063b2b;     /* Primary hover */
+  --lp-hijau-gelap: #071c16;     /* latar gelap di balik foto */
+  --lp-atas-hijau: #ffffff;      /* teks/ikon di atas Primary */
+  --lp-aksen: #79b82a;           /* Accent */
+  --lp-sorot: #fff000;           /* Highlight */
+  --lp-atas-sorot: #111111;      /* teks di atas Highlight */
+  --lp-merah: #d71920;           /* Alert */
+  --lp-panel: #063b2b;           /* kartu/panel gelap di halaman terang */
   --lp-terang: #ffffff;
   /* Warna teks di atas foto — selalu putih, tidak ikut tema, karena fotonya
      memang gelap di kedua mode. */
@@ -42,21 +51,27 @@
     color 0.4s ease;
 }
 
-/* ---- MODE GELAP: hijau tua Citra Negara ----
+/* ---- MODE GELAP: hijau tua (palet SPMB gelap) ----
    Halaman ini mengikuti tema situs (atribut data-tema dipasang skrip
    anti-kedip di app/layout.tsx). Seluruh halaman satu warna — tidak ada lagi
    selang-seling terang/gelap antar bagian, jadi tidak ada sambungan warna
    yang perlu dijembatani sama sekali. */
 [data-tema="gelap"] .lp-root {
-  --lp-tinta: #e8f0ea;
-  --lp-tinta-lembut: #a6b9ad;
-  --lp-tinta-samar: #74877c;
-  --lp-kertas: #071f16;
-  --lp-kertas-hangat: #0a2a1e;
-  --lp-garis: rgba(255, 255, 255, 0.14);
-  --lp-hijau: #34d399;
-  --lp-hijau-dalam: #10b981;
-  --lp-emas: #d8a94a;
+  --lp-kertas: #071c16;          /* Background */
+  --lp-kertas-hangat: #0b2a20;   /* Surface */
+  --lp-tinta: #ffffff;           /* Text */
+  --lp-tinta-lembut: #b8c8c0;    /* Text Secondary */
+  --lp-tinta-samar: #7f958a;
+  --lp-garis: #214438;           /* Border */
+  --lp-hijau: #79b82a;           /* Primary */
+  --lp-hijau-dalam: #92cc45;     /* Primary hover (lebih terang) */
+  --lp-hijau-gelap: #071c16;
+  --lp-atas-hijau: #071c16;      /* hijau muda terlalu terang untuk teks putih */
+  --lp-aksen: #79b82a;
+  --lp-sorot: #fff000;           /* Highlight */
+  --lp-atas-sorot: #111111;
+  --lp-merah: #d71920;           /* Red */
+  --lp-panel: #10382b;           /* Surface 2 */
 }
 
 .lp-root * {
@@ -99,6 +114,17 @@
   text-transform: uppercase;
   color: var(--lp-hijau);
   margin: 0;
+}
+
+/* Label bab di latar terang: kotak "stabilo" kuning — bahasa visual yang
+   sama dengan label CN ("Kenali jenjangmu di", "Alur SPMB"). Label di atas
+   foto (--terang) tetap tulisan putih polos. */
+.lp-label:not(.lp-label--terang) {
+  display: inline-block;
+  padding: 0.42em calc(0.7em - 0.22em) 0.38em 0.7em;
+  border-radius: 4px;
+  background: var(--lp-sorot);
+  color: var(--lp-atas-sorot);
 }
 
 .lp-label--terang {
@@ -165,13 +191,13 @@
   transform: translateY(-2px);
 }
 .lp-tombol:focus-visible {
-  outline: 2px solid var(--lp-emas);
+  outline: 2px solid var(--lp-aksen);
   outline-offset: 3px;
 }
 
 .lp-tombol--utama {
   background: var(--lp-hijau);
-  color: #fff;
+  color: var(--lp-atas-hijau);
 }
 .lp-tombol--utama:hover {
   background: var(--lp-hijau-dalam);
@@ -208,14 +234,14 @@
    kedua di atas foto tanpa overlay, supaya keterbacaannya tidak bergantung
    pada seberapa terang bagian foto di baliknya. */
 .lp-tombol--gelap {
-  background: rgba(7, 31, 22, 0.82);
+  background: rgba(7, 28, 22, 0.82);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   color: #fff;
   border-color: rgba(255, 255, 255, 0.22);
 }
 .lp-tombol--gelap:hover {
-  background: rgba(7, 31, 22, 0.95);
+  background: rgba(7, 28, 22, 0.95);
   border-color: rgba(255, 255, 255, 0.4);
 }
 
@@ -245,69 +271,139 @@
 
 /* --- Navigasi ------------------------------------------------------------ */
 
+/* Di atas foto: lambang & nama di tengah diapit garis emas tipis, deret
+   tautan berjajar di tengah pada baris kedua — komposisi situs sekolah
+   internasional. Begitu digulir: satu baris ringkas berlatar (is-lengket). */
 .lp-nav {
   position: fixed;
   inset: 0 0 auto 0;
   z-index: 100;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-areas: "kiri merek kanan";
   align-items: center;
-  gap: clamp(1.5rem, 4vw, 3rem);
-  /* Rendah dan lapang: tinggi bilah dijaga tetap ramping supaya halaman yang
-     jadi tokoh utama, bukan navigasinya. */
-  padding: 0.95rem clamp(1.25rem, 4.5vw, 3.5rem);
+  column-gap: clamp(0.8rem, 1.6vw, 1.4rem);
+  padding: 0.9rem clamp(1.25rem, 4.5vw, 3.5rem);
   color: #fff;
   border-bottom: 1px solid transparent;
   transition:
     background 0.55s cubic-bezier(0.16, 1, 0.3, 1),
     color 0.55s cubic-bezier(0.16, 1, 0.3, 1),
     border-color 0.55s cubic-bezier(0.16, 1, 0.3, 1),
-    padding 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+    padding 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* Bayangan gelap halus di belakang navbar selama ia duduk di atas foto,
+   supaya tulisan putihnya tetap terbaca di atas bagian foto yang terang. */
+.lp-nav::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 -3rem 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(7, 28, 22, 0.66) 0%, rgba(7, 28, 22, 0.5) 72%, transparent 100%);
+  transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lp-nav.is-lengket::before {
+  opacity: 0;
 }
 .lp-nav.is-lengket {
-  background: color-mix(in srgb, var(--lp-kertas) 84%, transparent);
+  background: color-mix(in srgb, var(--lp-kertas) 88%, transparent);
   backdrop-filter: saturate(180%) blur(16px);
   -webkit-backdrop-filter: saturate(180%) blur(16px);
   color: var(--lp-tinta);
-  /* Garis rambut, bukan bayangan tebal. */
   border-bottom-color: var(--lp-garis);
-  padding-block: 0.72rem;
+  padding-block: 0.6rem;
+}
+
+.lp-nav-garis {
+  display: block;
+  height: 1px;
+  background: var(--lp-sorot);
+  opacity: 0.9;
+}
+.lp-nav-kiri {
+  grid-area: kiri;
+  width: 100%;
+}
+.lp-nav.is-lengket .lp-nav-garis {
+  display: none;
 }
 
 .lp-nav-merek {
+  grid-area: merek;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.8rem;
   color: inherit;
   text-decoration: none;
-  font-family: var(--lp-serif);
-  font-weight: 700;
-  font-size: 1.08rem;
-  letter-spacing: 0.01em;
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: 0.92rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
   white-space: nowrap;
-  flex-shrink: 0;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.35);
 }
-.lp-nav-merek img {
+.lp-nav.is-lengket .lp-nav-merek {
+  text-shadow: none;
+}
+/* Spesifisitas sengaja dinaikkan: img[data-nimg] di globals.css membalikkan
+   tinggi gambar next/image ke ukuran aslinya. */
+.lp-nav .lp-nav-merek img {
   display: block;
+  height: 46px;
+  width: auto;
+  transition: height 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lp-nav.is-lengket .lp-nav-merek img {
+  height: 38px;
+}
+
+.lp-nav-kanan {
+  grid-area: kanan;
+  display: flex;
+  align-items: center;
+  gap: clamp(0.8rem, 1.6vw, 1.4rem);
+  min-width: 0;
+}
+.lp-nav-kanan .lp-nav-garis {
+  flex: 1 1 auto;
+  min-width: 1.5rem;
+}
+.lp-nav.is-lengket .lp-nav-kanan {
+  justify-content: flex-end;
+}
+
+.lp-cn-kartu-tautan {
+  cursor: pointer;
 }
 
 .lp-nav-tautan {
+  grid-area: tautan;
   display: none;
+  justify-content: center;
   align-items: center;
-  gap: clamp(1.4rem, 2.6vw, 2.6rem);
-  margin-left: auto;
+  gap: clamp(1.6rem, 3.4vw, 3.6rem);
 }
 .lp-nav-tautan a {
   color: inherit;
   text-decoration: none;
-  font-size: 0.76rem;
-  /* Tidak tebal — kesan editorial datang dari jarak huruf, bukan ketebalan. */
-  font-weight: 600;
-  letter-spacing: 0.13em;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  opacity: 0.85;
   padding-block: 0.35rem;
   position: relative;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.4);
   transition: opacity var(--lp-cepat);
+}
+.lp-nav.is-lengket .lp-nav-tautan a {
+  font-size: 0.74rem;
+  font-weight: 600;
+  opacity: 0.85;
+  text-shadow: none;
 }
 .lp-nav-tautan a::after {
   content: "";
@@ -329,97 +425,310 @@
   transform-origin: left;
 }
 
-.lp-nav-aksi {
-  margin-left: clamp(1rem, 2.5vw, 2.4rem);
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  flex-shrink: 0;
+/* HP: cukup lambang di tengah diapit garis, tanpa tulisan nama. */
+@media (max-width: 639px) {
+  .lp-nav-merek span {
+    display: none;
+  }
+  .lp-nav .lp-nav-merek img,
+  .lp-nav.is-lengket .lp-nav-merek img {
+    height: 36px;
+  }
 }
-.lp-nav-tautan ~ .lp-nav-aksi {
-  margin-left: clamp(1rem, 2.5vw, 2.4rem);
+@media (max-width: 1023px) {
+  .lp-nav {
+    grid-template-areas:
+      "kiri merek kanan"
+      "tautan tautan tautan";
+    row-gap: 0.3rem;
+    padding-block: 0.6rem 0.3rem;
+  }
+  .lp-nav.is-lengket {
+    padding-block: 0.45rem 0.25rem;
+  }
+  /* Ukuran huruf, jarak, dan tepi mengikuti lebar layar: keenam tautan muat
+     utuh dari layar 320 px sampai tablet, tanpa terpotong. */
+  .lp-nav-tautan {
+    display: flex;
+    justify-content: flex-start;
+    gap: clamp(0.5rem, 2.8vw, 1.4rem);
+    margin-inline: calc(-1 * clamp(1.25rem, 4.5vw, 3.5rem));
+    padding-inline: clamp(0.6rem, 3vw, 1.25rem);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .lp-nav-tautan::-webkit-scrollbar {
+    display: none;
+  }
+  .lp-nav-tautan a,
+  .lp-nav.is-lengket .lp-nav-tautan a {
+    flex: none;
+    font-size: clamp(0.54rem, 2.6vw, 0.7rem);
+    letter-spacing: 0.06em;
+    padding-block: 0.32rem;
+  }
+  /* Di tengah bila muat; rata kiri & bisa digeser bila tidak. */
+  .lp-nav-tautan a:first-child {
+    margin-left: auto;
+  }
+  .lp-nav-tautan a:last-child {
+    margin-right: auto;
+  }
 }
-.lp-nav-tautan:not(:only-of-type) {
-  margin-left: auto;
-}
-/* Tanpa deret tautan (layar sempit), aksi tetap terdorong ke kanan. */
-.lp-nav > .lp-nav-aksi:nth-child(2) {
-  margin-left: auto;
-}
-
-.lp-nav-tombol {
-  padding: 0.62rem 1.35rem;
-  border-radius: 4px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  text-decoration: none;
-  white-space: nowrap;
-  /* Ajakan paling menonjol: hijau merek penuh, di kedua keadaan. */
-  background: var(--lp-hijau);
-  border: 1px solid var(--lp-hijau);
-  color: #fff;
-  transition:
-    background var(--lp-cepat),
-    border-color var(--lp-cepat);
-}
-.lp-nav-tombol:hover {
-  background: var(--lp-hijau-dalam);
-  border-color: var(--lp-hijau-dalam);
-}
-.lp-nav-tombol:focus-visible {
-  outline: 2px solid var(--lp-emas);
-  outline-offset: 3px;
-}
-
-.lp-nav-hamburger {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: inherit;
-}
-
-.lp-menu {
-  position: fixed;
-  inset: 0;
-  z-index: 99;
-  background: var(--lp-kertas);
-  color: var(--lp-tinta);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.35rem;
-  padding: 6rem clamp(1.5rem, 8vw, 5rem) 3rem;
-}
-.lp-menu a {
-  font-family: var(--lp-serif);
-  font-size: clamp(1.9rem, 7.5vw, 3rem);
-  font-weight: 600;
-  color: var(--lp-tinta);
-  text-decoration: none;
-  line-height: 1.3;
-}
-.lp-menu-masuk {
-  margin-top: 1.6rem;
-  font-family: var(--lp-sans) !important;
-  font-size: 0.78rem !important;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  opacity: 0.7;
-}
-
 @media (min-width: 1024px) {
+  .lp-nav {
+    grid-template-areas:
+      "kiri merek kanan"
+      "tautan tautan tautan";
+    row-gap: 1.2rem;
+    padding-block: 1.15rem 0.95rem;
+  }
+  .lp-nav.is-lengket {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "merek tautan kanan";
+    row-gap: 0;
+    padding-block: 0.6rem;
+  }
   .lp-nav-tautan {
     display: flex;
   }
-  .lp-nav-hamburger {
+}
+
+/* Tombol menu & pencarian (garis menu dengan kaca pembesar). */
+.lp-nav-cari {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0.35rem;
+  margin-right: -0.35rem;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: inherit;
+  cursor: pointer;
+  filter: drop-shadow(0 1px 6px rgba(0, 0, 0, 0.35));
+  transition: color var(--lp-cepat), opacity var(--lp-cepat);
+}
+.lp-nav.is-lengket .lp-nav-cari {
+  filter: none;
+}
+.lp-nav-cari:hover {
+  color: var(--lp-sorot);
+}
+/* Saat navbar sudah berlatar terang, kuning tak terbaca — pakai hijau. */
+.lp-nav.is-lengket .lp-nav-cari:hover {
+  color: var(--lp-hijau);
+}
+.lp-nav-cari:focus-visible {
+  outline: 2px solid var(--lp-aksen);
+  outline-offset: 3px;
+}
+
+/* --- Panel menu & pencarian (geser dari kanan) ------------------------- */
+
+.lp-cari-tirai {
+  position: fixed;
+  inset: 0;
+  z-index: 190;
+  background: rgba(7, 28, 22, 0.55);
+  animation: lp-cari-pudar 0.35s ease both;
+}
+.lp-cari-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 200;
+  width: min(46rem, 100%);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  color: #fff;
+  background: linear-gradient(165deg, #063b2b 0%, #0b2a20 55%, #071c16 100%);
+  box-shadow: -24px 0 60px rgba(0, 0, 0, 0.35);
+  animation: lp-cari-masuk 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  isolation: isolate;
+}
+/* Tanda air lambang yayasan, samar di pojok bawah. */
+.lp-cari-panel::after {
+  content: "";
+  position: absolute;
+  right: -8%;
+  bottom: 3%;
+  width: 78%;
+  aspect-ratio: 900 / 362;
+  background: url("/images/logo-yatkj.png") center / contain no-repeat;
+  filter: grayscale(1) brightness(2.2);
+  opacity: 0.05;
+  z-index: -1;
+  pointer-events: none;
+}
+.lp-cari-tutup {
+  position: absolute;
+  top: clamp(1.2rem, 4vh, 2.4rem);
+  right: clamp(1.2rem, 4vw, 2.6rem);
+  display: inline-flex;
+  padding: 0.3rem;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color var(--lp-cepat), transform var(--lp-cepat);
+}
+.lp-cari-tutup:hover {
+  color: var(--lp-sorot);
+  transform: rotate(90deg);
+}
+.lp-cari-isi {
+  width: min(30rem, 100%);
+  margin-left: clamp(1.5rem, 20%, 11rem);
+  padding: clamp(5.5rem, 13vh, 8rem) clamp(1.5rem, 5vw, 2rem) 4rem 0;
+}
+@media (max-width: 640px) {
+  .lp-cari-isi {
+    width: auto;
+    margin-left: 0;
+    padding-inline: 1.5rem;
+  }
+}
+
+.lp-cari-kolom {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 4.5rem;
+  padding: 0 0.9rem 0 1.6rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  border-radius: 12px;
+  transition: border-color var(--lp-cepat), background var(--lp-cepat);
+}
+.lp-cari-kolom:focus-within {
+  border-color: var(--lp-sorot);
+  background: rgba(255, 255, 255, 0.04);
+}
+.lp-cari-kolom input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  background: none;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-family: var(--lp-sans);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.lp-cari-kolom input::placeholder {
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.14em;
+}
+.lp-cari-kolom input::-webkit-search-cancel-button {
+  display: none;
+}
+.lp-cari-ikon {
+  display: inline-flex;
+  padding: 0.4rem;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: color var(--lp-cepat);
+}
+.lp-cari-ikon:hover,
+.lp-cari-ikon:focus-visible {
+  color: var(--lp-sorot);
+  outline: none;
+}
+
+.lp-cari-judul {
+  margin: clamp(2.6rem, 7vh, 4.2rem) 0 1rem;
+  font-family: var(--lp-sans);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #fff;
+}
+.lp-cari-daftar {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: 19rem;
+}
+.lp-cari-panel section[aria-live] .lp-cari-daftar {
+  max-width: none;
+}
+.lp-cari-daftar li {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+}
+.lp-cari-daftar a {
+  position: relative;
+  display: block;
+  padding: 1.05rem 1.8rem 1.05rem 0;
+  color: #fff;
+  text-decoration: none;
+  font-family: var(--lp-sans);
+  font-size: 1.05rem;
+  font-weight: 500;
+  transition: color var(--lp-cepat), padding-left var(--lp-cepat);
+}
+.lp-cari-daftar a:hover,
+.lp-cari-daftar a:focus-visible {
+  color: var(--lp-sorot);
+  padding-left: 0.35rem;
+  outline: none;
+}
+.lp-cari-hasil-judul {
+  display: block;
+}
+.lp-cari-hasil-ket {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+.lp-cari-panah {
+  position: absolute;
+  right: 0.2rem;
+  top: 50%;
+  translate: 0 -50%;
+  opacity: 0.55;
+}
+.lp-cari-kosong {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.8);
+}
+.lp-cari-kosong em {
+  font-style: normal;
+  color: var(--lp-sorot);
+}
+/* Menu utama di panel hanya untuk layar sempit — di layar lebar tautannya
+   sudah tampil di navbar. */
+@media (min-width: 1024px) {
+  .lp-cari-menu {
     display: none;
+  }
+}
+
+@keyframes lp-cari-masuk {
+  from { transform: translateX(100%); }
+  to { transform: none; }
+}
+@keyframes lp-cari-pudar {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-cari-panel,
+  .lp-cari-tirai {
+    animation: none;
   }
 }
 
@@ -432,7 +741,16 @@
   display: flex;
   align-items: flex-end;
   overflow: hidden;
+}
+/* Bingkai foto + tirai gelapnya. Dipisah dari .lp-hero supaya bisa menyusut
+   jadi kartu saat digulir (blok PANGGUNG HERO) sementara halaman di
+   sekitarnya tetap berwarna latar biasa. */
+.lp-hero-bingkai {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
   background: var(--lp-hijau-gelap);
+  transform-origin: 50% 50%;
 }
 .lp-hero-media {
   position: absolute;
@@ -448,23 +766,103 @@
      .lp-hero yang gelap (var(--lp-hijau-gelap)) sudah menutupi jeda itu. */
   display: block;
 }
+/* Gelap di pita atas (navbar) dan di bawah (teks), terang di tengah supaya
+   fotonya tetap bercerita. */
 .lp-hero-tirai {
   position: absolute;
   inset: 0;
+}
+/* Juga dipakai lapisan zoom animasi pembuka, yang harus berakhir persis
+   sama dengan hero ini. */
+.lp-hero-tirai,
+.lp-pembuka-zoom-tirai {
   background: linear-gradient(
     180deg,
-    rgba(7, 31, 22, 0.62) 0%,
-    rgba(7, 31, 22, 0.18) 38%,
-    rgba(7, 31, 22, 0.9) 100%
+    rgba(7, 28, 22, 0.72) 0%,
+    rgba(7, 28, 22, 0.2) 24%,
+    rgba(7, 28, 22, 0.14) 42%,
+    rgba(7, 28, 22, 0.62) 64%,
+    rgba(7, 28, 22, 0.86) 100%
   );
 }
 .lp-hero-isi {
   position: relative;
   z-index: 2;
   width: 100%;
-  padding-bottom: clamp(3.5rem, 8vh, 7rem);
+  padding-bottom: clamp(3rem, 8vh, 6.5rem);
   color: #fff;
 }
+.lp-hero-tengah {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-inline: clamp(1rem, 4vw, 3rem);
+}
+
+/* Deret nilai bersekat garis tipis tegak: 2 kolom di HP, 3 di tablet,
+   6 sejajar di layar lebar. Sekatnya tidak pernah muncul di awal baris. */
+.lp-hero-nilai {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  justify-content: center;
+  row-gap: 0.5em;
+  margin: 1.4rem 0 0;
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: clamp(1.55rem, 3vw, 3.1rem);
+  line-height: 1.05;
+  letter-spacing: 0.005em;
+  text-shadow: 0 2px 22px rgba(0, 0, 0, 0.35);
+}
+/* Tiap nilai adalah tombol yang membuka panel penjelasannya (PanelNilai). */
+.lp-hero-nilai-tombol {
+  position: relative;
+  padding: 0.12em clamp(0.7rem, 1.7vw, 1.6rem);
+  border: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-shadow: inherit;
+  cursor: pointer;
+  overflow-wrap: normal;
+  -webkit-tap-highlight-color: transparent;
+}
+/* Disorot / disentuh: katanya saja yang terangkat sedikit — tanpa garis
+   bawah, tanpa ganti warna. */
+.lp-hero-nilai-kata {
+  display: inline-block;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lp-hero-nilai-tombol:hover .lp-hero-nilai-kata,
+.lp-hero-nilai-tombol:focus-visible .lp-hero-nilai-kata,
+.lp-hero-nilai-tombol:active .lp-hero-nilai-kata {
+  transform: translateY(-0.16em);
+}
+/* Cincin fokus hanya untuk pengguna keyboard (tidak muncul saat diklik
+   atau disentuh). */
+.lp-hero-nilai-tombol:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 4px;
+}
+.lp-hero-nilai-tombol:nth-child(2n + 1) {
+  border-left-color: transparent;
+}
+@media (min-width: 640px) {
+  .lp-hero-nilai { grid-template-columns: repeat(3, auto); }
+  .lp-hero-nilai-tombol:nth-child(2n + 1) { border-left-color: rgba(255, 255, 255, 0.6); }
+  .lp-hero-nilai-tombol:nth-child(3n + 1) { border-left-color: transparent; }
+}
+@media (min-width: 1100px) {
+  .lp-hero-nilai { grid-template-columns: repeat(6, auto); }
+  .lp-hero-nilai-tombol:nth-child(3n + 1) { border-left-color: rgba(255, 255, 255, 0.6); }
+  .lp-hero-nilai-tombol:first-child { border-left-color: transparent; }
+}
+
+/* Judul & subjudul hero rata kiri — dipakai halaman detail jenjang. */
 .lp-hero-judul {
   font-family: var(--lp-serif);
   font-weight: 700;
@@ -481,86 +879,10 @@
   line-height: 1.7;
   color: rgba(255, 255, 255, 0.82);
 }
-.lp-hero-aksi {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.9rem;
-  margin-top: 2.4rem;
-}
 
 /* Panel jenjang: gambar penuh, judul raksasa, seluruh panel bisa diklik.
    Di HP bertumpuk menurun, di layar lebar berjajar tiga — tidak pernah
    digeser ke samping. */
-.lp-panel-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: clamp(1rem, 2vw, 1.5rem);
-  padding-bottom: clamp(4rem, 8vw, 7rem);
-}
-@media (min-width: 900px) {
-  .lp-panel-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-.lp-panel {
-  position: relative;
-  height: clamp(24rem, 62svh, 36rem);
-  border-radius: 10px;
-  overflow: hidden;
-  display: flex;
-  align-items: flex-end;
-  text-decoration: none;
-  color: #fff;
-  background: var(--lp-hijau-dalam);
-  isolation: isolate;
-}
-.lp-panel-media {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-}
-.lp-panel-media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform var(--lp-lambat);
-}
-.lp-panel:hover .lp-panel-media img,
-.lp-panel:focus-visible .lp-panel-media img {
-  transform: scale(1.05);
-}
-.lp-panel::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(
-    180deg,
-    rgba(7, 31, 22, 0.15) 0%,
-    rgba(7, 31, 22, 0.5) 55%,
-    rgba(7, 31, 22, 0.93) 100%
-  );
-  transition: background var(--lp-sedang);
-}
-.lp-panel:hover::after {
-  background: linear-gradient(
-    180deg,
-    rgba(7, 31, 22, 0.25) 0%,
-    rgba(7, 31, 22, 0.6) 55%,
-    rgba(10, 70, 48, 0.95) 100%
-  );
-}
-.lp-panel-isi {
-  position: relative;
-  padding: clamp(1.6rem, 3.5vw, 3rem);
-  width: 100%;
-}
-.lp-panel-judul {
-  font-family: var(--lp-serif);
-  font-size: clamp(3.4rem, 8vw, 7rem);
-  font-weight: 700;
-  line-height: 0.9;
-  letter-spacing: -0.03em;
-  margin: 0;
-}
 .lp-panel-sub {
   font-size: 0.95rem;
   letter-spacing: 0.14em;
@@ -568,34 +890,6 @@
   color: rgba(255, 255, 255, 0.8);
   margin: 0.55rem 0 0;
   font-weight: 600;
-}
-.lp-panel-teks {
-  margin: 1.1rem 0 0;
-  max-width: 44ch;
-  font-size: 1rem;
-  line-height: 1.65;
-  color: rgba(255, 255, 255, 0.78);
-}
-.lp-panel-cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  margin-top: 1.5rem;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-.lp-panel-cta svg {
-  transition: transform var(--lp-cepat);
-}
-.lp-panel:hover .lp-panel-cta svg {
-  transform: translateX(5px);
-}
-
-.lp-panel:focus-visible {
-  outline: 3px solid var(--lp-emas);
-  outline-offset: 4px;
 }
 
 /* Kartu program keahlian — lebih ramping dari panel jenjang. */
@@ -610,7 +904,7 @@
   align-items: flex-end;
   color: #fff;
   isolation: isolate;
-  background: var(--lp-hijau-dalam);
+  background: var(--lp-panel);
 }
 .lp-program-media {
   position: absolute;
@@ -633,9 +927,9 @@
   z-index: -1;
   background: linear-gradient(
     180deg,
-    rgba(7, 31, 22, 0.1) 0%,
-    rgba(7, 31, 22, 0.55) 50%,
-    rgba(7, 31, 22, 0.94) 100%
+    rgba(7, 28, 22, 0.1) 0%,
+    rgba(7, 28, 22, 0.55) 50%,
+    rgba(7, 28, 22, 0.94) 100%
   );
 }
 .lp-program-isi {
@@ -675,13 +969,19 @@
   transform: none;
 }
 
-/* Gambar tersingkap dari bawah + sedikit mengecil dari 1.08 → 1. */
+/* Gambar tersingkap dari bawah + sedikit mengecil dari 1.08 → 1.
+   clip-path dipasang pada ANAK .lp-singkap, bukan pada elemen yang diamati
+   IntersectionObserver: Chrome/Edge terbaru ikut menghitung clip-path milik
+   target, jadi target yang terpotong penuh dianggap tidak pernah terlihat —
+   dan tidak pernah tersingkap. */
 .lp-singkap {
   overflow: hidden;
+}
+.lp-singkap > * {
   clip-path: inset(0 0 100% 0);
   transition: clip-path 1.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.lp-singkap.is-tampak {
+.lp-singkap.is-tampak > * {
   clip-path: inset(0 0 0 0);
 }
 .lp-singkap img {
@@ -712,10 +1012,10 @@
   transition-delay: 0.18s;
 }
 
-/* --- .lp-nilai-* : dipakai bagian "Fokus Pendidikan" di halaman detail
-   jenjang (app/spmb/jenjang/[jenjang]/page.tsx), BUKAN oleh section "Yang
-   Kami Pegang" di landing page (itu sekarang pakai .lp-pegang-*, lihat di
-   bawah). Jangan diubah kalau yang direvisi cuma "Yang Kami Pegang". ------- */
+/* --- .lp-nilai-grid / -lengket / -item : bagian "Fokus Pendidikan" di
+   halaman detail jenjang (app/spmb/jenjang/[jenjang]/page.tsx). Panel nilai
+   MANTAP di hero memakai kelas .lp-nilai-* lain (lihat PANEL NILAI MANTAP
+   di akhir berkas). --------------------------------------------------------- */
 
 .lp-nilai-grid {
   display: grid;
@@ -744,167 +1044,6 @@
     top: 22vh;
   }
 }
-
-/* ---------------------------------------------------------------------------
-   "Yang Kami Pegang" — enam nilai, daftar editorial yang bisa diklik.
-
-   Struktur: judul + subjudul di atas (memakai token typografi bersama), lalu
-   SATU daftar vertikal penuh lebar (bukan lagi heading-di-samping seperti
-   .lp-nilai-*).
-   --------------------------------------------------------------------------- */
-
-.lp-pegang-daftar {
-  width: 100%;
-  border-bottom: 1px solid var(--lp-garis);
-}
-
-.lp-pegang-item {
-  border-top: 1px solid var(--lp-garis);
-  /* Baris yang TIDAK aktif meredup sedikit begitu ADA baris lain yang
-     terbuka — tetap terbaca, tidak menghilang, persis seperti diminta. */
-  opacity: 1;
-  transition: opacity 0.4s ease, border-color 0.4s ease;
-}
-.lp-pegang-daftar:has(.is-aktif) .lp-pegang-item:not(.is-aktif) {
-  opacity: 0.5;
-}
-/* Aksen Citra Negara: garis atas baris yang sedang dipilih menghijau. */
-.lp-pegang-item.is-aktif {
-  border-top-color: var(--lp-hijau);
-}
-
-.lp-pegang-tombol {
-  display: flex;
-  align-items: baseline;
-  gap: clamp(1rem, 3vw, 2.2rem);
-  width: 100%;
-  padding: clamp(1.1rem, 2.6vh, 1.7rem) 0;
-  background: none;
-  border: none;
-  font-family: inherit;
-  text-align: left;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.lp-pegang-tombol:focus-visible {
-  outline: 2px solid var(--lp-emas);
-  outline-offset: 4px;
-}
-
-.lp-pegang-no {
-  flex: 0 0 auto;
-  font-family: var(--lp-serif);
-  font-weight: 700;
-  font-size: clamp(1.2rem, 2.2vw, 1.9rem);
-  font-variant-numeric: tabular-nums;
-  color: var(--lp-tinta-samar);
-  transition: color 0.4s ease;
-}
-.lp-pegang-item.is-aktif .lp-pegang-no {
-  color: var(--lp-hijau);
-}
-
-.lp-pegang-nama {
-  flex: 1 1 auto;
-  font-family: var(--lp-serif);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  font-size: clamp(1.5rem, 3.6vw, 2.6rem);
-  color: var(--lp-tinta-lembut);
-  transition: color 0.4s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.lp-pegang-item.is-aktif .lp-pegang-nama {
-  color: var(--lp-tinta);
-}
-/* Sedikit bergeser saat disentuh — bukan lompatan besar. */
-.lp-pegang-tombol:hover .lp-pegang-nama {
-  transform: translateX(0.4rem);
-}
-
-.lp-pegang-tanda {
-  flex: 0 0 auto;
-  width: 1.6rem;
-  text-align: center;
-  font-size: 1.3rem;
-  font-weight: 400;
-  color: var(--lp-tinta-samar);
-  transition: color 0.4s ease, opacity 0.3s ease;
-  opacity: 0.7;
-}
-.lp-pegang-tombol:hover .lp-pegang-tanda,
-.lp-pegang-item.is-aktif .lp-pegang-tanda {
-  opacity: 1;
-  color: var(--lp-hijau);
-}
-
-/* Ekspansi tinggi mulus TANPA JavaScript mengukur tinggi konten: trik
-   grid-template-rows 0fr -> 1fr. overflow:hidden pada wadahnya sendiri sudah
-   cukup untuk memotong isi selagi barisnya masih menciut/mengembang. */
-.lp-pegang-caption {
-  display: grid;
-  grid-template-rows: 0fr;
-  overflow: hidden;
-  transition: grid-template-rows 0.55s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.lp-pegang-caption-teks {
-  /* overflow:hidden WAJIB di elemen GRID ITEM ini sendiri (bukan cukup di
-     wadahnya) -- tanpanya grid tetap memakai tinggi-konten-minimum sebagai
-     lantai, dan barisnya tidak pernah benar-benar menciut ke 0. Item ini
-     SENGAJA tanpa padding sendiri -- padding pada grid item ikut dihitung
-     sebagai tinggi minimum baris meski overflow:hidden (terbukti lewat uji:
-     tersisa ~16px persis sebesar padding-bottom yang tadinya di sini).
-     Jarak bawahnya dipindah ke .lp-pegang-caption-isi di dalamnya. */
-  overflow: hidden;
-  min-height: 0;
-  margin: 0;
-  opacity: 0;
-  transform: translateY(-6px);
-  transition: opacity 0.4s ease, transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.lp-pegang-caption-isi {
-  margin: 0;
-  max-width: 58ch;
-  padding-bottom: clamp(1.1rem, 2.6vh, 1.7rem);
-}
-.lp-pegang-item.is-aktif .lp-pegang-caption-teks {
-  opacity: 1;
-  transform: none;
-  transition-delay: 0.12s;
-}
-
-/* Reveal saat masuk layar: nomor muncul dulu, nama menyusul sepersekian
-   detik kemudian — memakai penanda .is-tampak yang SAMA dengan komponen
-   <Muncul> di seluruh halaman, cuma diberi tahap tambahan di sini. */
-.lp-pegang-item .lp-pegang-no,
-.lp-pegang-item .lp-pegang-nama {
-  opacity: 0;
-  transform: translateY(14px);
-  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.lp-pegang-item.is-tampak .lp-pegang-no {
-  opacity: 1;
-  transform: none;
-}
-.lp-pegang-item.is-tampak .lp-pegang-nama {
-  opacity: 1;
-  transform: none;
-  transition-delay: 0.1s;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lp-pegang-item .lp-pegang-no,
-  .lp-pegang-item .lp-pegang-nama {
-    opacity: 1 !important;
-    transform: none !important;
-  }
-  .lp-pegang-caption,
-  .lp-pegang-caption-teks,
-  .lp-pegang-nama {
-    transition-duration: 0.01ms !important;
-  }
-}
-
 
 /* --- Editorial dua kolom ------------------------------------------------- */
 
@@ -990,10 +1129,10 @@
 .lp-tab[aria-selected="true"] {
   background: var(--lp-hijau);
   border-color: var(--lp-hijau);
-  color: #fff;
+  color: var(--lp-atas-hijau);
 }
 .lp-tab:focus-visible {
-  outline: 2px solid var(--lp-emas);
+  outline: 2px solid var(--lp-aksen);
   outline-offset: 2px;
 }
 
@@ -1068,11 +1207,16 @@
   white-space: nowrap;
 }
 .lp-lencana--wajib {
-  background: rgba(15, 107, 69, 0.1);
-  color: var(--lp-hijau);
+  background: var(--lp-merah);
+  color: #ffffff;
+}
+/* "Sedang berjalan" pada jadwal gelombang. */
+.lp-lencana--aktif {
+  background: var(--lp-aksen);
+  color: #0d2008;
 }
 .lp-lencana--opsional {
-  background: rgba(16, 21, 18, 0.06);
+  background: color-mix(in srgb, var(--lp-tinta) 7%, transparent);
   color: var(--lp-tinta-samar);
 }
 
@@ -1106,8 +1250,8 @@
   overflow: hidden;
   /* Warna dasar sebelum poster/video sempat terlukis, supaya tidak sempat
      berkedip putih polos yang menyatu dengan latar barunya. */
-  background: #10241c;
-  box-shadow: 0 40px 80px -32px rgba(7, 31, 22, 0.45);
+  background: var(--lp-hijau-gelap);
+  box-shadow: 0 40px 80px -32px rgba(7, 28, 22, 0.45);
 }
 @media (min-width: 640px) {
   .lp-penutup-kartu {
@@ -1148,26 +1292,172 @@
    jarak atasnya dirapatkan (dulu berjarak lega karena diasumsikan berdiri
    sendiri). */
 .lp-footer {
-  background: transparent;
+  background: var(--lp-kertas-hangat);
   color: var(--lp-tinta-lembut);
-  padding: clamp(2rem, 5vw, 3.5rem) 0 2.5rem;
+  padding-top: clamp(3rem, 6vw, 4.5rem);
 }
 .lp-footer a {
-  color: var(--lp-tinta-lembut);
+  color: inherit;
   text-decoration: none;
   transition: color var(--lp-cepat);
 }
 .lp-footer a:hover {
-  color: var(--lp-tinta);
+  color: var(--lp-hijau);
+}
+/* Spesifisitas dinaikkan: img[data-nimg] di globals.css. */
+.lp-footer .lp-footer-logo {
+  display: block;
+  width: auto;
+  height: clamp(3.4rem, 6vw, 4.6rem);
 }
 .lp-footer-grid {
   display: grid;
-  gap: 2.5rem;
+  gap: 2.4rem;
+  margin-top: clamp(1.8rem, 3vw, 2.4rem);
 }
 @media (min-width: 768px) {
   .lp-footer-grid {
-    grid-template-columns: 1.6fr 1fr 1fr;
+    grid-template-columns: 1.7fr 1fr 1fr;
   }
+}
+.lp-footer-judul {
+  margin: 0 0 1.1rem;
+  font-family: var(--lp-sans);
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--lp-tinta);
+}
+.lp-footer-judul--besar {
+  font-size: clamp(1.5rem, 2.2vw, 1.9rem);
+}
+.lp-footer-alamat {
+  display: grid;
+  gap: 0.7rem;
+  font-style: normal;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--lp-tinta);
+}
+.lp-footer .lp-footer-tombol {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 1.9rem;
+  padding: 1.05rem 1.7rem;
+  border-radius: 4px;
+  background: var(--lp-hijau);
+  color: var(--lp-atas-hijau);
+  font-size: 0.95rem;
+  font-weight: 800;
+  transition:
+    background-color 0.3s ease,
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lp-footer .lp-footer-tombol:hover {
+  background: var(--lp-hijau-dalam);
+  color: var(--lp-atas-hijau);
+  transform: translateY(-2px);
+}
+.lp-footer-tautan {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 1rem;
+  color: var(--lp-tinta);
+}
+.lp-footer-sosial {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lp-footer .lp-footer-sosial-ikon {
+  display: grid;
+  place-items: center;
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lp-footer .lp-footer-sosial-ikon:hover {
+  transform: translateY(-3px);
+}
+.lp-footer .lp-footer-sosial-ikon--instagram { background: #f1e4f8; color: #8a3ab9; }
+.lp-footer .lp-footer-sosial-ikon--tiktok { background: #e4ebe7; color: #111111; }
+.lp-footer .lp-footer-sosial-ikon--youtube { background: #fbe2e3; color: #d71920; }
+.lp-footer .lp-footer-sosial-ikon--whatsapp { background: #e0f2da; color: #1f8f3a; }
+.lp-footer a:focus-visible,
+.lp-footer-bc-logo:focus-visible {
+  outline: 2px solid var(--lp-aksen);
+  outline-offset: 4px;
+}
+.lp-footer-hak {
+  margin: clamp(2.5rem, 5vw, 3.5rem) 0 0;
+  padding-bottom: clamp(2rem, 4vw, 2.8rem);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--lp-tinta-lembut);
+}
+
+/* Deret paling bawah: logo business centre, abu-abu sampai disorot/diketuk. */
+.lp-footer-bc {
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--lp-garis);
+  background: var(--lp-kertas);
+}
+.lp-footer-bc-deret {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 1.1rem clamp(1.4rem, 3vw, 2.6rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 1024px) {
+  .lp-footer-bc-deret {
+    justify-content: flex-end;
+  }
+}
+.lp-footer-bc-logo {
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.lp-footer .lp-footer-bc-logo img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-height: clamp(2.5rem, 3.6vw, 3.2rem);
+  max-width: 8.5rem;
+  filter: grayscale(1);
+  opacity: 0.55;
+  transition:
+    filter 0.35s ease,
+    opacity 0.35s ease,
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lp-footer-bc-logo:hover img,
+.lp-footer-bc-logo:focus img,
+.lp-footer-bc-logo:active img {
+  filter: none;
+  opacity: 1;
+  transform: scale(1.06);
+}
+/* Tema gelap: logo berteks gelap butuh alas terang. */
+[data-tema="gelap"] .lp-footer-bc-logo {
+  padding: 0.4rem 0.55rem;
+  background: #f6f8f5;
 }
 
 /* --- Aksesibilitas: hormati preferensi gerak berkurang -------------------- */
@@ -1187,7 +1477,7 @@
     opacity: 1 !important;
     transform: none !important;
   }
-  .lp-singkap {
+  .lp-singkap > * {
     clip-path: none !important;
   }
   .lp-singkap img {
@@ -1200,136 +1490,175 @@
 
 /* Umpan balik saat ditekan — halaman ini banyak yang bisa diklik, dan
    setiap klik harus terasa. */
-.lp-panel:active,
 .lp-program:active,
 .lp-tombol:active,
 .lp-tab:active {
   transform: scale(0.988);
 }
-.lp-panel,
 .lp-program {
   transition: transform var(--lp-cepat);
 }
 
 /* ===========================================================================
-   TIRAI PEMBUKA
+   ANIMASI PEMBUKA (components/landing/Pembuka.tsx)
 
-   Foto sekolah dipotong mengikuti bentuk huruf: latar dipasang pada BARIS,
-   lalu di-clip ke teks. Huruf-hurufnya sendiri hanya bergerak — jadi ketika
-   naik, fotonya seolah tersingkap dari balik garis dasar.
+   Tahap 1–2 di sini, murni CSS, berjalan sejak bingkai pertama:
+     0,15–1,75 dtk  lima foto meluncur masuk dari KANAN ke kiri, berhenti
+                    tepat di tengah layar
+     2,15–3,55 dtk  deret foto turun sedikit dan menyingkap judul yang sejak
+                    awal menunggu di BELAKANGNYA; judul ikut naik pelan ke
+                    tengah layar
+   Setelah judul sempat terbaca, komponennya menjalankan tahap 3–4 (foto
+   tengah membesar jadi latar hero, kata-kata judul terbang ke label hero)
+   lewat Web Animations API.
    =========================================================================== */
 
 .lp-pembuka {
-  position: fixed;
-  /* top/left/ukuran ditulis terpisah (bukan inset) supaya `top` bisa
-     dianimasikan untuk mengangkat tirai. */
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100svh;
-  z-index: 300;
-  background: var(--lp-kertas);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  overflow: hidden;
+  /* Ukuran kartu foto: mengikuti lebar layar, tapi tidak pernah lebih tinggi
+     dari ±1/3 tinggi layar (layar lebar yang pendek). */
+  --w: min(clamp(9rem, 16.5vw, 20rem), 30vh);
+  --h: calc(var(--w) * 1.1);
+  --celah: clamp(0.6rem, 1.6vw, 1.75rem);
+  --f: clamp(2rem, 4.1vw, 4.25rem);
+  --baris-judul: 2;
+  /* Perkiraan tinggi judul (baris × line-height × ukuran huruf). */
+  --tj: calc(var(--baris-judul) * 1.1 * var(--f));
+  --celah-teks: clamp(1.25rem, 4vh, 2.5rem);
+  /* Pusat judul di 44% tinggi layar; deret foto turun dari tengah layar
+     sampai tepat di bawah judul. */
+  --pusat-judul: 44;
+  --turun: calc(var(--tj) / 2 + var(--celah-teks) + var(--h) / 2 - (50 - var(--pusat-judul)) * 1dvh);
 
-  /* Terangkat ke atas seperti tirai panggung.
-     PENTING — memakai `top`, BUKAN clip-path maupun transform.
-     Di Chromium, leluhur yang dipromosikan jadi lapisan komposit sendiri
-     (clip-path, transform, will-change) MEMATIKAN `background-clip: text`
-     pada keturunannya: hurufnya tetap ada dan terukur benar, tapi fotonya
-     sama sekali tidak terlukis — yang tampak hanya layar kosong. Keduanya
-     sudah terbukti merusak lewat uji browser di sini. Menganimasikan `top`
-     memang memicu layout, tapi ini animasi satu kali pada satu elemen
-     layar penuh, dan itu harga yang jauh lebih murah daripada tirai yang
-     tidak menampilkan apa pun. */
-  transition: top 1.1s cubic-bezier(0.76, 0, 0.24, 1);
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  overflow: hidden;
+  background: var(--lp-kertas);
 }
-/* Disetel skrip di dalam tirai SEBELUM halaman dilukis: sesi yang sudah
-   pernah melihatnya tidak perlu melihatnya lagi, dan tidak boleh ada kedipan. */
+@media (max-width: 640px) {
+  .lp-pembuka {
+    /* Baris pertama judul membungkus jadi dua di HP. */
+    --baris-judul: 3;
+  }
+}
+
+/* Jaring pengaman: kalau JavaScript tidak pernah hidup, tirai tetap
+   menyingkir sendiri alih-alih menutupi halaman selamanya. */
+.lp-pembuka:not(.is-hidup) {
+  animation: lp-pembuka-darurat 0.6s ease 12s forwards;
+}
+@keyframes lp-pembuka-darurat {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* Disetel skrip di <head> sebelum halaman dilukis (app/layout.tsx): sesi yang
+   sudah pernah melihatnya tidak melihatnya lagi, tanpa kedipan. */
 [data-pembuka="lewat"] .lp-pembuka {
   display: none !important;
 }
 
-.lp-pembuka.is-pergi {
-  top: -100svh;
-  pointer-events: none;
-}
-.lp-pembuka.is-pergi .lp-pembuka-garis,
-.lp-pembuka.is-pergi .lp-pembuka-tahun {
-  opacity: 0;
-  transition: opacity 0.45s ease;
-}
+/* --- Deret foto ------------------------------------------------------------ */
 
-/* Kabut hijau samar di belakang huruf supaya fotonya tidak menyilaukan. */
-.lp-pembuka-latar {
+.lp-pembuka-panggung {
   position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    120% 80% at 50% 45%,
-    rgba(15, 107, 69, 0.06),
-    transparent 70%
-  );
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: var(--h);
+  margin-top: calc(var(--h) / -2);
+  z-index: 2;
+  animation: lp-pembuka-turun 1.4s cubic-bezier(0.65, 0, 0.35, 1) 2.15s both;
+}
+@keyframes lp-pembuka-turun {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateY(var(--turun));
+  }
 }
 
-.lp-pembuka-teks {
+.lp-pembuka-kartu {
+  position: absolute;
+  top: 0;
+  left: calc((var(--i) - 2) * (var(--w) + var(--celah)) - var(--w) / 2);
+  width: var(--w);
+  height: var(--h);
+  animation: lp-pembuka-masuk 1.6s cubic-bezier(0.23, 1, 0.32, 1) 0.15s both;
+}
+/* Foto paling kanan berangkat paling jauh, jadi melaju paling cepat: deretnya
+   datang renggang lalu merapat saat mengerem. */
+@keyframes lp-pembuka-masuk {
+  from {
+    transform: translateX(calc(100vw + 3 * var(--w) + var(--i) * 9vw));
+  }
+  to {
+    transform: none;
+  }
+}
+
+.lp-pembuka-foto {
   position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 3px;
+  /* Warna tunggu selagi fotonya dimuat. */
+  background: color-mix(in srgb, var(--lp-hijau) 16%, var(--lp-kertas));
+}
+
+/* --- Judul ----------------------------------------------------------------- */
+
+/* Sejak awal sudah berada di tengah layar, TERTUTUP deret foto (lapisannya
+   di bawah deret sampai foto tengah mulai membesar). Deret yang turunlah
+   yang menyingkapnya; judul sendiri hanya naik sedikit sambil memudar masuk. */
+.lp-pembuka-judul {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  /* Isi dipusatkan di tinggi 2 × 44% = 88% → pusatnya tepat di 44%. */
+  height: calc(2% * var(--pusat-judul));
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-inline: clamp(1rem, 5vw, 4rem);
   text-align: center;
-  font-family: var(--lp-serif);
-  font-weight: 900;
-  line-height: 0.92;
-  letter-spacing: -0.03em;
-  padding-inline: 1rem;
+  font-family: var(--lp-sans);
+  font-size: var(--f);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  color: var(--lp-tinta);
+  pointer-events: none;
+  animation: lp-pembuka-judul-naik 1.6s cubic-bezier(0.22, 1, 0.36, 1) 2.3s both;
+}
+@keyframes lp-pembuka-judul-naik {
+  from {
+    transform: translateY(calc(var(--tj) * 0.45));
+  }
+  to {
+    transform: none;
+  }
+}
+.lp-pembuka.is-zoom .lp-pembuka-judul {
+  z-index: 4;
 }
 
 .lp-pembuka-baris {
   display: block;
-  overflow: hidden;
-  /* Tinta padat: keadaan dasar yang langsung terbaca, dan jaring pengaman
-     kalau video gagal dimuat atau mask tidak didukung browser. Begitu
-     .lp-pembuka-video-lapis siap, ia memudar masuk MENUTUPI tinta ini di
-     area yang berbentuk huruf yang sama persis (lihat definisinya di
-     bawah). */
-  color: var(--lp-tinta);
-}
-.lp-pembuka-baris--satu {
-  font-size: clamp(3.6rem, 17vw, 15rem);
+  animation: lp-pembuka-baris-muncul 1s ease 2.3s both;
 }
 .lp-pembuka-baris--dua {
-  font-size: clamp(1.35rem, 6.4vw, 5.6rem);
-  letter-spacing: 0.03em;
-  margin-top: 0.1em;
+  color: var(--lp-hijau);
+  font-weight: 500;
+  animation-delay: 2.5s;
 }
-
-/* Lapisan video yang "bolong" mengikuti bentuk kedua baris di sebelah kiri
-   (lihat komponen Pembuka.tsx untuk definisi <mask> SVG-nya). Diletakkan
-   pas menutupi .lp-pembuka-teks, lalu memudar masuk setelah hurufnya
-   selesai naik supaya urutannya terasa: judul muncul dulu, baru badannya
-   terbuka jadi jendela ke video. */
-.lp-pembuka-video-lapis {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  opacity: 0;
-  -webkit-mask-image: url("#lp-pembuka-video-mask");
-  mask-image: url("#lp-pembuka-video-mask");
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-size: 100% 100%;
-  mask-size: 100% 100%;
-  animation: lp-pembuka-video-muncul 0.6s ease 0.85s both;
-}
-.lp-pembuka-video-lapis video {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-@keyframes lp-pembuka-video-muncul {
+@keyframes lp-pembuka-baris-muncul {
   from {
     opacity: 0;
   }
@@ -1337,84 +1666,78 @@
     opacity: 1;
   }
 }
-.lp-pembuka.is-pergi .lp-pembuka-video-lapis {
-  animation: none;
-  opacity: 1;
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .lp-pembuka-video-lapis {
-    display: none;
-  }
-}
-
-/* Tiap huruf naik dari bawah garis dasar dengan jedanya sendiri.
-
-   Masih memakai `top`, bukan `transform` — sekarang sebetulnya sekadar
-   warisan, bukan lagi keharusan: baris ini sudah tidak dilukis lewat
-   `background-clip: text` (lubang videonya sekarang dari mask SVG yang
-   terpisah, lihat .lp-pembuka-video-lapis), jadi bug lama "transform pada
-   keturunan mematikan background-clip:text milik induk" sudah tidak
-   relevan di sini. Dibiarkan seperti ini karena sudah terbukti benar dan
-   tidak ada alasan mengubahnya. */
-.lp-huruf {
+/* Tiap kata terbang sendiri ke label hero; titik tumpunya di tepi kiri
+   supaya jarak hurufnya bisa melebar tanpa menggeser posisi awal kata. */
+.lp-pembuka-kata {
   display: inline-block;
-  position: relative;
-  top: 105%;
-  /* CEPAT dan sekali jalan: judul harus jadi hal PERTAMA yang terbaca,
-     bukan sesuatu yang ditunggu. Seluruh baris selesai di bawah satu detik. */
-  animation: lp-huruf-naik 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
-  white-space: pre;
-}
-@keyframes lp-huruf-naik {
-  from {
-    top: 105%;
-  }
-  to {
-    top: 0;
-  }
+  white-space: nowrap;
+  transform-origin: 0 50%;
 }
 
-/* Garis emas ditarik dari tengah setelah hurufnya selesai naik. */
-.lp-pembuka-garis {
-  position: relative;
-  display: block;
-  width: min(38vw, 22rem);
-  height: 1px;
-  margin-top: clamp(1.5rem, 4vh, 2.75rem);
-  background: linear-gradient(90deg, transparent, var(--lp-emas), transparent);
-  transform: scaleX(0);
-  animation: lp-garis-tarik 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.62s both;
+/* --- Foto tengah membesar -------------------------------------------------- */
+
+.lp-pembuka-zoom {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  visibility: hidden;
+  pointer-events: none;
 }
-@keyframes lp-garis-tarik {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
+.lp-pembuka.is-zoom .lp-pembuka-zoom {
+  visibility: visible;
+}
+.lp-pembuka-zoom-bingkai {
+  position: absolute;
+  /* Ukuran bawaan sebelum diukur ulang dari gambar hero oleh Pembuka.tsx. */
+  inset: 0;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+.lp-pembuka-zoom-tirai {
+  position: absolute;
+  opacity: 0;
 }
 
-.lp-pembuka-tahun {
-  position: relative;
-  margin-top: clamp(0.9rem, 2.4vh, 1.4rem);
-  font-family: var(--lp-sans);
-  font-size: clamp(0.62rem, 1vw, 0.78rem);
-  font-weight: 700;
-  letter-spacing: 0.42em;
-  text-transform: uppercase;
-  color: var(--lp-tinta-samar);
-  animation: lp-tahun-muncul 0.6s ease 0.82s both;
+/* --- Serah terima ------------------------------------------------------------ */
+
+/* Lapisan foto disingkirkan pada bingkai yang sama dengan saat ukurannya
+   persis menyamai hero di bawahnya — yang tersisa hanya kata-kata judul. */
+.lp-pembuka.is-lepas {
+  pointer-events: none;
 }
-@keyframes lp-tahun-muncul {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+.lp-pembuka.is-lepas:not(.is-lewati) {
+  background: transparent;
+}
+.lp-pembuka.is-lepas:not(.is-lewati) .lp-pembuka-panggung,
+.lp-pembuka.is-lepas:not(.is-lewati) .lp-pembuka-zoom {
+  visibility: hidden;
+}
+/* Dilewati pengguna: seluruh tirai cukup memudar. */
+.lp-pembuka.is-lewati {
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+
+/* Selama tirai berjalan, navbar dan isi hero ditahan, lalu masuk bersamaan
+   dengan serah terima. Hanya berlaku bila JavaScript hidup (.is-hidup) —
+   tanpa itu semuanya tampil seperti biasa. */
+.lp-pembuka.is-hidup:not(.is-lepas) ~ .lp-nav {
+  opacity: 0;
+  transform: translateY(-1.25rem);
+}
+.lp-pembuka.is-hidup:not(.is-lepas) ~ .lp-bab-tegak .lp-hero-nilai {
+  animation: none;
+  opacity: 0;
+}
+/* Label hero tidak memakai animasi masuknya sendiri: kata-kata judul yang
+   terbang itulah yang menjadi label ini (Pembuka.tsx memudarkannya masuk). */
+.lp-pembuka.is-hidup ~ .lp-bab-tegak .lp-hero-label {
+  animation: none;
+  opacity: 0;
+}
+.lp-pembuka.is-lepas ~ .lp-bab-tegak .lp-hero-nilai {
+  animation-delay: 0.5s;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1427,6 +1750,11 @@
    .lp-root, yang mengikuti tema. */
 .lp-bab-tegak {
   background: transparent;
+}
+/* Bab berlatar "Section" (#f6f8f5 / Surface) — memberi irama selang-seling
+   tanpa meninggalkan kesan dominan putih. */
+.lp-bab-tegak.lp-bab--lembut {
+  background: var(--lp-kertas-hangat);
 }
 
 /* Ruang di atas supaya butir pertama tidak tertutup navbar yang mengambang,
@@ -1482,7 +1810,7 @@
 .lp-alur-kemajuan-isi {
   display: block;
   height: 100%;
-  background: var(--lp-hijau);
+  background: var(--lp-aksen);
   transform-origin: left center;
   transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -1641,14 +1969,12 @@
 .lp-hero-label {
   animation: lp-hero-masuk 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
 }
-.lp-hero-judul {
+.lp-hero-judul,
+.lp-hero-nilai {
   animation: lp-hero-masuk 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both;
 }
 .lp-hero-sub {
   animation: lp-hero-masuk 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.22s both;
-}
-.lp-hero-aksi {
-  animation: lp-hero-masuk 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.32s both;
 }
 @keyframes lp-hero-masuk {
   from {
@@ -1666,16 +1992,14 @@
    =========================================================================== */
 
 .lp-bab-tegak .lp-footer {
-  background: transparent;
   width: 100%;
-  padding-block: clamp(2rem, 6vh, 4rem);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .lp-hero-label,
   .lp-hero-judul,
   .lp-hero-sub,
-  .lp-hero-aksi {
+  .lp-hero-nilai {
     animation: none !important;
   }
   .lp-alur-item {
@@ -1692,4 +2016,2158 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem 0.7rem;
+}
+
+/* ===========================================================================
+   PANEL NILAI MANTAP (components/landing/PanelNilai.tsx)
+
+   Dibuka dari deret nilai di hero: panel foto setinggi layar di tengah,
+   latar kiri-kanan meredup hijau tua, kepala berlambang di atas, tombol
+   panah di kedua sisi. Membuka dengan "membelah" latar dari garis tengah;
+   animasi buka/tutup/pindahnya dijalankan komponennya lewat Web Animations API.
+   =========================================================================== */
+
+.lp-nilai {
+  position: fixed;
+  inset: 0;
+  z-index: 170;
+  color: #fff;
+}
+.lp-nilai.is-tertutup {
+  visibility: hidden;
+  pointer-events: none;
+}
+/* Panel punya kepala berlambangnya sendiri; navbar asli di belakangnya
+   disembunyikan supaya garis emas dan ikon menunya tidak tampak dobel.
+   Atributnya dipasang/dilepas PanelNilai.tsx (dilepas sejak awal menutup). */
+html[data-nilai-buka] .lp-nav {
+  opacity: 0;
+  pointer-events: none;
+}
+/* Mode gerak-dikurangi memberi SEMUA elemen .lp-root transisi 0,01 ms. Di
+   panel ini itu ikut mentransisikan `visibility`, sehingga tombol tutup masih
+   terhitung tersembunyi tepat saat panel dibuka dan tidak bisa menerima fokus. */
+@media (prefers-reduced-motion: reduce) {
+  .lp-nilai,
+  .lp-nilai * {
+    transition-property: none !important;
+  }
+}
+
+/* Tanpa backdrop-filter: blur layar penuh yang ikut dianimasikan terlalu berat
+   dan membuat buka-tutup tersendat. Warnanya sedikit lebih pekat sebagai ganti. */
+.lp-nilai-tirai {
+  position: absolute;
+  inset: 0;
+  background: rgba(7, 28, 22, 0.8);
+}
+
+.lp-nilai-panel {
+  --lebar-panel: min(80vw, 90rem);
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: var(--lebar-panel);
+  margin-left: calc(var(--lebar-panel) / -2);
+  overflow: hidden;
+  /* Geser kiri-kanan di HP dipakai untuk berpindah nilai. */
+  touch-action: pan-y;
+}
+@media (max-width: 820px) {
+  .lp-nilai-panel {
+    --lebar-panel: 100%;
+    left: 0;
+    margin-left: 0;
+  }
+}
+
+/* Kilatan putih celah saat latar terbelah (buka) dan saat foto tertutup
+   sebelum celahnya menyempit (tutup). Dianimasikan lewat transform scaleX
+   dari garis tengah. Sengaja putih di kedua tema. */
+.lp-nilai-celah {
+  position: absolute;
+  inset: 0;
+  background: #ffffff;
+  transform-origin: 50% 50%;
+}
+
+.lp-nilai-foto {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+}
+/* `inherit`, BUKAN `visible`: keturunan yang memaksa visible tetap tampak
+   walau induknya (.lp-nilai.is-tertutup) tersembunyi — foto akan menimpa
+   hero padahal panelnya belum dibuka. */
+.lp-nilai-foto[data-tahap="lalu"] {
+  visibility: inherit;
+  z-index: 1;
+}
+.lp-nilai-foto[data-tahap="aktif"] {
+  visibility: inherit;
+  z-index: 2;
+}
+/* Saat menutup, sisa foto dari perpindahan sebelumnya tidak boleh tampak di
+   balik foto aktif yang sedang memudar ke putih. */
+.lp-nilai.is-menutup .lp-nilai-foto[data-tahap="lalu"] {
+  visibility: hidden;
+}
+
+/* Gelap di atas (kepala) dan di bawah (teks), foto tetap bercerita di tengah. */
+.lp-nilai-gelap {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: linear-gradient(
+    180deg,
+    rgba(7, 28, 22, 0.66) 0%,
+    rgba(7, 28, 22, 0.22) 24%,
+    rgba(7, 28, 22, 0.28) 44%,
+    rgba(7, 28, 22, 0.74) 70%,
+    rgba(7, 28, 22, 0.9) 100%
+  );
+}
+
+.lp-nilai-isi {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  text-align: center;
+  padding: 7rem clamp(1.25rem, 6vw, 5rem) clamp(4rem, 12vh, 7.5rem);
+}
+.lp-nilai-judul {
+  margin: 0;
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: clamp(2.6rem, 6vw, 5.2rem);
+  line-height: 1;
+  letter-spacing: 0.005em;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35);
+}
+.lp-nilai-teks {
+  margin: 1.3rem 0 0;
+  max-width: 44rem;
+  font-family: var(--lp-serif);
+  font-size: clamp(1.05rem, 1.5vw, 1.38rem);
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.94);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* --- Kepala: lambang diapit garis emas, seperti navbar di atas hero --- */
+.lp-nilai-kepala {
+  --tepi: clamp(1.25rem, 4.5vw, 3.5rem);
+  position: absolute;
+  z-index: 5;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: clamp(0.8rem, 1.6vw, 1.4rem);
+  /* Ruang yang sama di kiri-kanan untuk tombol tutup, supaya lambang tetap
+     tepat di tengah. */
+  padding: 1.15rem calc(var(--tepi) + 3.4rem);
+  pointer-events: none;
+}
+.lp-nilai-garis {
+  display: block;
+  height: 1px;
+  background: var(--lp-sorot);
+  opacity: 0.9;
+}
+.lp-nilai-merek {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-weight: 600;
+  font-size: 0.92rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.35);
+}
+.lp-nilai .lp-nilai-merek img {
+  display: block;
+  height: 46px;
+  width: auto;
+}
+@media (max-width: 639px) {
+  .lp-nilai-merek span {
+    display: none;
+  }
+  .lp-nilai .lp-nilai-merek img {
+    height: 36px;
+  }
+}
+
+.lp-nilai-tutup {
+  position: absolute;
+  z-index: 6;
+  top: 0.75rem;
+  right: clamp(0.75rem, 4.5vw, 3.2rem);
+  width: 3rem;
+  height: 3rem;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease;
+}
+.lp-nilai-tutup:hover {
+  color: var(--lp-sorot);
+  transform: rotate(90deg);
+}
+
+/* --- Panah sebelum / berikutnya --- */
+.lp-nilai-panah {
+  position: absolute;
+  z-index: 6;
+  top: 50%;
+  width: 3rem;
+  height: 3rem;
+  margin-top: -1.5rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
+  /* Latar solid, bukan backdrop-filter: blur di atas foto yang sedang
+     bergerak harus dihitung ulang tiap bingkai dan membuat animasi tersendat. */
+  background: rgba(7, 28, 22, 0.7);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+.lp-nilai-panah:hover {
+  background: var(--lp-sorot);
+  border-color: var(--lp-sorot);
+  color: var(--lp-atas-sorot);
+}
+.lp-nilai-panah--kiri {
+  left: clamp(0.6rem, 3vw, 2.5rem);
+}
+.lp-nilai-panah--kanan {
+  right: clamp(0.6rem, 3vw, 2.5rem);
+}
+
+/* ===========================================================================
+   HERO → "SEBUAH TEMPAT" (Hero.tsx, Intro.tsx)
+
+   Transisi yang MENGIKUTI POSISI GULIR, maju maupun mundur — bukan animasi
+   yang diputar sekali, dan tanpa bagian yang "ditahan" di layar:
+     • Hero ikut tergulir naik seperti biasa, tetapi fotonya MENGECIL dari
+       kiri-kanan DAN dari bawah (tiga penutup berwarna latar halaman melebar
+       dari tepi — isi fotonya tidak diperkecil), sampai tinggal pita di atas
+       dan jarak ke bab berikutnya tampak jauh. Semboyan & tombol di bagian
+       bawahnya ikut terpotong naik sambil memudar.
+     • Bab berikutnya berupa kartu hijau tua di atas deretan foto kegiatan
+       yang lebih pendek dari kartunya. Foto-foto di belakang kartu BERJALAN
+       KE SAMPING mengikuti gulir (ke kiri saat turun, ke kanan saat naik)
+       dan mengecil pelan ke ukuran normal.
+     • Isi kartu muncul bergiliran: label → judul → paragraf → tombol, dan
+       tombolnya tersingkap dari blur.
+
+   Hanya transform, opacity, dan filter yang dianimasikan, lewat
+   animation-timeline — browser mengerjakannya di GPU tanpa JavaScript per
+   bingkai. Browser yang belum mendukungnya, dan pengguna yang meminta gerak
+   dikurangi, melihat tata letak yang sama dalam keadaan diam.
+   =========================================================================== */
+
+/* --- Penutup sisi hero: diam = tidak tampak ----------------------------- */
+.lp-hero-sisi {
+  --lebar-sisi: 30%;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  /* Di atas teks hero (.lp-hero-isi, z-index 2): teks yang sedang memudar
+     ikut terpotong bingkai, tidak tampak menjorok ke area putih. */
+  z-index: 3;
+  width: calc(var(--lebar-sisi) + 1px);
+  background: var(--lp-kertas);
+  transform: scaleX(0);
+  pointer-events: none;
+}
+.lp-hero-sisi--kiri {
+  left: -1px;
+  transform-origin: 0 50%;
+}
+.lp-hero-sisi--kanan {
+  right: -1px;
+  transform-origin: 100% 50%;
+}
+/* Penutup bawah: memotong foto dari bawah ke atas. */
+.lp-hero-sisi--bawah {
+  top: auto;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
+  width: auto;
+  height: calc(62% + 1px);
+  transform: scaleY(0);
+  transform-origin: 50% 100%;
+}
+@media (max-width: 720px) {
+  .lp-hero-sisi {
+    --lebar-sisi: 14%;
+  }
+}
+
+/* --- "Sebuah tempat": kartu di atas deretan foto ------------------------- */
+.lp-intro {
+  --lp-intro-kartu: var(--lp-panel);
+  /* Seberapa jauh deret foto berjalan ke samping (ke tiap arah). */
+  --lp-intro-geser: 30vw;
+  position: relative;
+  display: grid;
+  /* Satu kolom selebar layar — tanpa ini kolomnya ikut melebar mengikuti
+     deret foto (yang memang lebih lebar dari layar) dan kartu jadi tidak
+     di tengah. */
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+  /* Jarak lega dari hero di atasnya. */
+  padding-block: clamp(6.5rem, 17vh, 11rem) clamp(4.5rem, 12vh, 8rem);
+  /* clip, bukan hidden: deret foto sengaja lebih lebar dari layar, tapi
+     halaman tidak boleh bisa digulir ke samping — dan clip tidak membuat
+     wadah gulir baru (yang akan mematahkan garis waktu gulir di dalamnya). */
+  overflow: clip;
+}
+
+.lp-intro-deret {
+  grid-area: 1 / 1;
+  display: flex;
+  justify-content: center;
+  gap: clamp(1rem, 2.6vw, 3rem);
+  width: 100%;
+}
+.lp-intro-foto {
+  position: relative;
+  flex: 0 0 auto;
+  width: clamp(9.5rem, 19vw, 18rem);
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--lp-kertas-hangat);
+}
+
+.lp-intro-kartu {
+  grid-area: 1 / 1;
+  position: relative;
+  z-index: 1;
+  width: min(42rem, 100% - 2rem);
+  padding: clamp(2.5rem, 5vw, 4.25rem) clamp(1.5rem, 4.5vw, 4rem);
+  /* Datar, tanpa bayangan, bersudut tegas. */
+  border-radius: 4px;
+  background: var(--lp-intro-kartu);
+  color: #fff;
+  text-align: center;
+}
+.lp-intro-label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lp-sorot);
+}
+.lp-intro-judul {
+  margin: 1rem 0 0;
+  font-family: var(--lp-serif);
+  font-weight: 700;
+  font-size: clamp(2.3rem, 4.4vw, 4rem);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+.lp-intro-teks {
+  margin: 1.25rem auto 0;
+  max-width: 34rem;
+  font-size: clamp(1rem, 1.15vw, 1.1rem);
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.86);
+}
+.lp-intro-tombol {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-top: 2rem;
+  padding: 0.5rem 0.55rem 0.5rem 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.3s ease;
+}
+.lp-intro-tombol:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.lp-intro-tombol:focus-visible {
+  outline: 2px solid var(--lp-sorot);
+  outline-offset: 3px;
+}
+.lp-intro-tombol-panah {
+  display: grid;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  background: var(--lp-sorot);
+  color: var(--lp-atas-sorot);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lp-intro-tombol:hover .lp-intro-tombol-panah {
+  transform: translateX(3px);
+}
+
+/* HP: deret foto di atas, kartu menumpang menutupi separuh bawahnya. */
+@media (max-width: 720px) {
+  .lp-intro-deret {
+    grid-area: 1 / 1;
+  }
+  .lp-intro-foto {
+    width: 42vw;
+  }
+  .lp-intro-kartu {
+    grid-area: 2 / 1;
+    margin-block: -24vw 0;
+  }
+  /* Layar sempit: geser lebih jauh supaya gerak sampingnya tetap terasa. */
+  .lp-intro {
+    --lp-intro-geser: 55vw;
+  }
+}
+
+/* --- Gerak mengikuti gulir ------------------------------------------------ */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Hero: rentangnya selama hero keluar layar (posisi teratas → hero
+       sepenuhnya lewat). */
+    .lp-hero-panggung {
+      view-timeline: --lp-hero block;
+    }
+    /* Hanya hero landing (di dalam panggung). Hero halaman detail jenjang
+       memakai kelas yang sama tanpa panggung: di sana --lp-hero tidak ada,
+       dan animasi tanpa garis waktu langsung jatuh ke keadaan akhirnya —
+       teks hero ikut tersembunyi. */
+    .lp-hero-sisi,
+    .lp-hero-panggung .lp-hero-media,
+    .lp-hero-panggung .lp-hero-isi {
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --lp-hero;
+      animation-range: exit 0% exit 100%;
+    }
+    .lp-hero-sisi {
+      animation-name: lp-hero-sisi;
+    }
+    .lp-hero-sisi--bawah {
+      animation-name: lp-hero-bawah;
+    }
+    .lp-hero-panggung .lp-hero-media {
+      animation-name: lp-hero-media-gulir;
+    }
+    .lp-hero-panggung .lp-hero-isi {
+      animation-name: lp-hero-isi-gulir;
+    }
+
+    /* "Sebuah tempat": semua memakai garis waktu bab ini sendiri — foto di
+       dalam .lp-intro-foto (overflow:hidden) tidak bisa memakai view()
+       miliknya sendiri. */
+    .lp-intro {
+      view-timeline: --lp-intro block;
+    }
+    .lp-intro-deret,
+    .lp-intro-foto img,
+    .lp-intro-muncul,
+    .lp-intro-tombol {
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --lp-intro;
+    }
+    .lp-intro-deret {
+      animation-name: lp-intro-deret;
+      animation-range: cover 0% cover 100%;
+    }
+    .lp-intro-foto img {
+      animation-name: lp-intro-foto;
+      animation-range: entry 0% cover 45%;
+    }
+    .lp-intro-muncul {
+      animation-name: lp-intro-muncul;
+    }
+    .lp-intro-label {
+      animation-range: cover 10% cover 24%;
+    }
+    .lp-intro-judul {
+      animation-range: cover 13% cover 28%;
+    }
+    .lp-intro-kartu > p:nth-of-type(2) {
+      animation-range: cover 17% cover 32%;
+    }
+    .lp-intro-kartu > p:nth-of-type(3) {
+      animation-range: cover 21% cover 36%;
+    }
+    .lp-intro-tombol {
+      animation-name: lp-intro-tombol;
+      animation-range: cover 25% cover 40%;
+    }
+  }
+}
+
+/* Bawah: mula-mula pelan (sisi yang menyempit duluan), lalu makin cepat —
+   pita foto di atas makin tipis dan jarak putih di bawahnya makin jauh. */
+@keyframes lp-hero-bawah {
+  0% {
+    transform: scaleY(0);
+    animation-timing-function: cubic-bezier(0.55, 0, 0.85, 0.55);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+@keyframes lp-hero-sisi {
+  0% {
+    transform: scaleX(0);
+    animation-timing-function: cubic-bezier(0.3, 0, 0.6, 1);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+/* Mulai dari skala yang sama dengan hero di posisi teratas (SKALA_HERO) —
+   Pembuka.tsx mengukur gambar ini saat serah terima. */
+@keyframes lp-hero-media-gulir {
+  from {
+    transform: scale(1.1);
+  }
+  to {
+    transform: translateY(12%) scale(1.1);
+  }
+}
+@keyframes lp-hero-isi-gulir {
+  0% {
+    transform: none;
+    opacity: 1;
+    visibility: visible;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.7, 0.6);
+  }
+  32%,
+  100% {
+    transform: translateY(-14vh);
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+/* Dinding foto berjalan ke kiri selama bab ini melintasi layar. */
+@keyframes lp-intro-deret {
+  from {
+    transform: translateX(var(--lp-intro-geser));
+  }
+  to {
+    transform: translateX(calc(-1 * var(--lp-intro-geser)));
+  }
+}
+@keyframes lp-intro-foto {
+  from {
+    transform: scale(1.12);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes lp-intro-muncul {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes lp-intro-tombol {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+  }
+}
+
+/* ===========================================================================
+   JENJANG → ALUR: "Kenali jenjangmu di CN" (JenjangStory.tsx)
+
+   Satu wadah (flex kolom) dari judul bab Jenjang sampai judul bab Alur SPMB.
+   Tulisan raksasa "CN" adalah anak langsung wadah itu dengan position:
+   sticky, jadi ia menempel sepanjang wadah:
+     1. mula-mula ia bagian judul "Kenali jenjangmu di CN";
+     2. saat digulir ia tertahan, dan deretan kartu SMP/SMA/SMK (z-index lebih
+        tinggi) naik MENUTUPINYA — CN di belakang foto;
+     3. setelah kartu lewat, CN tampak di atas pita emas; pita itu lalu
+        MENYUSUT — selebar layar → persegi panjang → kotak — sampai tepat
+        menjadi kotak label "Alur SPMB";
+     4. di ujung wadah ia berhenti menempel tepat di baris "Alur SPMB" dan
+        bersama label itu menjadi judul bab tersebut.
+   Label "Kenali jenjangmu di" masuk seperti disapu stabilo dari kiri.
+   Semua ukuran CN diturunkan dari satu variabel (--cn-fs) supaya teks di
+   kanannya, label "Alur SPMB", dan baris akhirnya selalu pas dengannya.
+   =========================================================================== */
+
+.lp-cn {
+  --cn-fs: clamp(9rem, 21vw, 21rem);
+  /* Tinggi kotak CN (line-height 0.8). */
+  --cn-tinggi: calc(var(--cn-fs) * 0.8);
+  /* Posisi CN di layar selama menempel. */
+  --cn-atas: 28vh;
+  /* Tepi kiri .lp-wadah — CN sejajar dengan isi halaman lainnya. */
+  --cn-kiri: calc((100% - min(1360px, 100% - clamp(1.5rem, 6vw, 7rem))) / 2);
+  --cn-warna: var(--lp-hijau);
+  --cn-pita: var(--lp-sorot);
+  --cn-chip: var(--lp-sorot);
+  --cn-chip-teks: var(--lp-atas-sorot);
+  /* Ukuran label emas. Kotak label "Alur SPMB" sengaja berukuran tetap
+     (dalam em) supaya kotak emas yang menyusut dari pita bisa berhenti tepat
+     di kotaknya — semua posisinya bisa dihitung di CSS, tanpa JavaScript. */
+  --chip-fs: clamp(1.4rem, 3.4vw, 3.3rem);
+  --chip-w: calc(var(--chip-fs) * 5.9);
+  --chip-h: calc(var(--chip-fs) * 1.32);
+  /* Label "Alur SPMB" di kanan-bawah CN, sedikit menumpang huruf N. */
+  --chip-kiri: calc(var(--cn-kiri) + var(--cn-fs) * 1.3);
+  --pita-tinggi: clamp(22rem, 70vh, 44rem);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding-top: clamp(5rem, 12vh, 8rem);
+}
+[data-tema="gelap"] .lp-cn {
+  --cn-pita: var(--lp-panel);
+}
+
+/* Label emas: "Kenali jenjangmu di" (atas) dan "Alur SPMB" (akhir). */
+.lp-cn-kepala {
+  position: relative;
+  z-index: 2;
+}
+.lp-cn-chip {
+  display: inline-block;
+  margin: 0;
+  padding: 0.06em 0.32em 0.14em;
+  border-radius: 0.2em;
+  background: var(--cn-chip);
+  color: var(--cn-chip-teks);
+  font-family: var(--lp-sans);
+  font-weight: 600;
+  font-size: var(--chip-fs);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+/* Tulisan raksasa yang menempel. */
+.lp-cn-kata {
+  position: sticky;
+  top: var(--cn-atas);
+  z-index: 1;
+  align-self: flex-start;
+  margin: -0.08em 0 0 var(--cn-kiri);
+  font-family: var(--lp-sans);
+  font-weight: 800;
+  font-size: var(--cn-fs);
+  line-height: 0.8;
+  letter-spacing: -0.045em;
+  color: var(--cn-warna);
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Penjelasan di kanan CN (desktop): ditarik naik sejajar CN, dan setinggi
+   CN supaya kartu di bawahnya mulai tepat setelah CN. */
+.lp-cn-teks {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  margin-top: calc(-1 * var(--cn-tinggi));
+  min-height: var(--cn-tinggi);
+}
+.lp-cn-teks-isi {
+  margin-left: 52%;
+  max-width: 36rem;
+}
+.lp-cn-label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lp-hijau);
+}
+.lp-cn-paragraf {
+  margin: 1rem 0 0;
+  font-size: clamp(1.05rem, 1.35vw, 1.3rem);
+  line-height: 1.7;
+  color: var(--lp-tinta-lembut);
+}
+
+/* --- Kartu SMP / SMA / SMK -------------------------------------------------- */
+.lp-cn-kartu {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: 6px;
+  height: clamp(26rem, 70vh, 46rem);
+  margin: clamp(4rem, 12vh, 8rem) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.lp-cn-kartu-item {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--lp-hijau-gelap);
+  transition: flex-grow 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.lp-cn-kartu-tautan {
+  position: absolute;
+  inset: 0;
+  display: block;
+  color: #fff;
+  text-decoration: none;
+}
+.lp-cn-kartu-tautan:focus-visible {
+  outline: 3px solid var(--cn-chip);
+  outline-offset: -6px;
+}
+.lp-cn-kartu-tirai {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(7, 28, 22, 0.62) 0%,
+    rgba(7, 28, 22, 0.08) 32%,
+    rgba(7, 28, 22, 0.12) 58%,
+    rgba(7, 28, 22, 0.72) 100%
+  );
+}
+/* Diam: nama jenjang di atas, garis emas kecil di bawah. */
+.lp-cn-kartu-atas {
+  position: absolute;
+  top: clamp(1.25rem, 3.5vh, 2.25rem);
+  left: 0.5rem;
+  right: 0.5rem;
+  text-align: center;
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: clamp(1.5rem, 2.4vw, 2.4rem);
+  letter-spacing: 0.02em;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+  transition: opacity 0.35s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.lp-cn-kartu-garis {
+  position: absolute;
+  bottom: clamp(1.25rem, 3.5vh, 2rem);
+  left: 50%;
+  width: 3.2rem;
+  height: 4px;
+  margin-left: -1.6rem;
+  border-radius: 2px;
+  background: var(--cn-chip);
+  transition: opacity 0.35s ease;
+}
+/* Terbuka (disorot): tombol "+", nama lengkap, dan ringkasannya di bawah. */
+.lp-cn-kartu-bawah {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: clamp(1.75rem, 5vh, 3rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  padding-inline: clamp(1rem, 3vw, 2.5rem);
+  text-align: center;
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.4s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.lp-cn-kartu-plus {
+  display: grid;
+  place-items: center;
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 50%;
+  background: var(--lp-hijau);
+  color: var(--lp-atas-hijau);
+}
+.lp-cn-kartu-judul {
+  font-family: var(--lp-sans);
+  font-weight: 700;
+  font-size: clamp(1.8rem, 3.2vw, 3.3rem);
+  line-height: 1.05;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
+}
+.lp-cn-kartu-teks {
+  max-width: 32rem;
+  font-size: clamp(0.95rem, 1.05vw, 1.05rem);
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+}
+/* Hanya perangkat berkursor & layar lebar: kartu yang disorot melebar,
+   kartu lainnya menyempit. */
+@media (hover: hover) and (min-width: 901px) {
+  .lp-cn-kartu:hover .lp-cn-kartu-item,
+  .lp-cn-kartu:focus-within .lp-cn-kartu-item {
+    flex-grow: 0.72;
+  }
+  .lp-cn-kartu .lp-cn-kartu-item:hover,
+  .lp-cn-kartu .lp-cn-kartu-item:focus-within {
+    flex-grow: 1.95;
+  }
+  .lp-cn-kartu-item:hover .lp-cn-kartu-atas,
+  .lp-cn-kartu-item:focus-within .lp-cn-kartu-atas {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  .lp-cn-kartu-item:hover .lp-cn-kartu-garis,
+  .lp-cn-kartu-item:focus-within .lp-cn-kartu-garis {
+    opacity: 0;
+  }
+  .lp-cn-kartu-item:hover .lp-cn-kartu-bawah,
+  .lp-cn-kartu-item:focus-within .lp-cn-kartu-bawah {
+    opacity: 1;
+    transform: none;
+    transition-delay: 0.12s;
+  }
+}
+
+/* --- Pita emas & judul "CN · Alur SPMB" ------------------------------------ */
+/* Ruang pita di bawah kartu; warnanya dilukis .lp-cn-emas. */
+.lp-cn-pita {
+  height: var(--pita-tinggi);
+}
+/* Setinggi CN: CN berhenti menempel tepat di baris ini. Saat dituju lewat
+   #alur, baris ini diletakkan di posisi CN menempel. */
+.lp-cn-akhir {
+  height: var(--cn-tinggi);
+  scroll-margin-top: var(--cn-atas);
+}
+/* Lapisan emas di belakang CN (di atas lapisan ini CN, lalu label). Dalam
+   keadaan diam ia hanya menutup ruang pita. */
+.lp-cn-emas {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--cn-tinggi);
+  z-index: 0;
+  height: var(--pita-tinggi);
+  background: var(--cn-pita);
+}
+/* Label "Alur SPMB": kotak berukuran tetap di dasar bagian ini, diukur dari
+   tepi bagian yang sama dengan lapisan emas. */
+.lp-cn-chip--akhir {
+  position: absolute;
+  left: var(--chip-kiri);
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--chip-w);
+  height: var(--chip-h);
+  padding: 0;
+  white-space: nowrap;
+}
+
+/* --- HP & tablet -------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .lp-cn {
+    --cn-fs: clamp(8rem, 44vw, 15rem);
+    --cn-atas: 16vh;
+    --pita-tinggi: clamp(18rem, 55vh, 30rem);
+    /* Label "Alur SPMB" rata kanan dengan isi halaman. */
+    --chip-kiri: calc(100% - var(--cn-kiri) - var(--chip-w));
+  }
+  /* Penjelasan pindah ke bawah CN dengan latar halaman, sehingga saat
+     digulir ia (lalu kartu-kartunya) naik menutupi CN yang menempel. */
+  .lp-cn-teks {
+    margin-top: 0;
+    min-height: 0;
+    padding-block: clamp(1.25rem, 4vh, 2rem) 0;
+    background: var(--lp-kertas);
+  }
+  .lp-cn-teks-isi {
+    margin-left: 0;
+  }
+  .lp-cn-kartu {
+    height: clamp(24rem, 62vh, 36rem);
+    margin-top: clamp(2rem, 6vh, 3rem);
+  }
+  .lp-cn-kartu-atas {
+    font-size: clamp(1.25rem, 5.5vw, 1.8rem);
+  }
+}
+
+/* --- Gerak mengikuti gulir ------------------------------------------------------ */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* CN memakai garis waktu baris label di atasnya (saudara, bukan induk). */
+    .lp-cn {
+      timeline-scope: --lp-cn-kepala, --lp-cn-akhir;
+    }
+    .lp-cn-kepala {
+      view-timeline: --lp-cn-kepala block;
+    }
+    .lp-cn-kepala .lp-cn-chip {
+      animation: lp-cn-chip-sapu linear both;
+      animation-timeline: --lp-cn-kepala;
+      animation-range: entry 10% cover 32%;
+    }
+    .lp-cn-kata {
+      animation: lp-cn-kata-masuk linear both;
+      animation-timeline: --lp-cn-kepala;
+      animation-range: entry 25% cover 45%;
+    }
+    .lp-cn-teks-isi > * {
+      animation: lp-intro-muncul linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 30%;
+    }
+    /* Kartu naik bergiliran; fotonya mengecil pelan ke ukuran normal. */
+    .lp-cn-kartu-item {
+      view-timeline: --lp-cn-kartu block;
+      animation: lp-cn-kartu-naik linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 85%;
+    }
+    .lp-cn-kartu-item:nth-child(2) {
+      animation-range: entry 8% entry 93%;
+    }
+    .lp-cn-kartu-item:nth-child(3) {
+      animation-range: entry 16% cover 52%;
+    }
+    .lp-cn-kartu-item img {
+      animation: lp-cn-kartu-foto linear both;
+      animation-timeline: --lp-cn-kartu;
+      animation-range: entry 0% cover 60%;
+    }
+    /* Pita emas menyusut menjadi kotak label "Alur SPMB". Lapisannya
+       diperpanjang sampai dasar bagian (baris akhir) supaya kotak label ada
+       di dalamnya; rentangnya: dari baris akhir mulai tampak di bawah layar
+       sampai ia tiba di posisi CN menempel. */
+    .lp-cn-akhir {
+      view-timeline: --lp-cn-akhir block;
+    }
+    .lp-cn-emas {
+      bottom: 0;
+      height: calc(var(--pita-tinggi) + var(--cn-tinggi));
+      animation: lp-cn-emas-kotak linear both;
+      animation-timeline: --lp-cn-akhir;
+      animation-range: entry 0% cover 55%;
+    }
+    /* Kotak label kini dilukis lapisan emas; tulisannya makin tegas
+       selama kotak menyusut. */
+    .lp-cn-chip--akhir {
+      background: transparent;
+      animation: lp-cn-chip-teks linear both;
+      animation-timeline: --lp-cn-akhir;
+      animation-range: entry 30% cover 55%;
+    }
+  }
+}
+
+/* Seperti disapu stabilo: kotak emas memanjang dari kiri sambil menyingkap
+   tulisannya, dari samar ke tegas. */
+@keyframes lp-cn-chip-sapu {
+  from {
+    clip-path: inset(0 100% 0 0 round 0.2em);
+    opacity: 0.35;
+  }
+  to {
+    clip-path: inset(0 0% 0 0 round 0.2em);
+    opacity: 1;
+  }
+}
+@keyframes lp-cn-kata-masuk {
+  from {
+    opacity: 0;
+    transform: translateY(0.16em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes lp-cn-kartu-naik {
+  from {
+    transform: translateY(16vh);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes lp-cn-kartu-foto {
+  from {
+    transform: scale(1.18);
+  }
+  to {
+    transform: none;
+  }
+}
+/* Pita selebar layar → persegi panjang → tepat kotak label (sudut
+   membulatnya ikut). Warnanya beralih ke warna label — di tema terang
+   keduanya emas, di tema gelap pita hijau menjadi label emas. */
+@keyframes lp-cn-emas-kotak {
+  from {
+    clip-path: inset(0px 0px 0px 0px round 0px);
+    background-color: var(--cn-pita);
+    animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+  }
+  /* Warna baru berganti menjelang akhir: di tema gelap, peralihan hijau → emas
+     yang terlalu panjang sempat tampak hijau zaitun yang kusam. */
+  70% {
+    background-color: var(--cn-pita);
+  }
+  to {
+    clip-path: inset(
+      calc(100% - var(--chip-h)) calc(100% - var(--chip-kiri) - var(--chip-w)) 0px var(--chip-kiri)
+      round calc(var(--chip-fs) * 0.2)
+    );
+    background-color: var(--cn-chip);
+  }
+}
+@keyframes lp-cn-chip-teks {
+  from {
+    opacity: 0.2;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ===========================================================================
+   JADWAL & BIAYA — pola "profil siswa"
+   Tab SMP · SMA · SMK di atas garis tipis; lingkaran gelap bergeser ke tab
+   terpilih. Kiri: biaya jenjang. Kanan: foto peserta didik tanpa latar,
+   dikelilingi gelombang pendaftaran sebagai catatan tempel yang melayang.
+   Ketiga panel ditumpuk di sel grid yang sama (subgrid) dan berganti lewat
+   data-keadaan="kiri|aktif|kanan" — transisinya transform & opacity saja.
+   =========================================================================== */
+
+.lp-jb {
+  --jb-atas: clamp(4.5rem, 9vh, 7rem);
+  --jb-indent: clamp(0rem, 4.5vw, 5.5rem);
+  --jb-tab: clamp(6rem, 10.5vw, 11rem);
+  --jb-lingkar: clamp(5.4rem, 9vw, 9.5rem);
+  --jb-catatan: clamp(11rem, 13.4vw, 13.5rem);
+  --jb-teks-2: #b8c8c0;
+  --jb-garis: rgba(184, 200, 192, 0.45);
+  --jb-lingkar-warna: rgba(1, 18, 12, 0.5);
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  padding-top: var(--jb-atas);
+  color: #ffffff;
+  background:
+    radial-gradient(70% 80% at 80% 105%, rgba(121, 184, 42, 0.24), rgba(121, 184, 42, 0) 70%),
+    linear-gradient(128deg, #04241a 0%, #063b2b 40%, #0c5134 70%, #4f7f60 100%);
+}
+[data-tema="gelap"] .lp-jb {
+  background:
+    radial-gradient(70% 80% at 80% 105%, rgba(121, 184, 42, 0.16), rgba(121, 184, 42, 0) 70%),
+    linear-gradient(128deg, #061a14 0%, #0b2a20 42%, #10382b 72%, #2c5641 100%);
+  box-shadow:
+    inset 0 1px 0 #214438,
+    inset 0 -1px 0 #214438;
+}
+.lp-jb-jangkar {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.lp-jb-wadah {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  grid-template-rows: auto auto 1fr;
+  column-gap: clamp(1.5rem, 3vw, 3rem);
+  min-height: clamp(38rem, calc(100svh - var(--jb-atas)), 56rem);
+}
+.lp-jb-label {
+  grid-area: 1 / 1;
+  position: relative;
+  z-index: 3;
+}
+
+/* --- Tab + lingkaran ------------------------------------------------------ */
+.lp-jb-tab {
+  grid-area: 2 / 1;
+  position: relative;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: repeat(var(--n), var(--jb-tab));
+  width: max-content;
+  height: var(--jb-lingkar);
+  margin: clamp(1.8rem, 5vh, 3.5rem) 0 0 var(--jb-indent);
+}
+/* Garis tipis dari tepi kiri layar sampai sedikit melewati tab terakhir. */
+.lp-jb-tab::before {
+  content: "";
+  position: absolute;
+  left: -100vw;
+  right: calc(var(--jb-tab) * -0.3);
+  top: calc(50% + var(--jb-lingkar) * 0.34);
+  height: 1px;
+  background: var(--jb-garis);
+}
+.lp-jb-lingkar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--jb-tab);
+  height: 100%;
+  transform: translate3d(calc(var(--i) * 100%), 0, 0);
+  transition: transform 0.75s cubic-bezier(0.45, 0, 0.1, 1);
+  pointer-events: none;
+}
+.lp-jb-lingkar-isi {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: var(--jb-lingkar);
+  height: var(--jb-lingkar);
+  margin-left: calc(var(--jb-lingkar) / -2);
+  border-radius: 50%;
+  background: var(--jb-lingkar-warna);
+}
+/* Meregang sebentar selama bergeser — seperti tetesan yang berpindah. */
+.lp-jb-lingkar-isi.is-regang {
+  animation: lp-jb-regang 0.75s cubic-bezier(0.45, 0, 0.1, 1);
+}
+@keyframes lp-jb-regang {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+  35% {
+    transform: scale(1.28, 0.9);
+  }
+}
+.lp-jb-tab-tombol {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  padding: 0 0 0 0.26em;
+  border: 0;
+  background: none;
+  font-family: var(--lp-sans);
+  font-size: clamp(0.9rem, 1.15vw, 1.1rem);
+  font-weight: 800;
+  letter-spacing: 0.26em;
+  color: var(--lp-sorot);
+  cursor: pointer;
+  transition: color 0.45s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.lp-jb-tab-tombol[aria-selected="true"] {
+  color: #ffffff;
+}
+.lp-jb-tab-tombol:not([aria-selected="true"]):hover {
+  color: #fff9a8;
+}
+.lp-jb-tab-tombol:focus-visible {
+  outline: none;
+}
+.lp-jb-tab-tombol:focus-visible::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--jb-lingkar) + 0.7rem);
+  height: calc(var(--jb-lingkar) + 0.7rem);
+  translate: -50% -50%;
+  border-radius: 50%;
+  border: 2px solid var(--lp-aksen);
+}
+
+/* --- Panel per jenjang ---------------------------------------------------- */
+.lp-jb-panel {
+  --arah: 1;
+  grid-area: 1 / 1 / -1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-template-rows: subgrid;
+  pointer-events: none;
+  visibility: hidden;
+  transition: visibility 0s linear 0.8s;
+}
+.lp-jb-panel[data-keadaan="kiri"] {
+  --arah: -1;
+}
+.lp-jb-panel[data-keadaan="aktif"] {
+  --arah: 0;
+  visibility: visible;
+  transition: visibility 0s;
+}
+.lp-jb-panel[data-keadaan="aktif"] .lp-jb-teks,
+.lp-jb-panel[data-keadaan="aktif"] .lp-jb-adegan {
+  pointer-events: auto;
+}
+
+/* Teks: keluar cepat ke arah perpindahan, masuk berurutan dari sisi lain. */
+.lp-jb-teks {
+  grid-area: 3 / 1;
+  align-self: start;
+  max-width: 36rem;
+  padding: clamp(1.6rem, 4.5vh, 2.8rem) 0 clamp(2.5rem, 7vh, 5rem) var(--jb-indent);
+}
+.lp-jb-teks > * {
+  opacity: 0;
+  transform: translate3d(calc(var(--arah) * 2.4rem), 0, 0);
+  transition:
+    opacity 0.28s ease,
+    transform 0.4s cubic-bezier(0.5, 0, 0.75, 0);
+}
+.lp-jb-panel[data-keadaan="aktif"] .lp-jb-teks > * {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.6s ease var(--jeda),
+    transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) var(--jeda);
+}
+.lp-jb-teks > :nth-child(1) { --jeda: 0.26s; }
+.lp-jb-teks > :nth-child(2) { --jeda: 0.32s; }
+.lp-jb-teks > :nth-child(3) { --jeda: 0.38s; }
+.lp-jb-teks > :nth-child(4) { --jeda: 0.44s; }
+.lp-jb-teks > :nth-child(5) { --jeda: 0.5s; }
+
+.lp-jb-sub {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--jb-teks-2);
+}
+.lp-jb-keterangan {
+  margin: 0.75rem 0 0;
+  max-width: 42ch;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--jb-teks-2);
+}
+.lp-jb-harga-kosong {
+  margin: 1.8rem 0 0;
+  font-family: var(--lp-serif);
+  font-size: clamp(1.7rem, 2.8vw, 2.6rem);
+  font-weight: 700;
+  line-height: 1.1;
+  color: #ffffff;
+}
+
+/* SMP & SMA: dua harga kelas awal berdampingan, dipisah garis tegak. */
+.lp-jb-pasangan {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 1.2rem;
+  margin: 1.9rem 0 0;
+  padding-top: 1.6rem;
+  border-top: 1px solid var(--jb-garis);
+}
+.lp-jb-pasangan > div {
+  padding-right: clamp(1.2rem, 2.2vw, 2.2rem);
+  margin-right: clamp(1.2rem, 2.2vw, 2.2rem);
+  border-right: 1px solid var(--jb-garis);
+}
+.lp-jb-pasangan > div:last-child {
+  padding-right: 0;
+  margin-right: 0;
+  border-right: 0;
+}
+.lp-jb-pasangan dt,
+.lp-jb-tabel thead th {
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lp-sorot);
+}
+.lp-jb-pasangan dd {
+  margin: 0.6rem 0 0;
+  font-family: var(--lp-serif);
+  font-size: clamp(1.8rem, 2.4vw, 2.25rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: lining-nums;
+  white-space: nowrap;
+  color: #ffffff;
+}
+
+/* SMK: tabel program keahlian × Reguler/Plus. */
+.lp-jb-tabel {
+  width: 100%;
+  margin: 1.7rem 0 0;
+  border-collapse: collapse;
+}
+.lp-jb-tabel th,
+.lp-jb-tabel td {
+  padding: 0.55rem 0;
+  border-bottom: 1px solid rgba(184, 200, 192, 0.16);
+  text-align: left;
+  vertical-align: middle;
+}
+.lp-jb-tabel thead th {
+  padding: 0 0 0.65rem;
+  border-bottom-color: var(--jb-garis);
+}
+.lp-jb-tabel th + th,
+.lp-jb-tabel td {
+  padding-left: clamp(0.9rem, 1.6vw, 1.6rem);
+  text-align: right;
+  white-space: nowrap;
+}
+.lp-jb-tabel tbody tr:last-child > * {
+  border-bottom: 0;
+}
+.lp-jb-tabel tbody th {
+  font-weight: 500;
+}
+.lp-jb-tabel td {
+  font-family: var(--lp-serif);
+  font-size: clamp(1rem, 1.2vw, 1.14rem);
+  font-weight: 600;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: #ffffff;
+}
+.lp-jb-program {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.lp-jb-kode {
+  flex: 0 0 2.9rem;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--lp-sorot);
+}
+.lp-jb-program-nama {
+  font-size: 0.84rem;
+  line-height: 1.35;
+  color: #ffffff;
+}
+.lp-jb-strip {
+  color: var(--jb-teks-2);
+}
+/* Teks khusus pembaca layar. */
+.lp-jb-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.lp-jb-aksi {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.1rem 1.8rem;
+  margin-top: clamp(2rem, 5vh, 2.8rem);
+}
+.lp-jb-tombol {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 1.05rem 1.7rem;
+  border: 1px solid var(--lp-sorot);
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--lp-sorot);
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lp-jb-tombol:hover {
+  background: var(--lp-sorot);
+  color: #111111;
+  transform: translateY(-2px);
+}
+.lp-jb-tombol:focus-visible {
+  outline: 2px solid var(--lp-aksen);
+  outline-offset: 4px;
+}
+
+/* --- Adegan: foto + catatan ----------------------------------------------- */
+.lp-jb-adegan {
+  grid-area: 1 / 2 / -1 / 3;
+  position: relative;
+  min-height: 32rem;
+}
+/* Singkatan jenjang raksasa di belakang foto — gema huruf "CN" di atas. */
+.lp-jb-tanda {
+  position: absolute;
+  top: 2%;
+  left: 54%;
+  translate: -50% 0;
+  z-index: 0;
+  font-family: var(--lp-serif);
+  font-size: clamp(8rem, 17vw, 17rem);
+  font-weight: 700;
+  line-height: 0.8;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.04);
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.13);
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  transform: translate3d(calc(var(--arah) * 6%), 0, 0);
+  transition:
+    opacity 0.4s ease,
+    transform 0.6s cubic-bezier(0.5, 0, 0.75, 0);
+}
+.lp-jb-panel[data-keadaan="aktif"] .lp-jb-tanda {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 1s ease 0.2s,
+    transform 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.1s;
+}
+
+/* Foto: berdiri di tepi bawah bab, sedikit ke kanan dari tengah kolom. */
+.lp-jb-foto {
+  position: absolute;
+  bottom: 0;
+  left: 54%;
+  translate: -50% 0;
+  z-index: 1;
+  height: min(100%, 54rem);
+  aspect-ratio: 2 / 3;
+  opacity: 0;
+  transform: translate3d(calc(var(--arah) * 8%), 2.5%, 0) scale(0.98);
+  transform-origin: 50% 100%;
+  transition:
+    opacity 0.26s linear,
+    transform 0.45s cubic-bezier(0.5, 0, 0.75, 0);
+  will-change: transform, opacity;
+}
+/* Masuk setelah foto lama hampir hilang (0,22 dtk) — dua orang tidak pernah
+   tampak bertumpuk samar. */
+.lp-jb-panel[data-keadaan="aktif"] .lp-jb-foto {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.7s cubic-bezier(0.3, 0, 0.2, 1) 0.22s,
+    transform 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s;
+}
+.lp-jb-foto-isi {
+  position: absolute;
+  inset: 0;
+  transform: scale(var(--skala, 1));
+  transform-origin: 50% 100%;
+  filter: drop-shadow(0 24px 36px rgba(0, 0, 0, 0.32));
+}
+
+/* Tumpukan catatan: jalur umum di kiri foto, jalur alumni di kanan. */
+.lp-jb-kelompok {
+  position: absolute;
+  z-index: 2;
+  width: var(--jb-catatan);
+}
+.lp-jb-kelompok--umum {
+  left: calc(var(--jb-catatan) * -0.2);
+  bottom: clamp(2.5rem, 9%, 6rem);
+}
+/* Tumpukan kanan sengaja rendah: di atasnya ada tangan & wajah (mis. jempol
+   pada foto SMK) yang tidak boleh tertutup. */
+.lp-jb-kelompok--alumni {
+  right: calc(var(--jb-catatan) * -0.1);
+  bottom: clamp(2rem, 6%, 4.5rem);
+}
+/* Berlatar pil gelap: tetap terbaca walau jatuh di atas seragam putih. */
+.lp-jb-kelompok-judul {
+  display: inline-block;
+  margin: 0 0 0.95rem;
+  padding: 0.42rem 0.75rem 0.38rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(1, 18, 12, 0.62);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #dfe9e3;
+  opacity: 0;
+  transform: translate3d(0, 0.5rem, 0);
+  transition:
+    opacity 0.2s ease,
+    transform 0.3s ease;
+}
+.lp-jb-panel[data-keadaan="aktif"] .lp-jb-kelompok-judul {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.5s ease 0.4s,
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.4s;
+}
+@media (max-width: 1279px) {
+  .lp-jb-judul-ekor {
+    display: none;
+  }
+}
+.lp-jb-tumpukan {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Catatan: warna kertas = jalur (kuning umum, hijau muda alumni); pekat =
+   gelombang yang sedang berjalan, pucat = belum. */
+.lp-jb-catatan {
+  --kertas: #fffbd1;
+  position: relative;
+  margin-left: var(--gx);
+  opacity: 0;
+  transform: translate3d(calc(var(--arah) * 1.2rem), -1.4rem, 0) rotate(calc(var(--r) + 9deg)) scale(1.1);
+  transform-origin: 50% 0;
+  transition:
+    opacity 0.22s ease calc(var(--k) * 0.03s),
+    transform 0.35s cubic-bezier(0.5, 0, 0.75, 0) calc(var(--k) * 0.03s);
+}
+.lp-jb-catatan + .lp-jb-catatan {
+  margin-top: -0.5rem;
+}
+.lp-jb-catatan[data-aktif] {
+  --kertas: var(--lp-sorot);
+  z-index: 1;
+}
+.lp-jb-catatan[data-alumni] {
+  --kertas: #e6f3d3;
+}
+.lp-jb-catatan[data-alumni][data-aktif] {
+  --kertas: #a9d863;
+}
+.lp-jb-catatan:hover {
+  z-index: 2;
+}
+/* Menempel: turun dari atas, sedikit memantul, berurutan. */
+.lp-jb-panel[data-keadaan="aktif"] .lp-jb-catatan {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) rotate(var(--r)) scale(1);
+  transition:
+    opacity 0.3s ease calc(0.45s + var(--k) * 0.1s),
+    transform 0.8s cubic-bezier(0.3, 1.45, 0.55, 1) calc(0.45s + var(--k) * 0.1s);
+}
+.lp-jb-kertas {
+  position: relative;
+  padding: 1.15rem 1.15rem 1.05rem;
+  border-radius: 3px;
+  color: #111111;
+  background-color: var(--kertas);
+  background-image:
+    linear-gradient(170deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 38%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0) 28%);
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.12),
+    0 12px 20px -8px rgba(0, 0, 0, 0.45),
+    0 28px 40px -18px rgba(0, 0, 0, 0.5);
+  animation: lp-jb-melayang calc(5.6s + var(--k) * 0.8s) ease-in-out calc(var(--k) * -1.9s) infinite;
+  animation-play-state: paused;
+}
+.lp-jb.is-catatan .lp-jb-panel[data-keadaan="aktif"] .lp-jb-kertas {
+  animation-play-state: running;
+}
+/* Selotip. */
+.lp-jb-kertas::before {
+  content: "";
+  position: absolute;
+  top: -0.6rem;
+  left: 50%;
+  width: 3.8rem;
+  height: 1.2rem;
+  translate: -50% 0;
+  rotate: -3deg;
+  background: rgba(255, 255, 255, 0.52);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+@keyframes lp-jb-melayang {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(0, -0.45rem, 0) rotate(0.7deg);
+  }
+}
+.lp-jb-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.6rem;
+  padding: 0.3rem 0.6rem 0.28rem 0.5rem;
+  border-radius: 999px;
+  background: #111111;
+  color: #ffffff;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.lp-jb-titik {
+  position: relative;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--lp-aksen);
+}
+.lp-jb-titik::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: inherit;
+  animation: lp-jb-denyut 1.8s ease-out infinite;
+}
+@keyframes lp-jb-denyut {
+  from {
+    transform: scale(1);
+    opacity: 0.75;
+  }
+  to {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+.lp-jb-nama {
+  margin: 0;
+  font-family: var(--lp-serif);
+  font-size: clamp(1.1rem, 1.35vw, 1.35rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.lp-jb-tanggal {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: rgba(17, 17, 17, 0.72);
+}
+.lp-jb-diskon {
+  display: inline-block;
+  margin: 0.6rem 0 0;
+  padding: 0.22rem 0.5rem;
+  border-radius: 2px;
+  background: #111111;
+  color: var(--lp-sorot);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Sebelum terlihat, catatan & foto jenjang aktif belum "ditempel"; begitu
+   terlihat (is-catatan / is-foto, lihat useMasuk), keduanya masuk dengan
+   transisi yang sama seperti saat berpindah tab. Setelah keluar layar
+   sepenuhnya: kembali diam-diam (durasi 0). */
+.lp-jb:not(.is-catatan) .lp-jb-panel[data-keadaan="aktif"] .lp-jb-catatan {
+  opacity: 0;
+  transform: translate3d(0, -1.4rem, 0) rotate(calc(var(--r) + 9deg)) scale(1.1);
+  transition-duration: 0s;
+  transition-delay: 0s;
+}
+.lp-jb:not(.is-catatan) .lp-jb-panel[data-keadaan="aktif"] .lp-jb-kelompok-judul {
+  opacity: 0;
+  transition-duration: 0s;
+  transition-delay: 0s;
+}
+.lp-jb:not(.is-foto) .lp-jb-panel[data-keadaan="aktif"] .lp-jb-foto {
+  opacity: 0;
+  transform: translate3d(0, 7%, 0);
+  transition-duration: 0s;
+  transition-delay: 0s;
+}
+
+/* --- Tablet: catatan lebih ringkas ---------------------------------------- */
+@media (min-width: 901px) and (max-width: 1200px) {
+  .lp-jb {
+    --jb-catatan: 9.8rem;
+  }
+  .lp-jb-teks {
+    padding-right: 0.6rem;
+  }
+  .lp-jb-kelompok--umum {
+    left: 0.6rem;
+  }
+  .lp-jb-kertas {
+    padding: 0.95rem 0.9rem 0.85rem;
+  }
+  .lp-jb-nama {
+    font-size: 1rem;
+  }
+  .lp-jb-tanggal {
+    font-size: 0.72rem;
+  }
+  .lp-jb-status {
+    gap: 0.35rem;
+    padding: 0.26rem 0.5rem 0.24rem 0.42rem;
+    font-size: 0.54rem;
+    letter-spacing: 0.08em;
+  }
+  .lp-jb-diskon {
+    font-size: 0.58rem;
+  }
+}
+
+/* --- HP & tablet kecil: satu kolom ---------------------------------------- */
+@media (max-width: 900px) {
+  .lp-jb {
+    --jb-indent: 0rem;
+    --jb-tab: clamp(5.2rem, 26vw, 7.5rem);
+    --jb-lingkar: clamp(4.6rem, 21vw, 6.2rem);
+  }
+  .lp-jb-wadah {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    min-height: 0;
+  }
+  .lp-jb-panel {
+    grid-area: 3 / 1;
+    display: flex;
+    flex-direction: column;
+  }
+  /* Hanya panel aktif yang mengisi alur; panel yang sedang memudar keluar
+     melayang di atasnya (grid-area yang sama sebagai blok acuannya). */
+  .lp-jb-panel:not([data-keadaan="aktif"]) {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+  }
+  .lp-jb-tab {
+    margin-top: 2.2rem;
+  }
+  .lp-jb-teks {
+    max-width: none;
+    padding: 2rem 0 0;
+  }
+  .lp-jb-pasangan > div {
+    padding-right: 1.1rem;
+    margin-right: 1.1rem;
+  }
+  .lp-jb-pasangan dd {
+    font-size: clamp(1.45rem, 6.2vw, 2rem);
+  }
+  .lp-jb-program {
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+  .lp-jb-kode {
+    flex: none;
+  }
+  .lp-jb-program-nama {
+    font-size: 0.8rem;
+  }
+  .lp-jb-tabel th + th,
+  .lp-jb-tabel td {
+    padding-left: 0.75rem;
+  }
+  .lp-jb-tabel td {
+    font-size: 0.92rem;
+  }
+  .lp-jb-adegan {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding-top: 2.8rem;
+  }
+  .lp-jb-kelompok {
+    position: static;
+    order: 1;
+    width: auto;
+  }
+  .lp-jb-kelompok + .lp-jb-kelompok {
+    margin-top: 1.8rem;
+  }
+  .lp-jb-tumpukan {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.3rem 0.9rem;
+  }
+  .lp-jb-catatan,
+  .lp-jb-catatan + .lp-jb-catatan {
+    margin: 0;
+  }
+  .lp-jb-foto {
+    position: relative;
+    left: auto;
+    translate: none;
+    order: 2;
+    align-self: center;
+    height: clamp(24rem, 112vw, 34rem);
+  }
+  .lp-jb-kelompok:last-of-type {
+    margin-bottom: 1.5rem;
+  }
+  .lp-jb-status {
+    gap: 0.35rem;
+    padding: 0.26rem 0.5rem 0.24rem 0.42rem;
+    font-size: 0.55rem;
+    letter-spacing: 0.07em;
+  }
+  .lp-jb-tanda {
+    top: auto;
+    bottom: 14rem;
+    left: 50%;
+    font-size: 38vw;
+  }
+}
+
+@media (max-width: 359px) {
+  .lp-jb-pasangan > div {
+    padding-right: 0;
+    margin-right: 1.4rem;
+    border-right: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-jb-teks > *,
+  .lp-jb-foto,
+  .lp-jb-tanda,
+  .lp-jb-catatan,
+  .lp-jb-kelompok-judul,
+  .lp-jb-lingkar {
+    transition-delay: 0s !important;
+  }
+  .lp-jb-kertas,
+  .lp-jb-titik::after,
+  .lp-jb-lingkar-isi.is-regang {
+    animation: none !important;
+  }
+  .lp-jb:not(.is-catatan) .lp-jb-panel[data-keadaan="aktif"] .lp-jb-catatan {
+    opacity: 1;
+    transform: rotate(var(--r));
+  }
+  .lp-jb:not(.is-foto) .lp-jb-panel[data-keadaan="aktif"] .lp-jb-foto,
+  .lp-jb:not(.is-catatan) .lp-jb-panel[data-keadaan="aktif"] .lp-jb-kelompok-judul {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ===========================================================================
+   PERSYARATAN — kotak bernomor (gaya "WAB Difference")
+   Kotak hijau selang-seling bak papan catur, ikon berkas di pojok kanan atas,
+   nomor besar, nama berkas, dan garis bawah yang memanjang saat disorot.
+   =========================================================================== */
+.lp-syarat-kotak-daftar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 2.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.lp-syarat-kotak {
+  --warna: #0b6b3a;
+  --tepi: clamp(1.4rem, 2.4vw, 2.2rem);
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: clamp(15rem, 21vw, 18rem);
+  /* Isi rata atas: nomor sejajar di satu baris, berapa pun panjang namanya. */
+  padding: clamp(5.4rem, 7vw, 6.4rem) var(--tepi) clamp(3rem, 4vw, 3.6rem);
+  overflow: hidden;
+  color: #ffffff;
+  background:
+    linear-gradient(225deg, rgba(255, 255, 255, 0.09) 0 27%, rgba(255, 255, 255, 0) 27.2%),
+    var(--warna);
+  transition:
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* Papan catur: 3 kolom → genap gelap. */
+.lp-syarat-kotak:nth-child(even) {
+  --warna: #063b2b;
+}
+@media (max-width: 1023px) {
+  .lp-syarat-kotak-daftar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  /* 2 kolom: gelap di posisi 2, 3, 6, 7, … */
+  .lp-syarat-kotak:nth-child(even) {
+    --warna: #0b6b3a;
+  }
+  .lp-syarat-kotak:nth-child(4n + 2),
+  .lp-syarat-kotak:nth-child(4n + 3) {
+    --warna: #063b2b;
+  }
+}
+@media (max-width: 639px) {
+  .lp-syarat-kotak-daftar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lp-syarat-kotak {
+    min-height: 13rem;
+  }
+  .lp-syarat-kotak:nth-child(4n + 2),
+  .lp-syarat-kotak:nth-child(4n + 3) {
+    --warna: #0b6b3a;
+  }
+  .lp-syarat-kotak:nth-child(even) {
+    --warna: #063b2b;
+  }
+}
+[data-tema="gelap"] .lp-syarat-kotak {
+  outline: 1px solid rgba(255, 255, 255, 0.06);
+  outline-offset: -1px;
+}
+.lp-syarat-kotak:hover {
+  z-index: 1;
+  transform: translateY(-4px);
+  box-shadow: 0 22px 40px -22px rgba(7, 28, 22, 0.7);
+}
+.lp-syarat-kotak-ikon {
+  position: absolute;
+  top: clamp(1.3rem, 2vw, 1.8rem);
+  right: var(--tepi);
+  color: rgba(255, 255, 255, 0.92);
+}
+.lp-syarat-kotak-no {
+  position: relative;
+  align-self: flex-start;
+  font-family: var(--lp-serif);
+  font-size: clamp(2.8rem, 4.4vw, 4rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: lining-nums;
+}
+/* Lingkaran gelap di belakang nomor. */
+.lp-syarat-kotak-no::before {
+  content: "";
+  position: absolute;
+  top: -0.16em;
+  left: -0.3em;
+  z-index: -1;
+  width: 0.95em;
+  height: 0.95em;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.18);
+}
+.lp-syarat-kotak-nama {
+  margin: 0.85rem 0 0;
+  max-width: 28ch;
+  font-family: var(--lp-sans);
+  font-size: clamp(1rem, 1.25vw, 1.14rem);
+  font-weight: 650;
+  line-height: 1.4;
+}
+.lp-syarat-kotak-desk {
+  margin: 0.45rem 0 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+.lp-syarat-kotak-status {
+  position: absolute;
+  top: clamp(1.45rem, 2.1vw, 1.95rem);
+  left: var(--tepi);
+  padding: 0.34rem 0.62rem 0.3rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.lp-syarat-kotak-status.is-wajib {
+  background: var(--lp-merah);
+}
+.lp-syarat-kotak-garis {
+  position: absolute;
+  right: var(--tepi);
+  bottom: clamp(1.2rem, 1.8vw, 1.5rem);
+  left: var(--tepi);
+  height: 2px;
+  background: rgba(255, 255, 255, 0.22);
+}
+.lp-syarat-kotak-garis::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 22%;
+  background: var(--lp-aksen);
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lp-syarat-kotak:hover .lp-syarat-kotak-garis::after {
+  width: 100%;
+}
+
+/* ===========================================================================
+   MENGAPA CITRA NEGARA — kerja sama dengan industri
+   Dua deret logo mitra berjalan sendiri (berlawanan arah), abu-abu; berwarna
+   dan berhenti saat disorot kursor atau diketuk.
+   =========================================================================== */
+.lp-mitra {
+  overflow: clip;
+}
+.lp-mitra-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.6rem 3rem;
+  margin-top: 1.8rem;
+}
+.lp-mitra-teks {
+  max-width: 52ch;
+}
+.lp-mitra-angka {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 0;
+  color: var(--lp-tinta);
+}
+.lp-mitra-angka strong {
+  font-family: var(--lp-serif);
+  font-size: clamp(2.6rem, 4.6vw, 4.2rem);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: lining-nums;
+  color: var(--lp-hijau);
+}
+.lp-mitra-angka span {
+  max-width: 17ch;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.lp-mitra-deretan {
+  display: grid;
+  gap: clamp(1.2rem, 2.4vw, 2rem);
+  margin-top: clamp(2.8rem, 5vw, 4rem);
+}
+.lp-mitra-pita {
+  overflow: hidden;
+  padding-block: 0.6rem;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+.lp-mitra-jalur {
+  display: flex;
+  width: max-content;
+  animation: lp-mitra-jalan var(--durasi, 150s) linear infinite;
+}
+.lp-mitra-jalur--kanan {
+  animation-direction: reverse;
+}
+.lp-mitra-pita:hover .lp-mitra-jalur,
+.lp-mitra-pita:focus-within .lp-mitra-jalur {
+  animation-play-state: paused;
+}
+@keyframes lp-mitra-jalan {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+/* padding-right = gap: sambungan antar-salinan berjarak sama persis. */
+.lp-mitra-deret {
+  display: flex;
+  align-items: center;
+  gap: clamp(2.2rem, 4.4vw, 4.2rem);
+  margin: 0;
+  padding: 0 clamp(2.2rem, 4.4vw, 4.2rem) 0 0;
+  list-style: none;
+}
+.lp-mitra-logo {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: clamp(2.8rem, 4.2vw, 3.7rem);
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.lp-mitra .lp-mitra-logo img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-height: 100%;
+  max-width: clamp(6.5rem, 10vw, 9.5rem);
+  filter: grayscale(1);
+  opacity: 0.6;
+  transition:
+    filter 0.35s ease,
+    opacity 0.35s ease,
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lp-mitra-logo:hover img,
+.lp-mitra-logo:focus img,
+.lp-mitra-logo:active img {
+  filter: none;
+  opacity: 1;
+  transform: scale(1.08);
+}
+.lp-mitra-logo:focus-visible {
+  outline: 2px solid var(--lp-aksen);
+  outline-offset: 6px;
+}
+/* Tema gelap: logo berteks gelap butuh alas terang. */
+[data-tema="gelap"] .lp-mitra-logo {
+  padding: 0.45rem 0.7rem;
+  background: #f6f8f5;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-mitra-jalur {
+    animation: none !important;
+  }
+  .lp-mitra-pita {
+    overflow-x: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .lp-mitra-deret[aria-hidden] {
+    display: none;
+  }
 }

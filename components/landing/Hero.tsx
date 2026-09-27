@@ -1,122 +1,122 @@
 'use client'
 
-import Link from 'next/link'
 import Image from 'next/image'
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useReducedMotion } from 'framer-motion'
-import { ArrowRight } from 'lucide-react'
-import { useKeluar } from './gerak'
+import { useGulirCss, useKeluar } from './gerak'
+import { NILAI_MANTAP } from './nilaiMantap'
+import { PanelNilai } from './PanelNilai'
 
-/** Ganti path ini kalau berkas videonya diberi nama lain. */
-const VIDEO_HERO = '/videos/hero.mp4'
-/** Dipakai sebagai bingkai pertama (sebelum video siap) DAN sebagai latar
- *  untuk pengguna yang meminta gerak dikurangi — lihat catatan di bawah.
- *  Ini frame PERTAMA hero.mp4 itu sendiri, jadi saat video mulai berputar
- *  tidak ada pergantian gambar yang terlihat. Poster berupa foto lain
- *  (dulu foto hadroh) sempat tampil sekilas setiap halaman dimuat. Kalau
- *  videonya diganti, ambil ulang frame pertamanya sebagai poster. */
-const POSTER_HERO = '/images/hero-poster.jpg'
+/** Foto udara gedung sekolah. Foto ini juga yang membesar di akhir animasi
+ *  pembuka (Pembuka.tsx) lalu "menjadi" latar hero — keduanya harus sama. */
+export const FOTO_HERO = '/images/hero-sekolah.jpg'
+
+/** Skala latar saat halaman di posisi paling atas. Pembuka mengakhiri
+ *  zoom-nya di angka yang sama supaya serah terimanya tidak bergeser. */
+export const SKALA_HERO = 1.1
 
 /**
- * Hero setinggi satu layar penuh.
+ * Hero setinggi satu layar penuh: foto udara sekolah, lalu di tengah bawah
+ * label SPMB (judul utama halaman) dan deret nilai sekolah (MANTAP) bersekat
+ * garis tipis — komposisi khas situs sekolah internasional. Tiap nilai bisa
+ * diklik untuk membuka panel foto + penjelasannya (PanelNilai).
  *
- * Judulnya muncul lebih dulu dan langsung terbaca. Begitu pengguna MULAI
- * bergerak, latar mengecil (zoom out) dan teks meredup — seluruhnya
- * digerakkan oleh POSISI GULIR, bukan hover atau klik. Jadi hero terasa
- * ditinggalkan, bukan sekadar tergulung pergi.
+ * Transisi ke bab berikutnya ("Sebuah tempat") mengikuti posisi gulir, maju
+ * maupun mundur: hero ikut tergulir naik seperti biasa, tetapi fotonya
+ * mengecil dari kiri, kanan, dan bawah (isinya tidak diperkecil) sampai
+ * tinggal pita di atas — jarak ke bab berikutnya tampak jauh — sementara
+ * teksnya ikut terpotong naik sambil memudar. Semuanya animasi
+ * CSS berbasis posisi gulir (landing.css, blok "HERO → SEBUAH TEMPAT") yang
+ * dikerjakan GPU — tanpa JavaScript per bingkai.
  *
- * Latarnya video, bukan lagi foto diam — tapi TIDAK untuk semua orang:
- * pengguna yang mengaktifkan "kurangi gerak" di sistemnya tetap melihat foto
- * diam (POSTER_HERO). Video yang berputar otomatis di latar adalah tepat
- * jenis gerak yang diminta dihindari oleh preferensi itu; kita menghormatinya
- * di sini, bukan cuma di transformasi zoom saja.
+ * Browser yang belum mendukung animasi semacam itu memakai efek lama: foto
+ * sedikit mengecil dan teks naik memudar lewat useKeluar. Pengguna yang
+ * meminta gerak dikurangi melihatnya diam.
  */
 export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
   const ref = useRef<HTMLElement | null>(null)
-  const videoRef = useRef<HTMLVideoElement | null>(null)
   const kurangiGerak = useReducedMotion()
-  const keluar = useKeluar(ref)
-  const [videoGagal, setVideoGagal] = useState(false)
+  const gulirCss = useGulirCss()
+  const keluar = useKeluar(ref, !gulirCss)
+  const tombolNilai = useRef<(HTMLButtonElement | null)[]>([])
+  const [nilaiAktif, setNilaiAktif] = useState<number | null>(null)
+  // Panel baru dipasang begitu ada tanda minat (kursor mendekat / fokus /
+  // sentuhan) — cukup awal untuk memuat fotonya sebelum diklik, tanpa
+  // membebani pemuatan pertama halaman.
+  const [panelSiap, setPanelSiap] = useState(false)
+  const siapkan = () => { if (!panelSiap) setPanelSiap(true) }
 
-  // Sebagian browser (terutama mobile) menolak autoplay lewat atribut HTML
-  // begitu saja kalau elemennya baru dipasang setelah interaksi pengguna;
-  // memanggil .play() secara eksplisit adalah jalan yang lebih tahan banting.
-  // Kegagalannya (mis. autoplay diblokir) diabaikan dengan tenang — poster
-  // gambar tetap tampil sebagai gantinya, bukan layar kosong.
-  useEffect(() => {
-    if (kurangiGerak) return
-    videoRef.current?.play().catch(() => {})
-  }, [kurangiGerak])
-
-  // Gambar/video berangkat sedikit membesar lalu mengecil ke ukuran wajar;
-  // teks naik dan memudar. Dipetakan langsung dari progres, tanpa pustaka animasi.
-  const skala = kurangiGerak ? 1 : 1.14 - keluar * 0.18
+  const skala = kurangiGerak ? 1 : SKALA_HERO - keluar * 0.1
   const naik = kurangiGerak ? 0 : keluar * 110
   const pudar = kurangiGerak ? 1 : Math.max(0, 1 - keluar * 1.6)
-
-  const pakaiVideo = !kurangiGerak && !videoGagal
+  // Bila CSS yang menggerakkan, gaya inline tidak dipasang sama sekali.
+  const gayaMedia = gulirCss ? undefined : { transform: `scale(${skala})` }
+  const gayaIsi = gulirCss ? undefined : { transform: `translateY(${-naik}px)`, opacity: pudar }
 
   return (
-    <section ref={ref} className="lp-hero">
-      <div className="lp-hero-media" style={{ transform: `scale(${skala})` }}>
-        {pakaiVideo ? (
-          <video
-            ref={videoRef}
-            key={VIDEO_HERO}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            poster={POSTER_HERO}
-            aria-hidden="true"
-            // Kalau berkas videonya belum ada / gagal dimuat, jatuh balik ke
-            // foto diam alih-alih membiarkan kotak hero kosong.
-            onError={() => setVideoGagal(true)}
-          >
-            <source src={VIDEO_HERO} type="video/mp4" />
-          </video>
-        ) : (
-          <Image
-            src={POSTER_HERO}
-            alt="Suasana kegiatan siswa Citra Negara"
-            fill
-            priority
-            sizes="100vw"
-            style={{ objectFit: 'cover' }}
-          />
-        )}
-      </div>
-      <div className="lp-hero-tirai" />
+    <section ref={ref} className="lp-hero-panggung">
+      <div className="lp-hero">
+        {/* Bingkai foto: inilah yang menyusut jadi kartu saat digulir. */}
+        <div className="lp-hero-bingkai">
+          <div className="lp-hero-media" style={gayaMedia}>
+            <Image
+              src={FOTO_HERO}
+              alt="Gedung sekolah Citra Negara dilihat dari udara"
+              fill
+              preload
+              sizes="100vw"
+              style={{ objectFit: 'cover' }}
+            />
+          </div>
+          <div className="lp-hero-tirai" />
+        </div>
+        {/* Penutup berwarna latar halaman: saat hero digulir keluar, ketiganya
+            melebar dari tepi sehingga foto tampak MENGECIL dari kiri, kanan,
+            dan bawah tanpa isinya ikut diperkecil (transform saja — ringan). */}
+        <div className="lp-hero-sisi lp-hero-sisi--kiri" aria-hidden="true" />
+        <div className="lp-hero-sisi lp-hero-sisi--kanan" aria-hidden="true" />
+        <div className="lp-hero-sisi lp-hero-sisi--bawah" aria-hidden="true" />
 
-      <div
-        className="lp-hero-isi"
-        style={{ transform: `translateY(${-naik}px)`, opacity: pudar }}
-      >
-        <div className="lp-wadah">
-          <p className="lp-label lp-label--terang lp-hero-label">
-            SPMB SMP-SMA-SMK Citra Negara{tahunAjaran ? ` · TA ${tahunAjaran}` : ''}
-          </p>
+        <div className="lp-hero-isi" style={gayaIsi}>
+          <div className="lp-hero-tengah">
+            {/* Judul utama (h1) halaman — tampil sebagai label kecil. */}
+            <h1 className="lp-label lp-label--terang lp-hero-label">
+              SPMB SMP-SMA-SMK Citra Negara{tahunAjaran && <> · <span style={{ whiteSpace: 'nowrap' }}>TA {tahunAjaran}</span></>}
+            </h1>
 
-          <h1 className="lp-hero-judul">
-            Langkah pertamamu<br />dimulai di sini.
-          </h1>
-
-          <p className="lp-hero-sub">
-            Temukan ruang untuk belajar, bertumbuh, dan mempersiapkan langkah
-            berikutnya bersama Citra Negara.
-          </p>
-
-          <div className="lp-hero-aksi">
-            <Link href="/register" className="lp-tombol lp-tombol--terang">
-              Daftar Sekarang <ArrowRight size={17} />
-            </Link>
-            <a href="#tentang" className="lp-tombol lp-tombol--hantu">
-              Jelajahi Citra Negara
-            </a>
+            <div
+              className="lp-hero-nilai"
+              role="group"
+              aria-label="Nilai MANTAP Citra Negara"
+              onPointerEnter={siapkan}
+              onFocus={siapkan}
+              onTouchStart={siapkan}
+            >
+              {NILAI_MANTAP.map((n, i) => (
+                <button
+                  key={n.nama}
+                  ref={el => { tombolNilai.current[i] = el }}
+                  type="button"
+                  className="lp-hero-nilai-tombol"
+                  aria-haspopup="dialog"
+                  onClick={() => { siapkan(); setNilaiAktif(i) }}
+                >
+                  {/* Teksnya dibungkus supaya yang terangkat saat disorot hanya
+                      kata ini — sekat tegak (border tombol) tetap diam. */}
+                  <span className="lp-hero-nilai-kata">{n.nama}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Di luar .lp-hero: elemen sticky membentuk konteks tumpukan sendiri
+          (panel akan tertimpa bab berikutnya), dan transform pada .lp-hero-isi
+          membuat position:fixed milik keturunannya ikut bergeser. */}
+      {panelSiap && (
+        <PanelNilai aktif={nilaiAktif} setAktif={setNilaiAktif} asal={i => tombolNilai.current[i] ?? null} />
+      )}
     </section>
   )
 }

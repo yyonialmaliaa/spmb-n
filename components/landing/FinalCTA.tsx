@@ -7,7 +7,7 @@ import { useReducedMotion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import { useMasuk } from './gerak'
 
-/** Sama dengan video hero & tirai pembuka — satu video dipakai di seluruh halaman. */
+/** Video udara sekolah — rekaman yang sama dengan asal foto latar hero. */
 const VIDEO_PENUTUP = '/videos/hero.mp4'
 /** Jaring pengaman: dipakai sebagai poster DAN latar kalau video gagal/tidak diputar. */
 const POSTER_PENUTUP = '/images/voli.jpg'

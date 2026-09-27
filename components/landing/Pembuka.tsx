@@ -1,318 +1,559 @@
-'use client'
+"use client";
 
-import { useEffect, useRef, useState } from 'react'
-import { useReducedMotion } from 'framer-motion'
+import Image from "next/image";
+import { Fragment, useEffect, useRef, useState } from "react";
+import { FOTO_HERO } from "./Hero";
 
 // ---------------------------------------------------------------------------
-// Tirai pembuka.
+// Animasi pembuka landing page.
 //
-// Dua baris — "SPMB" di atas, "CITRA NEGARA" di bawah — naik cepat (seluruh
-// baris selesai di bawah satu detik), lalu badan hurufnya sendiri menjadi
-// LUBANG yang menembus ke video hero: bukan foto diam yang dipotong
-// mengikuti bentuk huruf, tapi video yang benar-benar terlihat di baliknya.
-// Garis emas ditarik, lalu tirai terangkat.
+//  1. Deret lima foto meluncur masuk dari kanan ke kiri dan berhenti tepat
+//     di tengah layar.
+//  2. Deret foto turun sedikit dan menyingkap judul "SPMB SMP-SMA-SMK Citra
+//     Negara · TA …" yang sejak awal menunggu di BELAKANGNYA; judul naik
+//     pelan ke tengah layar, lalu dibiarkan diam sejenak supaya terbaca.
+//  3. Foto tengah membesar sampai memenuhi layar — foto itu sama persis
+//     dengan latar hero, dan ukuran akhirnya diukur dari gambar hero yang
+//     sudah dirender, jadi saat tirai dilepas tidak ada yang bergeser.
+//  4. Tiap kata judul terbang dan mengecil ke posisi kata yang sama di label
+//     hero, lalu melebur ke label aslinya; navbar dan isi hero ikut masuk.
 //
-// Kenapa video, bukan `background-clip: text` seperti sebelumnya: CSS
-// background sama sekali tidak bisa menerima elemen <video> sebagai
-// sumbernya (hanya gambar/gradien) — jadi trik lama itu mustahil dipakai
-// langsung untuk video. Jalan yang benar dan didukung standar adalah
-// `mask-image` yang menunjuk ke `<mask>` SVG, lalu mask itu dipasang ke
-// elemen <video> yang diletakkan tepat di atas kedua baris. Hasilnya: video
-// hanya terlihat di area yang berbentuk huruf — persis "bolong ke videonya"
-// yang diminta.
+// Tahap 1–2 murni CSS (landing.css) sehingga sudah berjalan sejak bingkai
+// pertama, bahkan sebelum React hidup. Tahap 3–4 butuh ukuran nyata, jadi
+// dijalankan lewat Web Animations API setelah jeda baca.
 //
-// Mask-nya dibangun dari elemen SVG <text> BIASA, BUKAN <foreignObject>
-// berisi HTML. Sudah dicoba: <foreignObject> di dalam <mask> yang dirujuk
-// lewat CSS mask-image dari elemen HTML biasa terbukti lewat uji browser
-// TIDAK PERNAH ikut dilukis sama sekali (mask-nya kosong total, video jadi
-// tidak tampak sedikit pun) — beda dengan <foreignObject> yang dipakai
-// langsung untuk MENAMPILKAN sesuatu (itu bekerja normal), rupanya jalur
-// rasterisasi <mask> di Chromium tidak melewati foreignObject-nya. <text>
-// SVG murni tidak punya masalah itu. Supaya bentuk & posisinya tetap
-// presisi menempel ke baris aslinya (yang ukurannya sendiri elastis lewat
-// clamp()+vw), ukuran font/posisi tiap baris DIUKUR LANGSUNG dari elemen
-// aslinya yang sudah dirender (getBoundingClientRect + getComputedStyle),
-// bukan ditebak/disalin manual — sehingga tidak bisa meleset walau lebar
-// layar berubah.
-//
-// Baris hurufnya sendiri TETAP diberi warna tinta padat sebagai keadaan
-// dasar (langsung terbaca, dan jadi jaring pengaman kalau video gagal
-// dimuat atau browser tidak mendukung `mask-image`) — begitu video siap,
-// lapisan bertopeng itu memudar masuk MENUTUPI tinta itu di area huruf yang
-// sama.
-//
-// Kenapa tirai ini ikut dirender di SERVER, bukan dimunculkan setelah React
-// hidup: kalau ia baru muncul setelah hydration, pengunjung sempat melihat
-// hero lebih dulu, tertutup tirai, lalu hero lagi. Judulnya harus jadi hal
-// PERTAMA yang terlihat — jadi ia sudah ada di HTML pertama, dan skrip kecil
-// di dalamnya menyembunyikannya seketika bila sesi ini sudah pernah
-// melihatnya (lihat SKRIP_PEMBUKA di app/layout.tsx). Pola yang sama
-// dipakai proyek ini untuk anti-kedip tema.
-//
-// Konten halaman tetap utuh di HTML sejak awal — ini hanya lapisan di atasnya,
-// jadi mesin pencari dan pembaca layar tidak pernah menunggu animasi. Bisa
-// dilewati kapan saja: tekan tombol apa pun, klik, atau gulir. Pengguna yang
-// meminta gerak dikurangi tidak melihatnya sama sekali (diatur di landing.css).
+// Tirai ini ikut dirender di server: judulnya harus jadi hal PERTAMA yang
+// terlihat, bukan muncul setelah hero sempat tampil. Sesi yang sudah pernah
+// melihatnya, kunjungan yang langsung menuju bagian tertentu (#jadwal, dst.),
+// dan pengguna yang meminta gerak dikurangi tidak melihatnya sama sekali —
+// lihat SKRIP_PEMBUKA di app/layout.tsx dan landing.css. Bisa dilewati kapan
+// saja dengan tombol apa pun, klik/sentuh, atau gulir.
 // ---------------------------------------------------------------------------
 
-/** Lama tirai bertahan sebelum terangkat sendiri. */
-const DURASI_TAHAN = 2000
-/** Lama animasi terangkatnya — harus sama dengan durasi di landing.css. */
-const DURASI_ANGKAT = 1100
+/** Deret foto kiri → kanan. */
+const DERET = [
+  "/images/paskibra.jpg",
+  "/images/band.jpg",
+  FOTO_HERO,
+  "/images/basket.jpg",
+  "/images/pramuka.jpg",
+];
+/** Indeks foto tengah — yang membesar menjadi latar hero. */
+const TENGAH = 2;
 
-/** Sama dengan video hero — inilah video yang "terlihat" lewat lubang huruf. */
-const VIDEO_PEMBUKA = '/videos/hero.mp4'
+/** Judul dibiarkan diam selama ini setelah tersingkap penuh, supaya sempat
+ *  terbaca sebelum foto tengah mulai membesar. */
+const BACA = 1000;
+const ZOOM = 1600;
+const EASE_ZOOM = "cubic-bezier(0.76, 0, 0.24, 1)";
+const TERBANG = 1300;
+const EASE_TERBANG = "cubic-bezier(0.65, 0, 0.35, 1)";
+/** Baris judul yang lebih bawah berangkat lebih dulu. Semua kata bergerak
+ *  turun ke label, jadi baris bawah yang memimpin selalu tetap di bawah baris
+ *  atasnya — "TA 2026/2027" tidak menabrak "Citra Negara" saat menyeberang
+ *  ke ujung kanan label. */
+const JEDA_BARIS = 160;
+/** Lama peleburan kata ke label aslinya. */
+const LEBUR = 420;
+/** Sejak serah terima sampai tirai dilepas dari DOM — isi hero (nilai,
+ *  semboyan, tombol) harus sudah selesai masuk, lihat landing.css. */
+const SISA = 2200;
+/** Warna & bayangan .lp-label--terang (landing.css) — tujuan akhir kata. */
+const WARNA_LABEL = "rgba(255, 255, 255, 0.78)";
+/** Jarak huruf .lp-label (landing.css). */
+const JARAK_HURUF_LABEL = "0.22em";
 
-/** Id `<mask>` SVG yang membentuk lubang video mengikuti bentuk kedua baris. */
-const ID_MASK = 'lp-pembuka-video-mask'
-
-/** Metrik satu baris, diukur langsung dari elemen aslinya yang sudah dirender. */
-type MetrikBaris = {
-  cx: number
-  cy: number
-  fontSize: string
-  fontWeight: string
-  fontFamily: string
-  letterSpacing: string
-}
-
-/** Memecah kata jadi huruf agar tiap huruf bisa naik dengan jeda sendiri. */
-function Huruf({ kata, mulai, langkah }: { kata: string; mulai: number; langkah: number }) {
+/** Tiap kata jadi elemen sendiri agar bisa diterbangkan ke posisinya di label. */
+function Kata({ teks }: { teks: string }) {
   return (
     <>
-      {Array.from(kata).map((h, i) => (
-        <span
-          key={`${h}-${i}`}
-          // .lp-huruf memakai white-space: pre, jadi spasi biasa tetap terjaga.
-          className="lp-huruf"
-          style={{ animationDelay: `${mulai + i * langkah}s` }}
-        >
-          {h}
-        </span>
+      {teks.split(" ").map((k, i) => (
+        <Fragment key={i}>
+          {i > 0 && " "}
+          <span className="lp-pembuka-kata">{k}</span>
+        </Fragment>
       ))}
     </>
-  )
+  );
 }
 
-export function Pembuka() {
-  const ref = useRef<HTMLDivElement | null>(null)
-  const teksRef = useRef<HTMLDivElement | null>(null)
-  const satuRef = useRef<HTMLSpanElement | null>(null)
-  const duaRef = useRef<HTMLSpanElement | null>(null)
-  const videoRef = useRef<HTMLVideoElement | null>(null)
-  const kurangiGerak = useReducedMotion()
-  const [pergi, setPergi] = useState(false)
-  const [selesai, setSelesai] = useState(false)
-  const [videoGagal, setVideoGagal] = useState(false)
-  // Default AMAN adalah false: baris tetap tinta padat sampai terbukti
-  // browsernya bisa memotong <video> lewat mask SVG. Kalau langsung
-  // diasumsikan didukung lalu ternyata tidak, videonya akan tampil sebagai
-  // kotak penuh tanpa terpotong sama sekali menutupi seluruh tirai.
-  const [dukungMask, setDukungMask] = useState(false)
-  // Ukuran nyata (px) dari .lp-pembuka-teks, dipakai sebagai kanvas <svg>
-  // tempat <text> mask digambar (koordinatnya harus dalam sistem yang sama).
-  const [ukuran, setUkuran] = useState({ w: 0, h: 0 })
-  // Metrik tiap baris (pusat + jenis huruf), diukur langsung dari elemen
-  // ASLI yang sudah dirender browser — bukan ditebak — supaya <text> di
-  // dalam mask presisi menumpuk tepat di atas baris aslinya di segala
-  // ukuran layar. null selama belum sempat diukur (server render / belum
-  // mount): dipakai untuk MENUNDA render lapisan video supaya tidak pernah
-  // sempat tampil tak-bertopeng walau sekejap.
-  const [baris, setBaris] = useState<{ satu: MetrikBaris | null; dua: MetrikBaris | null }>({
-    satu: null,
-    dua: null,
-  })
-
-  useEffect(() => {
-    try {
-      const css = (globalThis as { CSS?: { supports?: (p: string, v: string) => boolean } }).CSS
-      setDukungMask(
-        !!css?.supports &&
-          (css.supports('mask-image', `url(#${ID_MASK})`) ||
-            css.supports('-webkit-mask-image', `url(#${ID_MASK})`))
-      )
-    } catch {
-      // Tetap false — jaring pengaman tinta padat yang berlaku.
+/** Posisi tiap kata di label hero, diukur dari teks yang benar-benar dirender. */
+function kataDiLabel(label: HTMLElement) {
+  const hasil: { teks: string; r: DOMRect }[] = [];
+  const jalan = document.createTreeWalker(label, NodeFilter.SHOW_TEXT);
+  const rentang = document.createRange();
+  for (let n = jalan.nextNode(); n; n = jalan.nextNode()) {
+    const isi = n.textContent ?? "";
+    for (const m of isi.matchAll(/\S+/g)) {
+      rentang.setStart(n, m.index);
+      rentang.setEnd(n, m.index + m[0].length);
+      hasil.push({
+        teks: m[0].toLowerCase(),
+        r: rentang.getBoundingClientRect(),
+      });
     }
-  }, [])
+  }
+  return hasil;
+}
+
+export function Pembuka({ tahunAjaran }: { tahunAjaran: string | null }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [selesai, setSelesai] = useState(false);
 
   useEffect(() => {
-    const teks = teksRef.current
-    const s1 = satuRef.current
-    const s2 = duaRef.current
-    if (!teks || !s1 || !s2) return
+    const akar = ref.current;
+    const html = document.documentElement;
+    if (!akar || html.dataset.pembuka === "lewat") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // React datang sangat terlambat dan jaring pengaman CSS sudah
+    // menyingkirkan tirainya sendiri — jangan dimunculkan lagi.
+    const gaya = getComputedStyle(akar);
+    if (gaya.visibility === "hidden" || Number(gaya.opacity) < 1) return;
 
-    const ambil = (el: HTMLElement, rTeks: DOMRect): MetrikBaris => {
-      const r = el.getBoundingClientRect()
-      const cs = getComputedStyle(el)
-      return {
-        cx: r.left - rTeks.left + r.width / 2,
-        cy: r.top - rTeks.top + r.height / 2,
-        fontSize: cs.fontSize,
-        fontWeight: cs.fontWeight,
-        fontFamily: cs.fontFamily,
-        letterSpacing: cs.letterSpacing,
+    akar.classList.add("is-hidup");
+    // Kunci gulir di <html>, bukan <body> (body dipegang panel menu). Talang
+    // scrollbar tetap dipesan supaya lebar halaman tidak berubah saat dibuka.
+    html.style.overflow = "hidden";
+    html.style.scrollbarGutter = "stable";
+    const bukaGulir = () => {
+      html.style.overflow = "";
+      html.style.scrollbarGutter = "";
+    };
+
+    let tahap: "awal" | "zoom" | "lepas" | "lewati" | "usai" = "awal";
+    let batal = false;
+    const animasi: Animation[] = [];
+    const pewaktu: number[] = [];
+    const jalan = (a: Animation) => {
+      animasi.push(a);
+      return a;
+    };
+    const nanti = (fn: () => void, ms: number) => {
+      pewaktu.push(window.setTimeout(fn, ms));
+    };
+    const selesaiSemua = (daftar: Animation[]) =>
+      Promise.all(daftar.map((a) => a.finished.catch(() => null)));
+
+    const foto = Array.from(
+      akar.querySelectorAll<HTMLElement>(".lp-pembuka-foto"),
+    );
+    const judul = akar.querySelector<HTMLElement>(".lp-pembuka-judul");
+    const baris = Array.from(
+      akar.querySelectorAll<HTMLElement>(".lp-pembuka-baris"),
+    );
+    const kata = Array.from(
+      akar.querySelectorAll<HTMLElement>(".lp-pembuka-kata"),
+    );
+    const lapis = akar.querySelector<HTMLElement>(".lp-pembuka-zoom");
+    const bingkai = akar.querySelector<HTMLElement>(".lp-pembuka-zoom-bingkai");
+    const tirai = akar.querySelector<HTMLElement>(".lp-pembuka-zoom-tirai");
+    const gambarZoom = bingkai?.querySelector("img") ?? null;
+    const hero = document.querySelector<HTMLElement>(".lp-hero");
+    const gambarHero =
+      document.querySelector<HTMLImageElement>(".lp-hero-media img");
+    const label = document.querySelector<HTMLElement>(".lp-hero-label");
+
+    const akhiri = () => {
+      if (tahap === "usai") return;
+      tahap = "usai";
+      bukaGulir();
+      // Juga mencegah tirai tampil lagi bila pengguna kembali ke halaman ini
+      // lewat navigasi di dalam aplikasi (skrip di <head> tidak berjalan ulang).
+      html.dataset.pembuka = "lewat";
+      setSelesai(true);
+    };
+
+    // Dilewati pengguna (atau ada yang tidak bisa diukur): tirai memudar,
+    // hero dan navbar masuk dengan animasi biasanya.
+    const lewati = () => {
+      if (tahap !== "awal" && tahap !== "zoom") return;
+      tahap = "lewati";
+      bukaGulir();
+      akar.classList.add("is-lepas", "is-lewati");
+      if (label) {
+        label.style.animation = "none";
+        jalan(
+          label.animate(
+            [
+              { opacity: 0, transform: "translateY(18px)" },
+              { opacity: 1, transform: "none" },
+            ],
+            {
+              duration: 800,
+              delay: 120,
+              easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+              fill: "both",
+            },
+          ),
+        );
       }
-    }
-    const ukur = () => {
-      const rTeks = teks.getBoundingClientRect()
-      setUkuran({ w: Math.ceil(rTeks.width), h: Math.ceil(rTeks.height) })
-      setBaris({ satu: ambil(s1, rTeks), dua: ambil(s2, rTeks) })
-    }
-    ukur()
-    const ro = new ResizeObserver(ukur)
-    ro.observe(teks)
-    return () => ro.disconnect()
-  }, [])
+      nanti(akhiri, SISA);
+    };
 
-  const tampilkanVideo =
-    !kurangiGerak && dukungMask && !videoGagal && ukuran.w > 0 && ukuran.h > 0 && !!baris.satu && !!baris.dua
+    // Tahap 4: serah terima ke tata letak hero.
+    const lepas = () => {
+      if (tahap !== "zoom") return;
+      if (!judul || !label) return lewati();
+      const rLabel = label.getBoundingClientRect();
+      if (rLabel.bottom <= 0 || rLabel.top >= window.innerHeight)
+        return lewati();
+      tahap = "lepas";
 
-  useEffect(() => {
-    if (!tampilkanVideo) return
-    videoRef.current?.play().catch(() => {})
-  }, [tampilkanVideo])
+      // Label asli tidak ikut animasi masuknya sendiri: kata-kata inilah
+      // yang "menjadi" label itu.
+      label.style.animation = "none";
+      akar.classList.add("is-lepas");
 
-  useEffect(() => {
-    // Sesi ini sudah pernah melihatnya. Penandanya dipasang SKRIP_PEMBUKA di
-    // app/spmb/page.tsx sebelum halaman dilukis, dan CSS sudah menyembunyikan
-    // tirainya sejak bingkai pertama — jadi di sini cukup tidak memasang
-    // pewaktu maupun pendengar apa pun. Sengaja tidak memanggil setState:
-    // selain memicu render berantai, melepasnya dari DOM juga akan berbeda
-    // dari HTML yang dikirim server.
-    if (document.documentElement.dataset.pembuka === 'lewat') return
+      // Bekukan posisi tiap kata supaya jarak hurufnya bisa ikut berubah
+      // tanpa menggeser kata di sebelahnya.
+      judul.getAnimations({ subtree: true }).forEach((a) => {
+        if (a instanceof CSSAnimation) a.cancel();
+      });
+      const rJudul = judul.getBoundingClientRect();
+      const kotak = kata.map((k) => k.getBoundingClientRect());
+      judul.style.height = `${rJudul.height}px`;
+      kata.forEach((k, i) => {
+        k.style.position = "absolute";
+        k.style.left = `${kotak[i].left - rJudul.left}px`;
+        k.style.top = `${kotak[i].top - rJudul.top}px`;
+      });
 
-    const semula = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+      const tujuan = kataDiLabel(label);
+      const ukuranLabel = parseFloat(getComputedStyle(label).fontSize);
+      // Nomor baris tiap kata (0 = paling atas), dari posisi yang sudah dirender.
+      const puncak = [...new Set(kotak.map((r) => Math.round(r.top)))].sort(
+        (a, b) => a - b,
+      );
+      const barisKe = kotak.map((r) => puncak.indexOf(Math.round(r.top)));
+      const jeda = barisKe.map((b) => (puncak.length - 1 - b) * JEDA_BARIS);
+      const mulaiLebur = TERBANG + Math.max(0, ...jeda) - LEBUR * 0.35;
+      let p = 0;
+      kata.forEach((k, i) => {
+        const teks = (k.textContent ?? "").toLowerCase();
+        let j = p;
+        while (j < tujuan.length && tujuan[j].teks !== teks) j++;
+        if (j >= tujuan.length) {
+          jalan(
+            k.animate([{ opacity: 1 }, { opacity: 0 }], {
+              duration: 500,
+              fill: "both",
+            }),
+          );
+          return;
+        }
+        p = j + 1;
+        const r0 = kotak[i];
+        const r1 = tujuan[j].r;
+        const gk = getComputedStyle(k);
+        const s = ukuranLabel / parseFloat(gk.fontSize);
+        // Titik tumpu di tepi kiri-tengah kata (lihat landing.css).
+        const dx = r1.left - r0.left;
+        const dy = r1.top + r1.height / 2 - (r0.top + r0.height / 2);
+        jalan(
+          k.animate(
+            [
+              {
+                transform: "translate(0px, 0px) scale(1)",
+                color: gk.color,
+                textShadow: gk.textShadow,
+              },
+              {
+                transform: `translate(${dx}px, ${dy}px) scale(${s})`,
+                color: WARNA_LABEL,
+                // Bayangan .lp-label--terang, dibagi skala karena ikut mengecil.
+                textShadow: `0 ${1 / s}px ${2 / s}px rgba(0, 0, 0, 0.4), 0 ${4 / s}px ${12 / s}px rgba(0, 0, 0, 0.3)`,
+              },
+            ],
+            {
+              duration: TERBANG,
+              delay: jeda[i],
+              easing: EASE_TERBANG,
+              fill: "both",
+            },
+          ),
+        );
+        // Jarak huruf baru melebar menjelang mendarat: kalau ikut sejak awal,
+        // kata-kata sempat berdempetan di tengah jalan.
+        jalan(
+          k.animate(
+            [
+              { letterSpacing: gk.letterSpacing },
+              { letterSpacing: JARAK_HURUF_LABEL },
+            ],
+            {
+              duration: TERBANG * 0.45,
+              delay: jeda[i] + TERBANG * 0.55,
+              easing: "ease-out",
+              fill: "both",
+            },
+          ),
+        );
+        jalan(
+          k.animate([{ opacity: 1 }, { opacity: 0 }], {
+            duration: LEBUR,
+            delay: mulaiLebur,
+            fill: "both",
+          }),
+        );
+      });
+      jalan(
+        label.animate([{ opacity: 0 }, { opacity: 1 }], {
+          duration: LEBUR,
+          delay: mulaiLebur,
+          fill: "both",
+        }),
+      );
+      nanti(akhiri, Math.max(SISA, mulaiLebur + LEBUR + 50));
+    };
 
-    const tutup = () => setPergi(true)
-    const pewaktu = setTimeout(tutup, DURASI_TAHAN)
-    window.addEventListener('keydown', tutup)
-    window.addEventListener('pointerdown', tutup)
-    window.addEventListener('wheel', tutup, { passive: true })
+    // Tahap 3: foto tengah membesar menjadi latar hero.
+    const zoom = async () => {
+      if (batal || tahap !== "awal") return;
+      tahap = "zoom";
+      const fotoTengah = foto[TENGAH];
+      if (
+        !fotoTengah ||
+        !lapis ||
+        !bingkai ||
+        !tirai ||
+        !gambarZoom ||
+        !hero ||
+        !gambarHero
+      )
+        return lewati();
+
+      // Gambar hero belum siap (koneksi lambat) → jangan membesarkan kotak kosong.
+      const siap = await Promise.race([
+        gambarZoom.decode().then(
+          () => true,
+          () => false,
+        ),
+        new Promise<boolean>((r) => nanti(() => r(false), 2500)),
+      ]);
+      if (batal || tahap !== "zoom") return;
+      if (!siap || gambarZoom.naturalWidth === 0) return lewati();
+
+      const rC = fotoTengah.getBoundingClientRect();
+      const rB = gambarHero.getBoundingClientRect();
+      const rH = hero.getBoundingClientRect();
+      const rL = lapis.getBoundingClientRect();
+      if (rC.width === 0 || rB.bottom <= 0) return lewati();
+
+      // Bingkai memuat foto UTUH seukuran tampilan "cover" di kotak gambar hero
+      // (sudah termasuk skala 1.1-nya) dan berpusat di pusat kotak itu. Yang
+      // terlihat dibatasi klip lapisan — bukan dipotong ke kotak hero —
+      // supaya saat mengecil ke ukuran kartu fotonya tetap menutupi kartu,
+      // juga di HP yang kotak hero-nya tegak sementara kartunya lebih lebar.
+      const nw = gambarZoom.naturalWidth;
+      const nh = gambarZoom.naturalHeight;
+      const sB = Math.max(rB.width / nw, rB.height / nh);
+      const sC = Math.max(rC.width / nw, rC.height / nh);
+      const pusatB = {
+        x: rB.left + rB.width / 2 - rL.left,
+        y: rB.top + rB.height / 2 - rL.top,
+      };
+      Object.assign(bingkai.style, {
+        left: `${pusatB.x - (nw * sB) / 2}px`,
+        top: `${pusatB.y - (nh * sB) / 2}px`,
+        width: `${nw * sB}px`,
+        height: `${nh * sB}px`,
+      });
+      Object.assign(tirai.style, {
+        left: `${rH.left - rL.left}px`,
+        top: `${rH.top - rL.top}px`,
+        width: `${rH.width}px`,
+        height: `${rH.height}px`,
+      });
+
+      // Mulai dari tampilan foto tengah: object-fit cover di kotak kartu.
+      const k = sC / sB;
+      const dx = rC.left + rC.width / 2 - (rB.left + rB.width / 2);
+      const dy = rC.top + rC.height / 2 - (rB.top + rB.height / 2);
+      const sudut =
+        parseFloat(getComputedStyle(fotoTengah).borderTopLeftRadius) || 0;
+      const klip = (
+        atas: number,
+        kanan: number,
+        bawah: number,
+        kiri: number,
+        r: number,
+      ) => `inset(${atas}px ${kanan}px ${bawah}px ${kiri}px round ${r}px)`;
+      const klipAwal = klip(
+        rC.top - rL.top,
+        rL.right - rC.right,
+        rL.bottom - rC.bottom,
+        rC.left - rL.left,
+        sudut,
+      );
+      // Berakhir di area hero yang tampak di layar — di HP, hero (100svh)
+      // bisa sedikit lebih pendek dari layar saat bilah alamat tersembunyi.
+      const klipAkhir = klip(
+        Math.max(0, rH.top - rL.top),
+        Math.max(0, rL.right - rH.right),
+        Math.max(0, rL.bottom - rH.bottom),
+        Math.max(0, rH.left - rL.left),
+        0,
+      );
+      const opsi: KeyframeAnimationOptions = {
+        duration: ZOOM,
+        easing: EASE_ZOOM,
+        fill: "both",
+      };
+
+      akar.classList.add("is-zoom");
+      fotoTengah.style.visibility = "hidden";
+      const inti = [
+        jalan(
+          lapis.animate(
+            [{ clipPath: klipAwal }, { clipPath: klipAkhir }],
+            opsi,
+          ),
+        ),
+        jalan(
+          bingkai.animate(
+            [
+              { transform: `translate(${dx}px, ${dy}px) scale(${k})` },
+              { transform: "translate(0px, 0px) scale(1)" },
+            ],
+            opsi,
+          ),
+        ),
+      ];
+      jalan(
+        tirai.animate([{ opacity: 0 }, { opacity: 1 }], {
+          duration: ZOOM * 0.6,
+          delay: ZOOM * 0.4,
+          easing: "ease-in-out",
+          fill: "both",
+        }),
+      );
+      // Foto di kiri-kanannya terdorong menjauh selagi tertutup.
+      foto.forEach((f, i) => {
+        if (i === TENGAH) return;
+        jalan(
+          f.animate(
+            [
+              { transform: "none" },
+              { transform: `translateX(${(i - TENGAH) * 6}vw) scale(0.94)` },
+            ],
+            opsi,
+          ),
+        );
+      });
+      // Judul berganti dari tinta ke putih karena kini berdiri di atas foto.
+      baris.forEach((b, i) => {
+        jalan(
+          b.animate(
+            [
+              {
+                color: getComputedStyle(b).color,
+                textShadow: "0 2px 18px rgba(0, 0, 0, 0)",
+              },
+              {
+                color: i === 0 ? "#ffffff" : "#fff000",
+                textShadow: "0 2px 18px rgba(0, 0, 0, 0.35)",
+              },
+            ],
+            {
+              duration: ZOOM * 0.45,
+              delay: ZOOM * 0.22,
+              easing: "ease-in-out",
+              fill: "both",
+            },
+          ),
+        );
+      });
+
+      await selesaiSemua(inti);
+      if (!batal) lepas();
+    };
+
+    // Tahap 1–2 digerakkan CSS; tunggu sampai judul selesai naik, lalu beri
+    // waktu untuk membacanya.
+    const tahapCss = akar
+      .getAnimations({ subtree: true })
+      .filter((a) => a instanceof CSSAnimation);
+    selesaiSemua(tahapCss).then(() => {
+      if (!batal)
+        nanti(() => {
+          void zoom();
+        }, BACA);
+    });
+
+    const onLewati = () => lewati();
+    window.addEventListener("keydown", onLewati);
+    window.addEventListener("pointerdown", onLewati);
+    window.addEventListener("wheel", onLewati, { passive: true });
+    window.addEventListener("touchstart", onLewati, { passive: true });
 
     return () => {
-      document.body.style.overflow = semula
-      clearTimeout(pewaktu)
-      window.removeEventListener('keydown', tutup)
-      window.removeEventListener('pointerdown', tutup)
-      window.removeEventListener('wheel', tutup)
-    }
-  }, [])
+      batal = true;
+      window.removeEventListener("keydown", onLewati);
+      window.removeEventListener("pointerdown", onLewati);
+      window.removeEventListener("wheel", onLewati);
+      window.removeEventListener("touchstart", onLewati);
+      pewaktu.forEach((t) => window.clearTimeout(t));
+      animasi.forEach((a) => a.cancel());
+      bukaGulir();
+      // Kembalikan ke keadaan awal (penting untuk efek yang dijalankan dua
+      // kali oleh React Strict Mode saat pengembangan).
+      akar.classList.remove("is-hidup", "is-zoom", "is-lepas", "is-lewati");
+      foto[TENGAH]?.style.removeProperty("visibility");
+      if (label) label.style.removeProperty("animation");
+    };
+  }, []);
 
-  // Lepaskan dari DOM setelah animasi terangkatnya selesai.
-  useEffect(() => {
-    if (!pergi) return
-    document.body.style.overflow = ''
-    const t = setTimeout(() => setSelesai(true), DURASI_ANGKAT)
-    return () => clearTimeout(t)
-  }, [pergi])
-
-  if (selesai) return null
+  if (selesai) return null;
 
   return (
-    <div
-      ref={ref}
-      className={`lp-pembuka${pergi ? ' is-pergi' : ''}`}
-      // Murni dekorasi: isinya sudah ada di halaman, jadi pembaca layar tidak
-      // perlu membacanya dua kali.
-      aria-hidden="true"
-    >
-      <div className="lp-pembuka-latar" />
-
-      <div className="lp-pembuka-teks" ref={teksRef}>
-        <span ref={satuRef} className="lp-pembuka-baris lp-pembuka-baris--satu">
-          <Huruf kata="SPMB" mulai={0.04} langkah={0.03} />
+    // Murni dekorasi: isinya sudah ada di halaman, jadi pembaca layar tidak
+    // perlu membacanya dua kali.
+    <div ref={ref} className="lp-pembuka" aria-hidden="true">
+      <div className="lp-pembuka-judul">
+        <span className="lp-pembuka-baris">
+          <Kata teks="SPMB SMP-SMA-SMK Citra Negara" />
         </span>
-        <span ref={duaRef} className="lp-pembuka-baris lp-pembuka-baris--dua">
-          <Huruf kata="CITRA NEGARA" mulai={0.17} langkah={0.014} />
-        </span>
-
-        {tampilkanVideo && (
-          <div className="lp-pembuka-video-lapis">
-            <video
-              ref={videoRef}
-              key={VIDEO_PEMBUKA}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
-              onError={() => setVideoGagal(true)}
-            >
-              <source src={VIDEO_PEMBUKA} type="video/mp4" />
-            </video>
-          </div>
+        {tahunAjaran && (
+          <span className="lp-pembuka-baris lp-pembuka-baris--dua">
+            <Kata teks={`TA ${tahunAjaran}`} />
+          </span>
         )}
       </div>
 
-      {tampilkanVideo && baris.satu && baris.dua && (
-        // SVG ini tidak pernah tampil sendiri, cuma wadah definisi <mask>
-        // yang dirujuk lewat mask-image di landing.css — tapi width/height
-        // di sini TETAP harus ukuran piksel sungguhan (bukan 0), supaya
-        // koordinat cx/cy hasil pengukuran di atas jatuh di tempat yang benar.
-        <svg
-          width={ukuran.w}
-          height={ukuran.h}
-          // position:absolute saja — TANPA width/height:0 (akan membuat isi
-          // mask salah skala) dan TANPA visibility:hidden. <defs> tidak
-          // pernah melukis apa pun sendiri jadi elemen ini tidak akan
-          // terlihat, TAPI visibility:hidden di sini terbukti lewat uji
-          // browser justru mematikan mask-nya juga: Chromium tidak
-          // merender isi <mask> sama sekali untuk dirujuk mask-image ketika
-          // <svg> induknya visibility:hidden, walau referensinya sendiri
-          // valid — video jadi tidak tampak sedikit pun lewat lubang mana
-          // pun (sudah dibuktikan dengan mask persegi putih penuh yang
-          // seharusnya menampakkan videonya utuh, tapi tetap kosong sampai
-          // visibility:hidden ini dilepas).
-          style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}
-          aria-hidden="true"
-          focusable="false"
-        >
-          <defs>
-            <mask id={ID_MASK} maskContentUnits="userSpaceOnUse">
-              {/* <text> SVG murni, BUKAN <foreignObject> — lihat catatan
-                  panjang di kepala berkas ini untuk alasannya. Putih pekat =
-                  bagian yang jadi "lubang" tampak pada mask; textAnchor +
-                  dominantBaseline "middle"/"central" menaruh pusat glyph
-                  tepat di titik (cx, cy) yang sudah diukur dari baris asli. */}
-              <text
-                x={baris.satu.cx}
-                y={baris.satu.cy}
-                textAnchor="middle"
-                dominantBaseline="central"
-                style={{
-                  fill: '#fff',
-                  fontFamily: baris.satu.fontFamily,
-                  fontWeight: baris.satu.fontWeight,
-                  fontSize: baris.satu.fontSize,
-                  letterSpacing: baris.satu.letterSpacing,
-                }}
-              >
-                SPMB
-              </text>
-              <text
-                x={baris.dua.cx}
-                y={baris.dua.cy}
-                textAnchor="middle"
-                dominantBaseline="central"
-                style={{
-                  fill: '#fff',
-                  fontFamily: baris.dua.fontFamily,
-                  fontWeight: baris.dua.fontWeight,
-                  fontSize: baris.dua.fontSize,
-                  letterSpacing: baris.dua.letterSpacing,
-                }}
-              >
-                CITRA NEGARA
-              </text>
-            </mask>
-          </defs>
-        </svg>
-      )}
+      <div className="lp-pembuka-panggung">
+        {DERET.map((src, i) => (
+          <div
+            key={src}
+            className="lp-pembuka-kartu"
+            style={{ "--i": i } as React.CSSProperties}
+          >
+            <div className="lp-pembuka-foto">
+              <Image
+                src={src}
+                alt=""
+                fill
+                loading="eager"
+                sizes="(max-width: 640px) 40vw, 20vw"
+                style={{ objectFit: "cover" }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
 
-      <span className="lp-pembuka-garis" />
-      <span className="lp-pembuka-tahun">Penerimaan Murid Baru</span>
+      <div className="lp-pembuka-zoom">
+        <div className="lp-pembuka-zoom-bingkai">
+          <Image
+            src={FOTO_HERO}
+            alt=""
+            fill
+            loading="eager"
+            sizes="100vw"
+            style={{ objectFit: "cover" }}
+          />
+        </div>
+        <div className="lp-pembuka-zoom-tirai" />
+      </div>
     </div>
-  )
+  );
 }

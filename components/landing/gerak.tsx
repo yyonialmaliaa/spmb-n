@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 
 // ---------------------------------------------------------------------------
 // Primitif gerak untuk landing page.
@@ -106,12 +106,13 @@ function jepit(n: number) { return n < 0 ? 0 : n > 1 ? 1 : n }
 function useProgres(
   ref: React.RefObject<HTMLElement | null>,
   ukur: (kotak: DOMRect) => number,
+  aktif = true,
 ) {
   const [nilai, setNilai] = useState(0)
 
   useEffect(() => {
     const el = ref.current
-    if (!el) return
+    if (!el || !aktif) return
     let raf = 0
     const hitung = () => {
       raf = 0
@@ -130,7 +131,7 @@ function useProgres(
     // yang identik tiap render, dan menjadikannya dependensi hanya akan
     // memasang-lepas listener setiap render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ref])
+  }, [ref, aktif])
 
   return nilai
 }
@@ -138,9 +139,23 @@ function useProgres(
 /**
  * 0 selama bagian masih penuh di layar, 1 ketika sudah sepenuhnya lewat.
  * Untuk animasi "keluar" — mis. hero yang mengecil saat ditinggalkan.
+ * `aktif = false` mematikan pemantauan gulirnya sama sekali (nilainya tetap 0).
  */
-export function useKeluar(ref: React.RefObject<HTMLElement | null>) {
-  return useProgres(ref, k => -k.top / (k.height || 1))
+export function useKeluar(ref: React.RefObject<HTMLElement | null>, aktif = true) {
+  return useProgres(ref, k => -k.top / (k.height || 1), aktif)
+}
+
+const tanpaLangganan = () => () => {}
+/** Browser mendukung animasi CSS yang digerakkan posisi gulir (animation-timeline)
+ *  dan pengguna tidak meminta gerak dikurangi. Di server selalu false. */
+function dukungGulirCss() {
+  return (
+    typeof CSS !== 'undefined' && CSS.supports('animation-timeline: view()') &&
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
+}
+export function useGulirCss() {
+  return useSyncExternalStore(tanpaLangganan, dukungGulirCss, () => false)
 }
 
 /**

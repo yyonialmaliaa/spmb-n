@@ -63,13 +63,14 @@ export function AlurSPMB() {
   }, [])
 
   return (
-    <section id="alur" className="lp-bagian lp-alur">
+    // id "alur" & label "Alur SPMB" ada di judul "CN · Alur SPMB" tepat di
+    // atas bab ini (JenjangStory.tsx), bukan di sini.
+    <section className="lp-bagian lp-alur" aria-label="Alur SPMB">
       <div className="lp-wadah">
         <div className="lp-alur-grid">
           {/* Kepala menempel di tempatnya selagi langkah-langkahnya bergulir. */}
           <div className="lp-alur-kepala">
-            <Muncul><p className="lp-label">Alur SPMB</p></Muncul>
-            <div style={{ marginTop: '1.2rem' }}>
+            <div>
               <JudulBaris larik={['Memulai', 'langkahmu.']} className="lp-judul-besar" />
             </div>
             <Muncul jeda={0.1}>

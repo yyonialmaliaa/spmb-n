@@ -1,10 +1,17 @@
-'use client'
-
-import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowRight } from 'lucide-react'
-import { Muncul, JudulBaris } from './gerak'
+import { Plus } from 'lucide-react'
 import { GAMBAR_JENJANG, type Jenjang } from '@/lib/labels'
+
+/**
+ * Website masing-masing jenjang (dibuka di tab baru).
+ * Selama masih kosong, kartunya tetap bisa diklik/disorot seperti biasa,
+ * hanya belum mengarah ke mana pun — tidak error.
+ */
+const WEB_JENJANG: Record<Jenjang, string> = {
+  smp: '', // masukkan link web SMP di sini, contoh: 'https://smp.citranegara.sch.id'
+  sma: '', // masukkan link web SMA di sini
+  smk: '', // masukkan link web SMK di sini
+}
 
 /**
  * Ringkasan naratif tiap jenjang. Sengaja disimpan di sini dan bukan di
@@ -25,52 +32,96 @@ export type PanelJenjang = {
   label: string
 }
 
+/**
+ * "Kenali jenjangmu di CN" → kartu SMP/SMA/SMK → "CN · Alur SPMB".
+ *
+ * Satu wadah yang sengaja membentang dari judul bab Jenjang sampai judul
+ * bab Alur SPMB, karena tulisan raksasa "CN" di dalamnya menempel (sticky)
+ * sepanjang rentang itu:
+ *   1. Mula-mula CN adalah bagian judul "Kenali jenjangmu di CN", dengan
+ *      penjelasan singkat di sebelah kanannya.
+ *   2. Saat digulir, CN tertahan di layar sementara deretan kartu foto
+ *      SMP/SMA/SMK naik MENUTUPINYA — CN ada di belakang foto.
+ *   3. Setelah kartu lewat, CN tampak lagi di atas pita emas.
+ *   4. Pita emas itu MENYUSUT — dari selebar layar menjadi persegi panjang,
+ *      lalu terus mengecil — sampai tepat menjadi kotak label "Alur SPMB";
+ *      tulisannya makin tegas selama kotak menyusut. Di ujung wadah CN
+ *      berhenti menempel dan bersama label itu menjadi judul bab berikutnya:
+ *      "CN · Alur SPMB".
+ * Label "Kenali jenjangmu di" sendiri masuk seperti disapu stabilo: kotak
+ * emasnya memanjang dari kiri sambil menyingkap tulisannya.
+ *
+ * Kartu jenjang melebar saat disorot kursor (atau difokus keyboard): foto
+ * lebih lapang, tombol "+" dan nama lengkap jenjang muncul di bawah. Di HP
+ * ketiganya sama lebar dan cukup diketuk.
+ *
+ * Gerak yang mengikuti gulir diatur di landing.css (blok "JENJANG → ALUR");
+ * tanpa dukungan browser, tata letaknya sama dalam keadaan diam.
+ */
 export function JenjangStory({ daftar }: { daftar: PanelJenjang[] }) {
   return (
-    <section id="jenjang" style={{ paddingTop: 'clamp(5rem, 11vw, 11rem)' }}>
-      <div className="lp-wadah" style={{ marginBottom: 'clamp(2.5rem, 5vw, 4.5rem)' }}>
-        <Muncul>
-          <p className="lp-label">Tiga jenjang, satu naungan</p>
-        </Muncul>
-        <div style={{ marginTop: '1.4rem' }}>
-          <JudulBaris larik={['Kenali jenjangmu.']} className="lp-judul-besar" />
-        </div>
-        <Muncul jeda={0.12}>
-          <p className="lp-teks" style={{ marginTop: '1.6rem', maxWidth: '50ch' }}>
-            Pilih salah satu untuk membaca lebih jauh — kurikulum, jadwal
-            pendaftaran, biaya, dan persyaratannya.
-          </p>
-        </Muncul>
+    <section id="jenjang" className="lp-cn" aria-labelledby="lp-cn-judul">
+      <div className="lp-wadah lp-cn-kepala">
+        <h2 id="lp-cn-judul" className="lp-cn-chip" aria-label="Kenali jenjangmu di Citra Negara">
+          Kenali jenjangmu di
+        </h2>
       </div>
 
-      <div className="lp-wadah lp-panel-grid" role="region" aria-label="Jenjang pendidikan Citra Negara">
-        {daftar.map(j => (
-          <Link
-            key={j.jenjang}
-            href={`/spmb/jenjang/${j.jenjang}`}
-            className="lp-panel"
-            aria-label={`Pelajari ${j.label}`}
-          >
-            <div className="lp-panel-media">
+      {/* Tulisan raksasa yang menempel sepanjang wadah ini. */}
+      <div className="lp-cn-kata" aria-hidden="true">CN</div>
+
+      <div className="lp-wadah lp-cn-teks">
+        <div className="lp-cn-teks-isi">
+          <p className="lp-cn-label">Tiga jenjang, satu naungan</p>
+          <p className="lp-cn-paragraf">
+            Pilih salah satu untuk mengenal lebih jauh setiap jenjangnya.
+          </p>
+        </div>
+      </div>
+
+      <ul className="lp-cn-kartu" aria-label="Jenjang pendidikan Citra Negara">
+        {daftar.map(j => {
+          const web = WEB_JENJANG[j.jenjang]
+          // Link kosong: <a> tanpa href — tetap bisa difokus & diklik, tapi
+          // tidak berpindah halaman.
+          const tautan = web
+            ? { href: web, target: '_blank', rel: 'noopener noreferrer' }
+            : { tabIndex: 0, 'aria-disabled': true }
+          return (
+          <li key={j.jenjang} className="lp-cn-kartu-item">
+            <a {...tautan} className="lp-cn-kartu-tautan" aria-label={`Website ${j.label}`}>
               <Image
                 src={GAMBAR_JENJANG[j.jenjang]}
                 alt=""
                 fill
-                sizes="(max-width: 900px) 100vw, 33vw"
+                sizes="(max-width: 900px) 34vw, 55vw"
                 style={{ objectFit: 'cover' }}
               />
-            </div>
-            <div className="lp-panel-isi">
-              <h3 className="lp-panel-judul">{j.singkat}</h3>
-              <p className="lp-panel-sub">Citra Negara</p>
-              <p className="lp-panel-teks">{CERITA[j.jenjang].teks}</p>
-              <span className="lp-panel-cta">
-                Jelajahi {j.singkat} <ArrowRight size={16} />
+              <span className="lp-cn-kartu-tirai" aria-hidden="true" />
+              <span className="lp-cn-kartu-atas" aria-hidden="true">{j.singkat}</span>
+              <span className="lp-cn-kartu-bawah" aria-hidden="true">
+                <span className="lp-cn-kartu-plus"><Plus size={26} strokeWidth={2.4} /></span>
+                <span className="lp-cn-kartu-judul">{j.label}</span>
+                <span className="lp-cn-kartu-teks">{CERITA[j.jenjang].teks}</span>
               </span>
-            </div>
-          </Link>
-        ))}
-      </div>
+              <span className="lp-cn-kartu-garis" aria-hidden="true" />
+            </a>
+          </li>
+          )
+        })}
+      </ul>
+
+      {/* Ruang pita emas (warnanya dilukis .lp-cn-emas di bawah). */}
+      <div className="lp-cn-pita" aria-hidden="true" />
+
+      {/* Baris judul bab Alur SPMB: CN yang tadi menempel berhenti tepat di
+          sini, setinggi CN. Tujuan tautan #alur. */}
+      <div id="alur" className="lp-wadah lp-cn-akhir" />
+
+      {/* Kotak emas: mula-mula pita lebar di belakang CN, lalu menyusut
+          sampai tepat menjadi kotak label "Alur SPMB" di bawah ini. */}
+      <div className="lp-cn-emas" aria-hidden="true" />
+      <p className="lp-cn-chip lp-cn-chip--akhir">Alur SPMB</p>
     </section>
   )
 }
