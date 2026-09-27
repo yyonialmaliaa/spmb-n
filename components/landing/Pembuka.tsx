@@ -4,6 +4,9 @@ import Image from "next/image";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { FOTO_HERO } from "./Hero";
 
+// Video hero sebagai latar zoom pembuka
+const VIDEO_HERO = '/videos/Video Project.mp4'
+
 // ---------------------------------------------------------------------------
 // Animasi pembuka landing page.
 //
@@ -12,7 +15,7 @@ import { FOTO_HERO } from "./Hero";
 //  2. Deret foto turun sedikit dan menyingkap judul "SPMB SMP-SMA-SMK Citra
 //     Negara · TA …" yang sejak awal menunggu di BELAKANGNYA; judul naik
 //     pelan ke tengah layar, lalu dibiarkan diam sejenak supaya terbaca.
-//  3. Foto tengah membesar sampai memenuhi layar — foto itu sama persis
+//  3. Video tengah membesar sampai memenuhi layar — video itu sama persis
 //     dengan latar hero, dan ukuran akhirnya diukur dari gambar hero yang
 //     sudah dirender, jadi saat tirai dilepas tidak ada yang bergeser.
 //  4. Tiap kata judul terbang dan mengecil ke posisi kata yang sama di label
@@ -30,11 +33,11 @@ import { FOTO_HERO } from "./Hero";
 // saja dengan tombol apa pun, klik/sentuh, atau gulir.
 // ---------------------------------------------------------------------------
 
-/** Deret foto kiri → kanan. */
+/** Deret foto/video kiri → kanan. */
 const DERET = [
   "/images/17agst-112.jpg",
   "/images/cn beersholawat-261.jpg",
-  FOTO_HERO,
+  VIDEO_HERO, // Video tengah yang jadi latar hero
   "/images/bkst sma-8.jpg",
   "/images/AWS03774.jpg",
 ];
@@ -42,7 +45,7 @@ const DERET = [
 const TENGAH = 2;
 
 /** Judul dibiarkan diam selama ini setelah tersingkap penuh, supaya sempat
- *  terbaca sebelum foto tengah mulai membesar. */
+ *  terbaca sebelum video tengah mulai membesar. */
 const BACA = 1000;
 const ZOOM = 1600;
 const EASE_ZOOM = "cubic-bezier(0.76, 0, 0.24, 1)";
@@ -98,7 +101,9 @@ function kataDiLabel(label: HTMLElement) {
 
 export function Pembuka({ tahunAjaran }: { tahunAjaran: string | null }) {
   const ref = useRef<HTMLDivElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [selesai, setSelesai] = useState(false);
+  const [videoGagal, setVideoGagal] = useState(false);
 
   useEffect(() => {
     const akar = ref.current;
@@ -147,10 +152,10 @@ export function Pembuka({ tahunAjaran }: { tahunAjaran: string | null }) {
     const lapis = akar.querySelector<HTMLElement>(".lp-pembuka-zoom");
     const bingkai = akar.querySelector<HTMLElement>(".lp-pembuka-zoom-bingkai");
     const tirai = akar.querySelector<HTMLElement>(".lp-pembuka-zoom-tirai");
-    const gambarZoom = bingkai?.querySelector("img") ?? null;
+    const mediaZoom = bingkai?.querySelector<HTMLImageElement | HTMLVideoElement>("img, video") ?? null;
     const hero = document.querySelector<HTMLElement>(".lp-hero");
-    const gambarHero =
-      document.querySelector<HTMLImageElement>(".lp-hero-media img");
+    const mediaBingkaiHero =
+      document.querySelector<HTMLImageElement | HTMLVideoElement>(".lp-hero-media img, .lp-hero-media video");
     const label = document.querySelector<HTMLElement>(".lp-hero-label");
 
     const akhiri = () => {
@@ -306,7 +311,7 @@ export function Pembuka({ tahunAjaran }: { tahunAjaran: string | null }) {
       nanti(akhiri, Math.max(SISA, mulaiLebur + LEBUR + 50));
     };
 
-    // Tahap 3: foto tengah membesar menjadi latar hero.
+    // Tahap 3: media (video/foto) tengah membesar menjadi latar hero.
     const zoom = async () => {
       if (batal || tahap !== "awal") return;
       tahap = "zoom";
@@ -316,36 +321,53 @@ export function Pembuka({ tahunAjaran }: { tahunAjaran: string | null }) {
         !lapis ||
         !bingkai ||
         !tirai ||
-        !gambarZoom ||
+        !mediaZoom ||
         !hero ||
-        !gambarHero
+        !mediaBingkaiHero
       )
         return lewati();
 
-      // Gambar hero belum siap (koneksi lambat) → jangan membesarkan kotak kosong.
-      const siap = await Promise.race([
-        gambarZoom.decode().then(
-          () => true,
-          () => false,
-        ),
-        new Promise<boolean>((r) => nanti(() => r(false), 2500)),
-      ]);
+      // Media hero belum siap (koneksi lambat) → jangan membesarkan kotak kosong.
+      let siap = false;
+      if (mediaZoom instanceof HTMLVideoElement) {
+        siap = await Promise.race([
+          new Promise<boolean>((r) => {
+            mediaZoom.onloadedmetadata = () => r(true);
+            mediaZoom.onerror = () => r(false);
+          }),
+          new Promise<boolean>((r) => nanti(() => r(false), 2500)),
+        ]);
+      } else {
+        siap = await Promise.race([
+          mediaZoom.decode().then(
+            () => true,
+            () => false,
+          ),
+          new Promise<boolean>((r) => nanti(() => r(false), 2500)),
+        ]);
+      }
+      
       if (batal || tahap !== "zoom") return;
-      if (!siap || gambarZoom.naturalWidth === 0) return lewati();
+      if (!siap || (mediaZoom instanceof HTMLImageElement && mediaZoom.naturalWidth === 0)) return lewati();
 
       const rC = fotoTengah.getBoundingClientRect();
-      const rB = gambarHero.getBoundingClientRect();
+      const rB = mediaBingkaiHero.getBoundingClientRect();
       const rH = hero.getBoundingClientRect();
       const rL = lapis.getBoundingClientRect();
       if (rC.width === 0 || rB.bottom <= 0) return lewati();
 
-      // Bingkai memuat foto UTUH seukuran tampilan "cover" di kotak gambar hero
+      // Bingkai memuat media UTUH seukuran tampilan "cover" di kotak media hero
       // (sudah termasuk skala 1.1-nya) dan berpusat di pusat kotak itu. Yang
       // terlihat dibatasi klip lapisan — bukan dipotong ke kotak hero —
-      // supaya saat mengecil ke ukuran kartu fotonya tetap menutupi kartu,
+      // supaya saat mengecil ke ukuran kartu medianya tetap menutupi kartu,
       // juga di HP yang kotak hero-nya tegak sementara kartunya lebih lebar.
-      const nw = gambarZoom.naturalWidth;
-      const nh = gambarZoom.naturalHeight;
+      const nw = mediaZoom instanceof HTMLVideoElement 
+        ? mediaZoom.videoWidth 
+        : mediaZoom.naturalWidth;
+      const nh = mediaZoom instanceof HTMLVideoElement 
+        ? mediaZoom.videoHeight 
+        : mediaZoom.naturalHeight;
+      
       const sB = Math.max(rB.width / nw, rB.height / nh);
       const sC = Math.max(rC.width / nw, rC.height / nh);
       const pusatB = {
@@ -440,7 +462,7 @@ export function Pembuka({ tahunAjaran }: { tahunAjaran: string | null }) {
           ),
         );
       });
-      // Judul berganti dari tinta ke putih karena kini berdiri di atas foto.
+      // Judul berganti dari tinta ke putih karena kini berdiri di atas media.
       baris.forEach((b, i) => {
         jalan(
           b.animate(
@@ -528,14 +550,35 @@ export function Pembuka({ tahunAjaran }: { tahunAjaran: string | null }) {
             style={{ "--i": i } as React.CSSProperties}
           >
             <div className="lp-pembuka-foto">
-              <Image
-                src={src}
-                alt=""
-                fill
-                loading="eager"
-                sizes="(max-width: 640px) 40vw, 20vw"
-                style={{ objectFit: "cover" }}
-              />
+              {src === VIDEO_HERO ? (
+                <video
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="auto"
+                  poster={FOTO_HERO}
+                  style={{ 
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%", 
+                    height: "100%", 
+                    objectFit: "cover", 
+                    display: "block" 
+                  }}
+                >
+                  <source src={src} type="video/mp4" />
+                </video>
+              ) : (
+                <Image
+                  src={src}
+                  alt=""
+                  fill
+                  loading="eager"
+                  sizes="(max-width: 640px) 40vw, 20vw"
+                  style={{ objectFit: "cover" }}
+                />
+              )}
             </div>
           </div>
         ))}
@@ -543,14 +586,30 @@ export function Pembuka({ tahunAjaran }: { tahunAjaran: string | null }) {
 
       <div className="lp-pembuka-zoom">
         <div className="lp-pembuka-zoom-bingkai">
-          <Image
-            src={FOTO_HERO}
-            alt=""
-            fill
-            loading="eager"
-            sizes="100vw"
-            style={{ objectFit: "cover" }}
-          />
+          {!videoGagal ? (
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              poster={FOTO_HERO}
+              onError={() => setVideoGagal(true)}
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            >
+              <source src={VIDEO_HERO} type="video/mp4" />
+            </video>
+          ) : (
+            <Image
+              src={FOTO_HERO}
+              alt=""
+              fill
+              loading="eager"
+              sizes="100vw"
+              style={{ objectFit: "cover" }}
+            />
+          )}
         </div>
         <div className="lp-pembuka-zoom-tirai" />
       </div>

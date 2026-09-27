@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useReducedMotion } from 'framer-motion'
 import { useGulirCss, useKeluar } from './gerak'
 import { NILAI_MANTAP } from './nilaiMantap'
@@ -11,30 +11,34 @@ import { PanelNilai } from './PanelNilai'
  *  pembuka (Pembuka.tsx) lalu "menjadi" latar hero — keduanya harus sama. */
 export const FOTO_HERO = '/images/hero baru.png'
 
+/** Video udara gedung sekolah sebagai latar hero */
+export const VIDEO_HERO = '/videos/Video Project.mp4'
+
 /** Skala latar saat halaman di posisi paling atas. Pembuka mengakhiri
  *  zoom-nya di angka yang sama supaya serah terimanya tidak bergeser. */
 export const SKALA_HERO = 1.1
 
 /**
- * Hero setinggi satu layar penuh: foto udara sekolah, lalu di tengah bawah
+ * Hero setinggi satu layar penuh: video udara sekolah, lalu di tengah bawah
  * label SPMB (judul utama halaman) dan deret nilai sekolah (MANTAP) bersekat
  * garis tipis — komposisi khas situs sekolah internasional. Tiap nilai bisa
  * diklik untuk membuka panel foto + penjelasannya (PanelNilai).
  *
  * Transisi ke bab berikutnya ("Sebuah tempat") mengikuti posisi gulir, maju
- * maupun mundur: hero ikut tergulir naik seperti biasa, tetapi fotonya
+ * maupun mundur: hero ikut tergulir naik seperti biasa, tetapi videonya
  * mengecil dari kiri, kanan, dan bawah (isinya tidak diperkecil) sampai
  * tinggal pita di atas — jarak ke bab berikutnya tampak jauh — sementara
  * teksnya ikut terpotong naik sambil memudar. Semuanya animasi
  * CSS berbasis posisi gulir (landing.css, blok "HERO → SEBUAH TEMPAT") yang
  * dikerjakan GPU — tanpa JavaScript per bingkai.
  *
- * Browser yang belum mendukung animasi semacam itu memakai efek lama: foto
+ * Browser yang belum mendukung animasi semacam itu memakai efek lama: video
  * sedikit mengecil dan teks naik memudar lewat useKeluar. Pengguna yang
  * meminta gerak dikurangi melihatnya diam.
  */
 export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
   const ref = useRef<HTMLElement | null>(null)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
   const kurangiGerak = useReducedMotion()
   const gulirCss = useGulirCss()
   const keluar = useKeluar(ref, !gulirCss)
@@ -44,7 +48,29 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
   // sentuhan) — cukup awal untuk memuat fotonya sebelum diklik, tanpa
   // membebani pemuatan pertama halaman.
   const [panelSiap, setPanelSiap] = useState(false)
+  const [videoGagal, setVideoGagal] = useState(false)
+  const [dekat, setDekat] = useState(false)
+
   const siapkan = () => { if (!panelSiap) setPanelSiap(true) }
+
+  // Video dimulai muat sedikit sebelum benar-benar terlihat
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      entri => { if (entri[0].isIntersecting) { setDekat(true); io.disconnect() } },
+      { rootMargin: '50% 0px' },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+
+  const pakaiVideo = !kurangiGerak && !videoGagal && dekat
+
+  useEffect(() => {
+    if (!pakaiVideo) return
+    videoRef.current?.play().catch(() => {})
+  }, [pakaiVideo])
 
   const skala = kurangiGerak ? 1 : SKALA_HERO - keluar * 0.1
   const naik = kurangiGerak ? 0 : keluar * 110
@@ -56,22 +82,40 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
   return (
     <section ref={ref} className="lp-hero-panggung">
       <div className="lp-hero">
-        {/* Bingkai foto: inilah yang menyusut jadi kartu saat digulir. */}
+        {/* Bingkai media: video atau foto fallback */}
         <div className="lp-hero-bingkai">
           <div className="lp-hero-media" style={gayaMedia}>
-            <Image
-              src={FOTO_HERO}
-              alt="Gedung sekolah Citra Negara dilihat dari udara"
-              fill
-              preload
-              sizes="100vw"
-              style={{ objectFit: 'cover' }}
-            />
+            {pakaiVideo ? (
+              <video
+                ref={videoRef}
+                key={VIDEO_HERO}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+                poster={FOTO_HERO}
+                aria-hidden="true"
+                onError={() => setVideoGagal(true)}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              >
+                <source src={VIDEO_HERO} type="video/mp4" />
+              </video>
+            ) : (
+              <Image
+                src={FOTO_HERO}
+                alt="Gedung sekolah Citra Negara dilihat dari udara"
+                fill
+                preload
+                sizes="100vw"
+                style={{ objectFit: 'cover' }}
+              />
+            )}
           </div>
           <div className="lp-hero-tirai" />
         </div>
         {/* Penutup berwarna latar halaman: saat hero digulir keluar, ketiganya
-            melebar dari tepi sehingga foto tampak MENGECIL dari kiri, kanan,
+            melebar dari tepi sehingga media tampak MENGECIL dari kiri, kanan,
             dan bawah tanpa isinya ikut diperkecil (transform saja — ringan). */}
         <div className="lp-hero-sisi lp-hero-sisi--kiri" aria-hidden="true" />
         <div className="lp-hero-sisi lp-hero-sisi--kanan" aria-hidden="true" />
