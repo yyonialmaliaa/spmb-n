@@ -18,6 +18,17 @@ export const VIDEO_HERO = '/videos/Video Project.mp4'
  *  zoom-nya di angka yang sama supaya serah terimanya tidak bergeser. */
 export const SKALA_HERO = 1.1
 
+type BahasaNilai = 'id' | 'en' | 'ja' | 'tr' | 'de' | 'ko'
+
+const DAFTAR_BAHASA: { key: BahasaNilai; label: string }[] = [
+  { key: 'id', label: 'Bahasa' },
+  { key: 'en', label: 'English' },
+  { key: 'ja', label: '日本語' },
+  { key: 'tr', label: 'Türkçe' },
+  { key: 'de', label: 'Deutsch' },
+  { key: 'ko', label: '한국어' },
+]
+
 /**
  * Hero setinggi satu layar penuh: video udara sekolah, lalu di tengah bawah
  * label SPMB (judul utama halaman) dan deret nilai sekolah (MANTAP) bersekat
@@ -44,6 +55,7 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
   const keluar = useKeluar(ref, !gulirCss)
   const tombolNilai = useRef<(HTMLButtonElement | null)[]>([])
   const [nilaiAktif, setNilaiAktif] = useState<number | null>(null)
+  const [bahasaAktif, setBahasaAktif] = useState<BahasaNilai>('id')
   // Panel baru dipasang begitu ada tanda minat (kursor mendekat / fokus /
   // sentuhan) — cukup awal untuk memuat fotonya sebelum diklik, tanpa
   // membebani pemuatan pertama halaman.
@@ -78,6 +90,13 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
   // Bila CSS yang menggerakkan, gaya inline tidak dipasang sama sekali.
   const gayaMedia = gulirCss ? undefined : { transform: `scale(${skala})` }
   const gayaIsi = gulirCss ? undefined : { transform: `translateY(${-naik}px)`, opacity: pudar }
+
+  const getNama = (index: number) => {
+    const nilai = NILAI_MANTAP[index]
+    if (bahasaAktif === 'id') return nilai.nama
+    const terjemahan = nilai.terjemahan?.[bahasaAktif as keyof typeof nilai.terjemahan]
+    return terjemahan?.nama || nilai.nama
+  }
 
   return (
     <section ref={ref} className="lp-hero-panggung">
@@ -128,6 +147,20 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
               SPMB SMP-SMA-SMK Citra Negara{tahunAjaran && <> · <span style={{ whiteSpace: 'nowrap' }}>TA {tahunAjaran}</span></>}
             </h1>
 
+            {/* Toggle bahasa */}
+            <div className="lp-hero-bahasa">
+              {DAFTAR_BAHASA.map(lang => (
+                <button
+                  key={lang.key}
+                  type="button"
+                  className={`lp-hero-bahasa-tombol ${bahasaAktif === lang.key ? 'is-aktif' : ''}`}
+                  onClick={() => setBahasaAktif(lang.key)}
+                >
+                  {lang.label}
+                </button>
+              ))}
+            </div>
+
             <div
               className="lp-hero-nilai"
               role="group"
@@ -147,7 +180,12 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
                 >
                   {/* Teksnya dibungkus supaya yang terangkat saat disorot hanya
                       kata ini — sekat tegak (border tombol) tetap diam. */}
-                  <span className="lp-hero-nilai-kata">{n.nama}</span>
+                  <span 
+                    className="lp-hero-nilai-kata"
+                    key={`${i}-${bahasaAktif}`}
+                  >
+                    {getNama(i)}
+                  </span>
                 </button>
               ))}
             </div>
@@ -159,7 +197,12 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
           (panel akan tertimpa bab berikutnya), dan transform pada .lp-hero-isi
           membuat position:fixed milik keturunannya ikut bergeser. */}
       {panelSiap && (
-        <PanelNilai aktif={nilaiAktif} setAktif={setNilaiAktif} asal={i => tombolNilai.current[i] ?? null} />
+        <PanelNilai 
+          aktif={nilaiAktif} 
+          setAktif={setNilaiAktif} 
+          asal={i => tombolNilai.current[i] ?? null}
+          bahasa={bahasaAktif}
+        />
       )}
     </section>
   )

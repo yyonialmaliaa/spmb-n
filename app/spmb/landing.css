@@ -716,6 +716,95 @@
   }
 }
 
+/* --- Toggle bahasa di hero ------------------------------------------------ */
+
+.lp-hero-bahasa {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin: 1.2rem 0 1.4rem;
+  padding: 0 clamp(1rem, 4vw, 3rem);
+}
+
+.lp-hero-bahasa-tombol {
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
+  font-family: var(--lp-sans);
+  font-size: clamp(0.7rem, 1.4vw, 0.85rem);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lp-hero-bahasa-tombol:hover {
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.lp-hero-bahasa-tombol.is-aktif {
+  border-color: var(--lp-sorot);
+  background: var(--lp-sorot);
+  color: var(--lp-atas-sorot);
+}
+
+.lp-hero-bahasa-tombol:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 3px;
+}
+
+/* --- Animasi transisi teks nilai ---------------------------------------- */
+
+.lp-hero-nilai-kata {
+  display: inline-block;
+  transition:
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.35s ease;
+  animation: lp-hero-nilai-masuk 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 1;
+}
+
+@keyframes lp-hero-nilai-masuk {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.lp-hero-nilai-tombol:hover .lp-hero-nilai-kata,
+.lp-hero-nilai-tombol:focus-visible .lp-hero-nilai-kata,
+.lp-hero-nilai-tombol:active .lp-hero-nilai-kata {
+  transform: translateY(-0.16em);
+}
+
+@media (max-width: 640px) {
+  .lp-hero-bahasa {
+    gap: 0.4rem;
+  }
+  
+  .lp-hero-bahasa-tombol {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.65rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-hero-nilai-kata {
+    animation: none;
+  }
+}
+
+
 /* --- Hero ---------------------------------------------------------------- */
 
 .lp-hero {

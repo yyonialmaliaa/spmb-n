@@ -7,15 +7,26 @@ import { NILAI_MANTAP } from './nilaiMantap'
 
 const N = NILAI_MANTAP.length
 const EASE_KELUAR = 'cubic-bezier(0.22, 1, 0.36, 1)'
-/** Sapuan foto saat berpindah nilai: langsung bergerak begitu diklik, lalu
- *  melambat panjang — tidak menunggu di awal seperti ease-in-out. */
 const EASE_SAPU = 'cubic-bezier(0.6, 0.05, 0.2, 1)'
-/** Celah membuka: langsung bergerak, lalu mendarat halus. */
 const EASE_BELAH = 'cubic-bezier(0.55, 0, 0.2, 1)'
-/** Celah menutup: mulus di awal dan akhir, tidak menggantung. */
 const EASE_KATUP = 'cubic-bezier(0.65, 0, 0.35, 1)'
 
+type BahasaNilai = 'id' | 'en' | 'ja' | 'tr' | 'de' | 'ko'
+
 const kurangiGerak = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+function getTeksNilai(nilai: (typeof NILAI_MANTAP)[0], bahasa: BahasaNilai) {
+  if (bahasa === 'id') {
+    return { nama: nilai.nama, teks: nilai.teks }
+  }
+  
+  const terjemahan = nilai.terjemahan?.[bahasa as keyof typeof nilai.terjemahan]
+  if (!terjemahan) {
+    return { nama: nilai.nama, teks: nilai.teks }
+  }
+  
+  return terjemahan
+}
 
 /**
  * Panel penjelasan satu nilai MANTAP, dibuka dari deret nilai di hero.
@@ -42,12 +53,15 @@ export function PanelNilai({
   aktif,
   setAktif,
   asal,
+  bahasa = 'id',
 }: {
   /** Indeks nilai yang tampil; null = tertutup. */
   aktif: number | null
   setAktif: (i: number | null) => void
   /** Tombol nilai di hero — fokus keyboard kembali ke sini saat ditutup. */
   asal: (i: number) => HTMLElement | null
+  /** Bahasa yang aktif */
+  bahasa?: BahasaNilai
 }) {
   const akarRef = useRef<HTMLDivElement | null>(null)
   const panelRef = useRef<HTMLDivElement | null>(null)
@@ -66,6 +80,7 @@ export function PanelNilai({
   const terbuka = aktif !== null
   const i = aktif ?? 0
   const nilai = NILAI_MANTAP[i]
+  const { nama, teks } = getTeksNilai(nilai, bahasa)
 
   const jalan = (el: Element | null | undefined, kf: Keyframe[], opsi: KeyframeAnimationOptions) => {
     if (!el) return null
@@ -287,8 +302,8 @@ export function PanelNilai({
         <div className="lp-nilai-gelap" />
 
         <div ref={isiRef} className="lp-nilai-isi" aria-live="polite">
-          <h2 id={idJudul} className="lp-nilai-judul lp-nilai-muncul">{nilai.nama}</h2>
-          <p className="lp-nilai-teks lp-nilai-muncul">{nilai.teks}</p>
+          <h2 id={idJudul} className="lp-nilai-judul lp-nilai-muncul">{nama}</h2>
+          <p className="lp-nilai-teks lp-nilai-muncul">{teks}</p>
         </div>
       </div>
 
