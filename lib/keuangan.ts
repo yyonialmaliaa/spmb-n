@@ -51,8 +51,8 @@ export async function getMinimalCicilan(tahunAjaranId: string): Promise<number> 
 }
 
 // Dokumen wajib saat PENDAFTARAN (bukan daftar ulang) — persis daftar yang
-// digerbangi "Kirim Formulir" jalur online (app/api/pendaftaran/kirim/route.ts,
-// fileKip sengaja tidak wajib di sana juga). Disalin literal, bukan diimpor
+// digerbangi "Kirim Formulir" jalur online (app/api/pendaftaran/kirim/route.ts).
+// Disalin literal, bukan diimpor
 // dari route itu, supaya kedua gerbang tetap independen kalau salah satu
 // jenjang nanti butuh pengecualian sendiri.
 function dokumenPendaftaranLengkap(p: {

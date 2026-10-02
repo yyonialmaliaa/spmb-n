@@ -4,7 +4,9 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
-import { useMasuk } from './gerak'
+import { useHp, useMasuk } from './gerak'
+import { useBahasa } from './i18n/PenyediaBahasa'
+import { tandaiNama } from './i18n/namaDiri'
 
 /** Video udara sekolah — rekaman yang sama dengan asal foto latar hero. */
 const VIDEO_PENUTUP = '/videos/Video Project.mp4'
@@ -26,16 +28,22 @@ const POSTER_PENUTUP = '/images/hero baru.png'
  * tambahan setelah tiba (itu salah baca referensi versi sebelumnya).
  * Sudut membulatnya ikut diinterpolasi 0→22px selaras dengan skalanya.
  *
- * Latar di SEKELILING kartu mengikuti tema situs (putih di mode terang,
- * hijau tua di mode gelap) seperti section lain, karena begitu kartunya
- * sudah mengecil ia tidak lagi memenuhi seluruh section.
+ * Latar di SEKELILING kartu mengikuti latar halaman (putih) seperti section
+ * lain, karena begitu kartunya sudah mengecil ia tidak lagi memenuhi seluruh
+ * section.
+ *
+ * Di HP tanpa efek menyusut ini (dan tanpa gaya inline sama sekali): video
+ * melebar (16:9) dan teksnya di blok hijau tua di bawahnya (landing.css,
+ * blok "TAMPILAN HP").
  */
 export function FinalCTA({ tahunAjaran }: { tahunAjaran: string | null }) {
   const ref = useRef<HTMLElement | null>(null)
   const kartuRef = useRef<HTMLDivElement | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const kurangiGerak = useReducedMotion()
-  const masuk = useMasuk(ref)
+  const hp = useHp()
+  const masuk = useMasuk(ref, !hp)
+  const { t } = useBahasa()
   const [videoGagal, setVideoGagal] = useState(false)
   // Skala yang dibutuhkan supaya kartu (ukuran alaminya, dari CSS) menutupi
   // seluruh layar. Diukur dari offsetWidth/Height — bukan
@@ -97,9 +105,9 @@ export function FinalCTA({ tahunAjaran }: { tahunAjaran: string | null }) {
       <div
         ref={kartuRef}
         className="lp-penutup-kartu"
-        style={{ transform: `scale(${skalaKartu})`, borderRadius: `${radiusKartu}px` }}
+        style={hp ? undefined : { transform: `scale(${skalaKartu})`, borderRadius: `${radiusKartu}px` }}
       >
-        <div className="lp-penutup-media" style={{ transform: `scale(${skala})` }}>
+        <div className="lp-penutup-media" style={hp ? undefined : { transform: `scale(${skala})` }}>
           {pakaiVideo && !videoGagal && (
             <video
               ref={videoRef}
@@ -120,25 +128,26 @@ export function FinalCTA({ tahunAjaran }: { tahunAjaran: string | null }) {
 
         <div
           className="lp-penutup-isi"
-          style={{ opacity: munculTeks, transform: `translateY(${(1 - munculTeks) * 28}px)` }}
+          style={hp ? undefined : { opacity: munculTeks, transform: `translateY(${(1 - munculTeks) * 28}px)` }}
         >
           <p className="lp-label lp-label--terang">
-            SPMB SMP-SMA-SMK Citra Negara{tahunAjaran ? ` · TA ${tahunAjaran}` : ''}
+            {tandaiNama(t.label.judul)}{tahunAjaran ? ` · ${t.label.tahun(tahunAjaran)}` : ''}
           </p>
 
           <h2 className="lp-judul-raksasa lp-penutup-judul">
-            Siap memulai langkahmu?
+            {t.penutup.judul}
           </h2>
 
           <div className="lp-penutup-aksi">
-            <Link href="/register" className="lp-tombol lp-tombol--terang">
-              Daftar Sekarang <ArrowRight size={18} />
+            <Link href="/spmb/pra-pendaftaran" className="lp-tombol lp-tombol--terang">
+              {t.aksi.daftarSekarang} <ArrowRight size={18} />
             </Link>
-            <a href="#alur" className="lp-tombol lp-tombol--gelap">Lihat Alur</a>
+            <a href="#alur" className="lp-tombol lp-tombol--gelap">{t.aksi.lihatAlur}</a>
           </div>
 
           <p className="lp-penutup-masuk">
-            Sudah punya akun? <Link href="/login" className="lp-tautan">Masuk di sini</Link>
+            {t.penutup.formulirLengkap} <Link href="/register" className="lp-tautan">{t.aksi.daftarOnline}</Link>
+            {' · '}{t.penutup.sudahPunyaAkun} <Link href="/login" className="lp-tautan">{t.aksi.masuk}</Link>
           </p>
         </div>
       </div>

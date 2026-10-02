@@ -14,7 +14,7 @@ const KATEGORI = ['pendaftaran', 'daftar_ulang']
 // fieldKey dibatasi kolom file yang BENAR-BENAR ada di model Pendaftaran.
 // Nilai di luar daftar ini akan membuat berkas tidak pernah terbaca halaman
 // Verifikasi, jadi ditolak di sini.
-const FIELD_SAH = ['fileIjazah', 'fileAkte', 'fileKK', 'fileKtpOrtu', 'fileKip', 'fileFoto']
+const FIELD_SAH = ['fileIjazah', 'fileAkte', 'fileKK', 'fileKtpOrtu', 'fileFoto']
 
 // GET ?jenjang=&kategori=&tahunAjaranId=
 export async function GET(req: Request) {

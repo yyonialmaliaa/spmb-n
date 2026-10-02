@@ -145,6 +145,21 @@ export function useKeluar(ref: React.RefObject<HTMLElement | null>, aktif = true
   return useProgres(ref, k => -k.top / (k.height || 1), aktif)
 }
 
+/** Batas "tampilan HP" — harus sama dengan @media (max-width: 767px) di
+ *  landing.css (blok "TAMPILAN HP"). Di bawah batas ini tidak ada tirai
+ *  pembuka maupun gerak besar yang mengikuti gulir; geraknya tipis saja. */
+export const MEDIA_HP = '(max-width: 767px)'
+
+function langgananHp(ubah: () => void) {
+  const mq = window.matchMedia(MEDIA_HP)
+  mq.addEventListener('change', ubah)
+  return () => mq.removeEventListener('change', ubah)
+}
+/** Sedang di tampilan HP. Di server (dan saat hydration) selalu false. */
+export function useHp() {
+  return useSyncExternalStore(langgananHp, () => window.matchMedia(MEDIA_HP).matches, () => false)
+}
+
 const tanpaLangganan = () => () => {}
 /** Browser mendukung animasi CSS yang digerakkan posisi gulir (animation-timeline)
  *  dan pengguna tidak meminta gerak dikurangi. Di server selalu false. */
@@ -162,6 +177,6 @@ export function useGulirCss() {
  * 0 ketika bagian masih di luar layar, 1 ketika sudah memenuhi layar.
  * Untuk animasi "masuk" — mis. gambar penutup yang membesar saat didekati.
  */
-export function useMasuk(ref: React.RefObject<HTMLElement | null>) {
-  return useProgres(ref, k => (window.innerHeight - k.top) / (window.innerHeight || 1))
+export function useMasuk(ref: React.RefObject<HTMLElement | null>, aktif = true) {
+  return useProgres(ref, k => (window.innerHeight - k.top) / (window.innerHeight || 1), aktif)
 }

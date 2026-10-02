@@ -11,7 +11,7 @@ const EDITABLE_FIELDS = [
   'namaAyah', 'ttlAyah', 'pendidikanAyah', 'pekerjaanAyah', 'penghasilanAyah', 'noHpAyah', 'alamatAyah',
   'namaIbu', 'ttlIbu', 'pendidikanIbu', 'pekerjaanIbu', 'penghasilanIbu', 'noHpIbu', 'alamatIbu',
   'namaWali', 'ttlWali', 'pendidikanWali', 'pekerjaanWali', 'penghasilanWali', 'noHpWali', 'alamatWali',
-  'namaOrtu', 'noOrtu', 'jenisIjazah', 'fileIjazah', 'fileAkte', 'fileKK', 'fileKtpOrtu', 'fileKip', 'fileFoto',
+  'namaOrtu', 'noOrtu', 'jenisIjazah', 'fileIjazah', 'fileAkte', 'fileKK', 'fileKtpOrtu', 'fileFoto',
   'waVerified', 'catatan',
 ] as const
 

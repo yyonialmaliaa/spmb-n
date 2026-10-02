@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 import Image from 'next/image';
-import { TemaToggle } from '@/components/TemaToggle';
 
 const JENJANG_OPTIONS = [
   { value: 'smp', label: 'SMP' },
@@ -85,20 +84,8 @@ export default function RegisterPage() {
         alignItems: 'center',
         justifyContent: 'center',
         padding: 24,
-        position: 'relative',
       }}
     >
-      {/* Toggle tema */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 20,
-          right: 20,
-        }}
-      >
-        <TemaToggle gaya="ikon" />
-      </div>
-
       <div style={{ width: '100%', maxWidth: 480 }}>
         {/* Logo */}
         <div

@@ -51,15 +51,13 @@ export const STATUS_BAYAR_CONFIG: Record<string, { label: string; color: string;
 };
 
 // Daftar berkas wajib SPMB — dipakai bersama oleh Dashboard, Pendaftaran, dan
-// Dokumen supaya nama field & label selalu sama. "wajib: false" untuk KIP
-// (section F formulir pendaftaran) — tidak dihitung sebagai kekurangan.
-export function daftarBerkas(p: { fileIjazah?: string; fileAkte?: string; fileKK?: string; fileKtpOrtu?: string; fileKip?: string; fileFoto?: string }) {
+// Dokumen supaya nama field & label selalu sama.
+export function daftarBerkas(p: { fileIjazah?: string; fileAkte?: string; fileKK?: string; fileKtpOrtu?: string; fileFoto?: string }) {
   return [
     { key: 'ijazah', label: 'Ijazah / SKL', path: p.fileIjazah, wajib: true },
     { key: 'akte', label: 'Akta Kelahiran', path: p.fileAkte, wajib: true },
     { key: 'kk', label: 'Kartu Keluarga', path: p.fileKK, wajib: true },
     { key: 'ktpOrtu', label: 'KTP Orang Tua', path: p.fileKtpOrtu, wajib: true },
-    { key: 'kip', label: 'Kartu KIP', path: p.fileKip, wajib: false },
     { key: 'foto', label: 'Pas Foto', path: p.fileFoto, wajib: true },
   ];
 }

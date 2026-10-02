@@ -34,7 +34,7 @@ type Pendaftaran = {
   sudahDaftarUlang?: boolean; tanggalDaftarUlang?: string; catatanDaftarUlang?: string;
   fileIjazah?: string | null; fileAkte?: string | null;
   fileKK?: string | null; fileKtpOrtu?: string | null;
-  fileKip?: string | null; fileFoto?: string | null;
+  fileFoto?: string | null;
   createdAt: string; userEmail?: string; userId?: string;
   pembayaranList?: { id: string; jenis?: string; nominal: number; status: string; angsuranKe: number; tanggalBayar: string }[];
 };

@@ -9,7 +9,7 @@
    =========================================================================== */
 
 .lp-root {
-  /* ---- MODE TERANG: dominan PUTIH (palet SPMB) ----
+  /* ---- Palet: dominan PUTIH (palet SPMB) ----
      Hijau untuk tombol, tab, dan angka; kuning "stabilo" untuk label, pita,
      dan penanda; hijau muda untuk garis kemajuan & cincin fokus; merah hanya
      untuk yang wajib. Kuning tidak pernah dipakai sebagai warna teks di atas
@@ -30,13 +30,14 @@
   --lp-merah: #d71920;           /* Alert */
   --lp-panel: #063b2b;           /* kartu/panel gelap di halaman terang */
   --lp-terang: #ffffff;
-  /* Warna teks di atas foto — selalu putih, tidak ikut tema, karena fotonya
-     memang gelap di kedua mode. */
+  /* Warna teks di atas foto — selalu putih, karena fotonya memang gelap. */
   --lp-atas-foto: #ffffff;
   --lp-atas-foto-lembut: rgba(255, 255, 255, 0.78);
 
-  --lp-serif: "Playfair Display", Georgia, "Times New Roman", serif;
-  --lp-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  /* --font-lp-*: Playfair Display & Plus Jakarta Sans dari next/font
+     (app/spmb/fonts.ts, kelasnya dipasang di elemen .lp-root ini). */
+  --lp-serif: var(--font-lp-serif), "Playfair Display", Georgia, "Times New Roman", serif;
+  --lp-sans: var(--font-lp-sans), "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
 
   --lp-lambat: 1.05s cubic-bezier(0.16, 1, 0.3, 1);
   --lp-sedang: 0.7s cubic-bezier(0.16, 1, 0.3, 1);
@@ -46,32 +47,6 @@
   color: var(--lp-tinta);
   font-family: var(--lp-sans);
   overflow-x: clip;
-  transition:
-    background-color 0.4s ease,
-    color 0.4s ease;
-}
-
-/* ---- MODE GELAP: hijau tua (palet SPMB gelap) ----
-   Halaman ini mengikuti tema situs (atribut data-tema dipasang skrip
-   anti-kedip di app/layout.tsx). Seluruh halaman satu warna — tidak ada lagi
-   selang-seling terang/gelap antar bagian, jadi tidak ada sambungan warna
-   yang perlu dijembatani sama sekali. */
-[data-tema="gelap"] .lp-root {
-  --lp-kertas: #071c16;          /* Background */
-  --lp-kertas-hangat: #0b2a20;   /* Surface */
-  --lp-tinta: #ffffff;           /* Text */
-  --lp-tinta-lembut: #b8c8c0;    /* Text Secondary */
-  --lp-tinta-samar: #7f958a;
-  --lp-garis: #214438;           /* Border */
-  --lp-hijau: #79b82a;           /* Primary */
-  --lp-hijau-dalam: #92cc45;     /* Primary hover (lebih terang) */
-  --lp-hijau-gelap: #071c16;
-  --lp-atas-hijau: #071c16;      /* hijau muda terlalu terang untuk teks putih */
-  --lp-aksen: #79b82a;
-  --lp-sorot: #fff000;           /* Highlight */
-  --lp-atas-sorot: #111111;
-  --lp-merah: #d71920;           /* Red */
-  --lp-panel: #10382b;           /* Surface 2 */
 }
 
 .lp-root * {
@@ -513,6 +488,109 @@
   outline-offset: 3px;
 }
 
+/* Bendera bahasa aktif (PilihBahasaNav) — hanya di navbar ringkas, ketika
+   cincin bendera "Go Internasional" di hero sudah tergulir lewat. */
+.lp-nav-bahasa {
+  position: relative;
+  flex: none;
+  display: none;
+}
+.lp-nav.is-lengket .lp-nav-bahasa {
+  display: block;
+  transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@starting-style {
+  .lp-nav.is-lengket .lp-nav-bahasa {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+.lp-nav-bahasa-tombol {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.28rem 0.62rem 0.28rem 0.3rem;
+  border: 1px solid var(--lp-garis);
+  border-radius: 999px;
+  background: var(--lp-kertas);
+  color: var(--lp-tinta);
+  font-family: var(--lp-sans);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  transition: border-color var(--lp-cepat), box-shadow var(--lp-cepat);
+  -webkit-tap-highlight-color: transparent;
+}
+.lp-nav-bahasa-tombol:hover,
+.lp-nav-bahasa-tombol[aria-expanded="true"] {
+  border-color: var(--lp-hijau);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lp-aksen) 22%, transparent);
+}
+.lp-nav-bahasa-tombol:focus-visible {
+  outline: 2px solid var(--lp-aksen);
+  outline-offset: 3px;
+}
+.lp-bendera-bulat {
+  display: block;
+  flex: none;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(7, 28, 22, 0.12);
+}
+.lp-bendera-bulat svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.lp-nav-bahasa-daftar {
+  position: absolute;
+  top: calc(100% + 0.65rem);
+  right: 0;
+  z-index: 1;
+  min-width: 13.5rem;
+  margin: 0;
+  padding: 0.4rem;
+  list-style: none;
+  background: #ffffff;
+  color: var(--lp-tinta);
+  border: 1px solid var(--lp-garis);
+  border-radius: 14px;
+  box-shadow: 0 22px 44px -16px rgba(7, 28, 22, 0.4);
+  animation: lp-masuk 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lp-nav-bahasa-daftar button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.62rem 0.75rem;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: inherit;
+  font-family: var(--lp-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--lp-cepat), color var(--lp-cepat);
+}
+.lp-nav-bahasa-daftar button:hover,
+.lp-nav-bahasa-daftar button:focus-visible {
+  background: var(--lp-kertas-hangat);
+  outline: none;
+}
+.lp-nav-bahasa-daftar button[aria-current="true"] {
+  color: var(--lp-hijau);
+}
+.lp-nav-bahasa-nama {
+  flex: 1;
+}
+
 /* --- Panel menu & pencarian (geser dari kanan) ------------------------- */
 
 .lp-cari-tirai {
@@ -536,6 +614,9 @@
   box-shadow: -24px 0 60px rgba(0, 0, 0, 0.35);
   animation: lp-cari-masuk 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
   isolation: isolate;
+}
+.lp-cari-panel:focus {
+  outline: none;
 }
 .lp-cari-panel::after {
   content: "";
@@ -701,6 +782,51 @@
   }
 }
 
+/* Pilihan bahasa di panel — hanya di HP, yang navbarnya tanpa bendera. */
+.lp-cari-bahasa-daftar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lp-cari-bahasa-daftar button {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 2.9rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  background: none;
+  color: #fff;
+  font-family: var(--lp-sans);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.lp-cari-bahasa-daftar button[aria-current="true"] {
+  border-color: var(--lp-sorot);
+  color: var(--lp-sorot);
+}
+.lp-cari-bahasa-daftar button:focus-visible {
+  outline: 2px solid var(--lp-sorot);
+  outline-offset: 2px;
+}
+.lp-cari-bahasa-nama {
+  flex: 1;
+  min-width: 0;
+}
+@media (min-width: 768px) {
+  .lp-cari-bahasa {
+    display: none;
+  }
+}
+
 @keyframes lp-cari-masuk {
   from { transform: translateX(100%); }
   to { transform: none; }
@@ -715,95 +841,6 @@
     animation: none;
   }
 }
-
-/* --- Toggle bahasa di hero ------------------------------------------------ */
-
-.lp-hero-bahasa {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.6rem;
-  margin: 1.2rem 0 1.4rem;
-  padding: 0 clamp(1rem, 4vw, 3rem);
-}
-
-.lp-hero-bahasa-tombol {
-  padding: 0.5rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.8);
-  font-family: var(--lp-sans);
-  font-size: clamp(0.7rem, 1.4vw, 0.85rem);
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  -webkit-tap-highlight-color: transparent;
-}
-
-.lp-hero-bahasa-tombol:hover {
-  border-color: rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-}
-
-.lp-hero-bahasa-tombol.is-aktif {
-  border-color: var(--lp-sorot);
-  background: var(--lp-sorot);
-  color: var(--lp-atas-sorot);
-}
-
-.lp-hero-bahasa-tombol:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.7);
-  outline-offset: 3px;
-}
-
-/* --- Animasi transisi teks nilai ---------------------------------------- */
-
-.lp-hero-nilai-kata {
-  display: inline-block;
-  transition:
-    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.35s ease;
-  animation: lp-hero-nilai-masuk 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  opacity: 1;
-}
-
-@keyframes lp-hero-nilai-masuk {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.lp-hero-nilai-tombol:hover .lp-hero-nilai-kata,
-.lp-hero-nilai-tombol:focus-visible .lp-hero-nilai-kata,
-.lp-hero-nilai-tombol:active .lp-hero-nilai-kata {
-  transform: translateY(-0.16em);
-}
-
-@media (max-width: 640px) {
-  .lp-hero-bahasa {
-    gap: 0.4rem;
-  }
-  
-  .lp-hero-bahasa-tombol {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.65rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lp-hero-nilai-kata {
-    animation: none;
-  }
-}
-
 
 /* --- Hero ---------------------------------------------------------------- */
 
@@ -848,12 +885,42 @@
     rgba(7, 28, 22, 0.86) 100%
   );
 }
+/* Hero landing: bayangan lembut di kiri tengah, tempat tulisan "Go
+   Internasional" — bagian video itu paling terang. Tirai pembuka memakai
+   lapisan yang sama supaya serah terimanya tidak berubah warna. */
+.lp-hero-panggung .lp-hero-tirai,
+.lp-pembuka-zoom-tirai {
+  background:
+    radial-gradient(ellipse 62% 54% at 16% 47%, rgba(7, 28, 22, 0.55), rgba(7, 28, 22, 0) 72%),
+    linear-gradient(
+      180deg,
+      rgba(7, 28, 22, 0.72) 0%,
+      rgba(7, 28, 22, 0.2) 24%,
+      rgba(7, 28, 22, 0.14) 42%,
+      rgba(7, 28, 22, 0.62) 64%,
+      rgba(7, 28, 22, 0.86) 100%
+    );
+}
 .lp-hero-isi {
   position: relative;
   z-index: 2;
   width: 100%;
   padding-bottom: clamp(3rem, 8vh, 6.5rem);
   color: #fff;
+}
+/* Hero halaman detail jenjang (/spmb/jenjang/…). */
+.lp-hero--jenjang {
+  height: 82svh;
+  min-height: 30rem;
+}
+/* Hero landing setinggi layar: ruang di antara navbar dan label SPMB diisi
+   tulisan "Go Internasional" (rata kiri), label & nilai tetap di tengah
+   bawah. */
+.lp-hero-panggung .lp-hero-isi {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  padding-top: clamp(5.5rem, 15vh, 9rem);
 }
 .lp-hero-tengah {
   display: flex;
@@ -1466,10 +1533,6 @@
   filter: none;
   opacity: 1;
   transform: scale(1.06);
-}
-[data-tema="gelap"] .lp-footer-bc-logo {
-  padding: 0.4rem 0.55rem;
-  background: #f6f8f5;
 }
 
 /* --- Aksesibilitas: hormati preferensi gerak berkurang -------------------- */
@@ -2338,8 +2401,9 @@ html[data-nilai-buka] .lp-nav {
 }
 
 /* --- Gerak mengikuti gulir ------------------------------------------------ */
+/* Tidak di HP: di sana hero & "Sebuah tempat" diam (blok "TAMPILAN HP"). */
 @supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
+  @media (prefers-reduced-motion: no-preference) and (min-width: 768px) {
     .lp-hero-panggung {
       view-timeline: --lp-hero block;
     }
@@ -2498,7 +2562,9 @@ html[data-nilai-buka] .lp-nav {
   --cn-chip: var(--lp-sorot);
   --cn-chip-teks: var(--lp-atas-sorot);
   --chip-fs: clamp(1.4rem, 3.4vw, 3.3rem);
-  --chip-w: calc(var(--chip-fs) * 5.9);
+  /* --chip-lebar: lebar label "Alur SPMB" (em) di bahasa aktif — diisi
+     JenjangStory dari kamus, karena panjang teksnya berbeda per bahasa. */
+  --chip-w: calc(var(--chip-fs) * var(--chip-lebar, 5.9));
   --chip-h: calc(var(--chip-fs) * 1.32);
   --chip-kiri: calc(var(--cn-kiri) + var(--cn-fs) * 1.3);
   --pita-tinggi: clamp(22rem, 70vh, 44rem);
@@ -2506,9 +2572,6 @@ html[data-nilai-buka] .lp-nav {
   display: flex;
   flex-direction: column;
   padding-top: clamp(5rem, 12vh, 8rem);
-}
-[data-tema="gelap"] .lp-cn {
-  --cn-pita: var(--lp-panel);
 }
 
 .lp-cn-kepala {
@@ -2674,6 +2737,10 @@ html[data-nilai-buka] .lp-nav {
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.9);
 }
+/* Baris "nama + '+'" untuk kartu tertutup — hanya di HP (blok "TAMPILAN HP"). */
+.lp-cn-kartu-baris {
+  display: none;
+}
 @media (hover: hover) and (min-width: 901px) {
   .lp-cn-kartu:hover .lp-cn-kartu-item,
   .lp-cn-kartu:focus-within .lp-cn-kartu-item {
@@ -2707,6 +2774,10 @@ html[data-nilai-buka] .lp-nav {
 .lp-cn-akhir {
   height: var(--cn-tinggi);
   scroll-margin-top: var(--cn-atas);
+}
+/* Salinan "CN" untuk judul bab Alur — hanya di HP, tempat CN tidak menempel. */
+.lp-cn-kata-akhir {
+  display: none;
 }
 .lp-cn-emas {
   position: absolute;
@@ -2758,8 +2829,9 @@ html[data-nilai-buka] .lp-nav {
 }
 
 /* --- Gerak mengikuti gulir ------------------------------------------------------ */
+/* Tidak di HP: di sana bab ini diam (blok "TAMPILAN HP"). */
 @supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
+  @media (prefers-reduced-motion: no-preference) and (min-width: 768px) {
     .lp-cn {
       timeline-scope: --lp-cn-kepala, --lp-cn-akhir;
     }
@@ -2901,14 +2973,6 @@ html[data-nilai-buka] .lp-nav {
     radial-gradient(70% 80% at 80% 105%, rgba(121, 184, 42, 0.24), rgba(121, 184, 42, 0) 70%),
     linear-gradient(128deg, #04241a 0%, #063b2b 40%, #0c5134 70%, #4f7f60 100%);
 }
-[data-tema="gelap"] .lp-jb {
-  background:
-    radial-gradient(70% 80% at 80% 105%, rgba(121, 184, 42, 0.16), rgba(121, 184, 42, 0) 70%),
-    linear-gradient(128deg, #061a14 0%, #0b2a20 42%, #10382b 72%, #2c5641 100%);
-  box-shadow:
-    inset 0 1px 0 #214438,
-    inset 0 -1px 0 #214438;
-}
 .lp-jb-jangkar {
   position: absolute;
   top: 0;
@@ -2999,6 +3063,18 @@ html[data-nilai-buka] .lp-nav {
 }
 .lp-jb-tab-tombol[aria-selected="true"] {
   color: #ffffff;
+}
+/* Nama jenjang panjang (bahasa selain Indonesia: "Junior High",
+   "Berufsoberschule"): huruf lebih kecil dan rapat, boleh dua-tiga baris di
+   dalam lingkaran — lebar teksnya dibatasi selebar lingkaran. */
+.lp-jb-tab[data-panjang] .lp-jb-tab-tombol {
+  padding: 0 calc((var(--jb-tab) - var(--jb-lingkar)) / 2 + 0.35rem);
+  font-size: clamp(0.78rem, 0.95vw, 0.95rem);
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+  white-space: normal;
+  overflow-wrap: normal;
+  hyphens: manual;
 }
 .lp-jb-tab-tombol:not([aria-selected="true"]):hover {
   color: #fff9a8;
@@ -3197,6 +3273,15 @@ html[data-nilai-buka] .lp-nav {
   border: 0;
 }
 
+/* Catatan kurs di bawah biaya yang dikonversi dari rupiah. */
+.lp-jb-kurs {
+  margin: 1.1rem 0 0;
+  max-width: 46ch;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--jb-teks-2);
+}
+
 .lp-jb-aksi {
   display: flex;
   flex-wrap: wrap;
@@ -3245,7 +3330,9 @@ html[data-nilai-buka] .lp-nav {
   translate: -50% 0;
   z-index: 0;
   font-family: var(--lp-serif);
-  font-size: clamp(8rem, 17vw, 17rem);
+  /* --muat (< 1) dipasang TandaJenjang bila nama jenjangnya lebih lebar dari
+     adegan — di bahasa lain namanya bisa jauh lebih panjang dari "SMP". */
+  font-size: calc(clamp(8rem, 17vw, 17rem) * var(--muat, 1));
   font-weight: 700;
   line-height: 0.8;
   letter-spacing: -0.04em;
@@ -3638,7 +3725,7 @@ html[data-nilai-buka] .lp-nav {
     top: auto;
     bottom: 14rem;
     left: 50%;
-    font-size: 38vw;
+    font-size: calc(38vw * var(--muat, 1));
   }
 }
 
@@ -3733,10 +3820,6 @@ html[data-nilai-buka] .lp-nav {
   .lp-syarat-kotak:nth-child(even) {
     --warna: #063b2b;
   }
-}
-[data-tema="gelap"] .lp-syarat-kotak {
-  outline: 1px solid rgba(255, 255, 255, 0.06);
-  outline-offset: -1px;
 }
 .lp-syarat-kotak:hover {
   z-index: 1;
@@ -3935,10 +4018,6 @@ html[data-nilai-buka] .lp-nav {
   outline: 2px solid var(--lp-aksen);
   outline-offset: 6px;
 }
-[data-tema="gelap"] .lp-mitra-logo {
-  padding: 0.45rem 0.7rem;
-  background: #f6f8f5;
-}
 @media (prefers-reduced-motion: reduce) {
   .lp-mitra-jalur {
     animation: none !important;
@@ -3950,5 +4029,1169 @@ html[data-nilai-buka] .lp-nav {
   }
   .lp-mitra-deret[aria-hidden] {
     display: none;
+  }
+}
+
+/* ===========================================================================
+   GO INTERNASIONAL (components/landing/GoInternasional.tsx)
+
+   Tulisan besar di kiri hero. Huruf "o" pada "Go" adalah cincin berisi enam
+   bendera pemilih bahasa yang mengorbit pelan (bendera tetap tegak); bendera
+   bahasa aktif bercincin kuning dan berdenyut. Semua ukuran relatif terhadap
+   huruf "G" (em) supaya komposisinya utuh di layar mana pun.
+
+   Gerak masuk: "G" naik, cincin tergambar dari atas, bendera bermunculan
+   satu per satu, "Internasional" tersusun huruf demi huruf, lalu catatan
+   bahasa menyusul. Selama tirai pembuka berjalan semuanya menunggu
+   (--go-jeda, lihat bagian bawah blok ini).
+   =========================================================================== */
+
+.lp-go-wadah {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  min-height: 0;
+  padding: clamp(0.5rem, 3vh, 2rem) clamp(1.25rem, 4.5vw, 3.5rem);
+}
+
+.lp-go {
+  /* Diameter huruf "o", dan bendera di atasnya (25% diameter itu). Jari-jari
+     orbit = 36% diameter — sama dengan r="36" lingkaran SVG-nya. */
+  --o: 0.8em;
+  --titik: calc(var(--o) * 0.25);
+  --go-jeda: 0s;
+  --go-putar: 80s;
+  position: relative;
+  font-family: var(--lp-serif);
+  font-size: clamp(4.6rem, min(10.4vw, 19vh), 11.5rem);
+  line-height: 1;
+  color: #ffffff;
+  text-shadow: 0 2px 28px rgba(0, 0, 0, 0.35);
+}
+
+.lp-go-kata {
+  display: flex;
+  align-items: baseline;
+}
+.lp-go-g {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  animation: lp-go-naik 1.1s cubic-bezier(0.16, 1, 0.3, 1) calc(var(--go-jeda) + 0.1s) both;
+}
+
+/* --- Huruf "o": cincin + orbit bendera ------------------------------------- */
+.lp-go-o {
+  position: relative;
+  flex: none;
+  width: var(--o);
+  height: var(--o);
+  margin-left: 0.04em;
+}
+.lp-go-cincin {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.lp-go-cincin circle {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.92);
+  stroke-width: 2.6;
+  stroke-dasharray: 100;
+  transform: rotate(-90deg);
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  filter: drop-shadow(0 1px 5px rgba(0, 0, 0, 0.35));
+  animation: lp-go-gambar 1.5s cubic-bezier(0.65, 0, 0.35, 1) calc(var(--go-jeda) + 0.3s) both;
+}
+
+.lp-go-orbit {
+  position: absolute;
+  inset: 0;
+  animation: lp-go-putar var(--go-putar) linear infinite;
+}
+.lp-go-bendera {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--titik);
+  height: var(--titik);
+  margin: calc(var(--titik) / -2) 0 0 calc(var(--titik) / -2);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  /* em di dalam tombol mengikuti ukuran "G", bukan ukuran bawaan tombol. */
+  font: inherit;
+  cursor: pointer;
+  transform:
+    rotate(calc(var(--i) * 60deg))
+    translateY(calc(var(--o) * -0.36))
+    rotate(calc(var(--i) * -60deg));
+  -webkit-tap-highlight-color: transparent;
+}
+/* Area sentuh sedikit lebih besar dari benderanya. */
+.lp-go-bendera::before {
+  content: "";
+  position: absolute;
+  inset: -16%;
+  border-radius: 50%;
+}
+/* Denyut kuning di sekitar bendera bahasa aktif. */
+.lp-go-bendera::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--lp-sorot);
+  opacity: 0;
+  pointer-events: none;
+}
+.lp-go-bendera[aria-checked="true"]::after {
+  animation: lp-go-denyut 2.8s cubic-bezier(0.22, 1, 0.36, 1) calc(var(--go-jeda) + 1.6s) infinite;
+}
+.lp-go-bendera:hover,
+.lp-go-bendera:focus-visible,
+.lp-go-bendera[aria-checked="true"] {
+  z-index: 1;
+}
+.lp-go-bendera:focus-visible {
+  outline: none;
+}
+
+.lp-go-bendera-isi {
+  position: absolute;
+  inset: 0;
+  display: block;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1.5px rgba(255, 255, 255, 0.95),
+    0 4px 14px rgba(0, 0, 0, 0.4);
+  /* Berputar berlawanan dengan orbit supaya bendera selalu tegak. */
+  animation:
+    lp-go-tegak var(--go-putar) linear infinite,
+    lp-go-bendera-masuk 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--go-jeda) + 0.6s + var(--i) * 0.1s) backwards;
+  transition:
+    scale 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.4s ease;
+}
+.lp-go-bendera-isi svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+/* Kilau bola: bendera terlihat seperti lencana bulat, bukan stiker datar. */
+.lp-go-bendera-isi::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 44%),
+    radial-gradient(circle at 70% 82%, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0) 56%);
+  pointer-events: none;
+}
+.lp-go-bendera:hover .lp-go-bendera-isi,
+.lp-go-bendera:focus-visible .lp-go-bendera-isi {
+  scale: 1.2;
+}
+.lp-go-bendera[aria-checked="true"] .lp-go-bendera-isi {
+  scale: 1.16;
+  box-shadow:
+    0 0 0 2.5px var(--lp-sorot),
+    0 0 18px rgba(255, 240, 0, 0.45),
+    0 4px 14px rgba(0, 0, 0, 0.4);
+}
+.lp-go-bendera[aria-checked="true"]:hover .lp-go-bendera-isi {
+  scale: 1.24;
+}
+.lp-go-bendera:focus-visible .lp-go-bendera-isi {
+  box-shadow:
+    0 0 0 2.5px var(--lp-sorot),
+    0 0 0 5px rgba(255, 255, 255, 0.85),
+    0 4px 14px rgba(0, 0, 0, 0.4);
+}
+/* Orbit berhenti selama kursor/fokus di cincin — bendera mudah dipilih. */
+.lp-go-o:hover .lp-go-orbit,
+.lp-go-o:focus-within .lp-go-orbit {
+  animation-play-state: paused;
+}
+.lp-go-o:hover .lp-go-bendera-isi,
+.lp-go-o:focus-within .lp-go-bendera-isi {
+  animation-play-state: paused, running;
+}
+
+/* --- Catatan: nama bahasa + petunjuk ---------------------------------------- */
+.lp-go-catatan {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-left: clamp(0.9rem, 1.7vw, 1.7rem);
+  font-family: var(--lp-sans);
+  font-size: 1rem;
+  line-height: 1.4;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.5);
+}
+.lp-go-garis {
+  flex: none;
+  width: clamp(1.6rem, 3.4vw, 3.6rem);
+  height: 1px;
+  background: var(--lp-sorot);
+  transform-origin: 0 50%;
+  animation: lp-go-garis 0.9s cubic-bezier(0.16, 1, 0.3, 1) calc(var(--go-jeda) + 1.25s) both;
+}
+.lp-go-catatan-teks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  animation: lp-go-pudar 0.9s ease calc(var(--go-jeda) + 1.4s) both;
+}
+.lp-go-nama {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #ffffff;
+  animation: lp-go-pudar 0.45s ease both;
+}
+.lp-go-petunjuk {
+  max-width: 15rem;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+/* --- "Internasional" --------------------------------------------------------- */
+.lp-go-dua {
+  margin: 0.04em 0 0;
+  font-size: 0.47em;
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+}
+.lp-go-dua span {
+  display: inline-block;
+  animation: lp-go-huruf 0.9s cubic-bezier(0.16, 1, 0.3, 1) calc(var(--go-jeda) + 0.45s + var(--k) * 0.035s) both;
+}
+/* Ganti bahasa: kata kedua langsung tersusun ulang, tanpa jeda pembukaan. */
+.lp-go-dua.is-ganti span {
+  animation-delay: calc(var(--k) * 0.03s);
+}
+
+/* --- Kemitraan: "In Partnership with" Anabuki × Makara UI Academy ---------- */
+/* Hierarki: tulisan utama (besar) → label tipis → dua logo sejajar di kartu
+   terang kecil. Logonya sengaja lebih pendek dari logo Citra Negara di
+   navbar — Citra Negara tetap merek utama. */
+.lp-go-mitra {
+  margin-top: clamp(1rem, 2.6vh, 1.75rem);
+  font-family: var(--lp-sans);
+  font-size: 1rem;
+  line-height: 1;
+  text-shadow: none;
+  animation: lp-go-pudar 0.9s ease calc(var(--go-jeda) + 1.6s) both;
+}
+.lp-go-mitra-label {
+  margin: 0 0 0.7rem;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.8);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
+}
+.lp-go-mitra-kartu {
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(0.85rem, 1.5vw, 1.25rem);
+  padding: 0.55rem 1.25rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.94);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.55);
+}
+.lp-root .lp-go-mitra-kartu img {
+  display: block;
+  width: auto;
+  height: clamp(2.3rem, 4.8vh, 2.8rem);
+}
+.lp-go-mitra-kali {
+  font-size: 1.05rem;
+  font-weight: 300;
+  color: var(--lp-tinta-samar);
+}
+@media (max-width: 767px) {
+  .lp-go-mitra-label {
+    margin-bottom: 0.55rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.22em;
+  }
+  .lp-go-mitra-kartu {
+    gap: 0.75rem;
+    padding: 0.45rem 1rem;
+    border-radius: 10px;
+  }
+  .lp-root .lp-go-mitra-kartu img {
+    height: 2.1rem;
+  }
+}
+
+@keyframes lp-go-naik {
+  from {
+    opacity: 0;
+    transform: translateY(0.2em);
+    filter: blur(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+@keyframes lp-go-gambar {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes lp-go-putar {
+  to {
+    rotate: 360deg;
+  }
+}
+@keyframes lp-go-tegak {
+  to {
+    rotate: -360deg;
+  }
+}
+@keyframes lp-go-bendera-masuk {
+  from {
+    scale: 0;
+    opacity: 0;
+  }
+  to {
+    scale: 1;
+    opacity: 1;
+  }
+}
+@keyframes lp-go-denyut {
+  0% {
+    opacity: 0.9;
+    transform: scale(1.12);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.75);
+  }
+}
+@keyframes lp-go-garis {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes lp-go-pudar {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes lp-go-huruf {
+  from {
+    opacity: 0;
+    transform: translateY(0.45em);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+
+/* Tablet tegak: ruang tegaknya lega — tulisan boleh lebih besar. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .lp-go {
+    font-size: min(16vw, 14vh);
+  }
+}
+/* HP: cincin sedikit lebih besar dari huruf "G" supaya benderanya cukup
+   besar untuk diketuk jari. Hero HP tidak setinggi layar (lihat "TAMPILAN
+   HP"), jadi ukurannya cukup mengikuti lebar. */
+@media (max-width: 767px) {
+  .lp-go {
+    --o: 0.94em;
+    font-size: min(25vw, 7.5rem);
+  }
+  .lp-go-dua {
+    font-size: 0.54em;
+  }
+  .lp-go-catatan {
+    gap: 0.55rem;
+    margin-left: 0.75rem;
+  }
+  .lp-go-garis {
+    width: 1rem;
+  }
+  .lp-go-nama {
+    font-size: 0.62rem;
+    letter-spacing: 0.16em;
+  }
+  .lp-go-petunjuk {
+    max-width: 9.5rem;
+    font-size: 0.7rem;
+    line-height: 1.35;
+  }
+}
+
+/* Menunggu tirai pembuka: tak terlihat dan gerak masuknya belum diputar;
+   begitu tirai dilepas, semuanya mulai dengan jeda singkat (sama seperti
+   deret nilai). */
+.lp-pembuka.is-hidup:not(.is-lepas) ~ .lp-bab-tegak .lp-go {
+  opacity: 0;
+}
+.lp-pembuka.is-hidup:not(.is-lepas) ~ .lp-bab-tegak .lp-go :is(.lp-go-g, .lp-go-cincin circle, .lp-go-bendera-isi, .lp-go-garis, .lp-go-catatan-teks, .lp-go-dua span, .lp-go-mitra) {
+  animation-name: none;
+}
+.lp-pembuka.is-lepas ~ .lp-bab-tegak .lp-go {
+  --go-jeda: 0.55s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-go *,
+  .lp-go *::after {
+    animation: none !important;
+  }
+}
+
+/* ===========================================================================
+   BAHASA — tipografi per aksara & transisi ganti bahasa
+   (atribut lang di .lp-root dipasang PenyediaBahasa)
+   =========================================================================== */
+
+/* Jepang & Korea: Playfair/Plus Jakarta tetap untuk huruf Latin, aksara
+   CJK memakai font sistem yang setara (Mincho/Myeongjo untuk judul serif,
+   Gothic untuk teks) — tanpa unduhan font tambahan. Perangkat tanpa font
+   Mincho/Myeongjo (mis. Windows tanpa paket bahasa) memakai Gothic-nya. */
+.lp-root[lang="ja"] {
+  --lp-sans: var(--font-lp-sans), "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Yu Gothic", YuGothic, Meiryo, "Noto Sans JP", system-ui, sans-serif;
+  --lp-serif: var(--font-lp-serif), "Hiragino Mincho ProN", "Yu Mincho", YuMincho, "Noto Serif JP", "Hiragino Sans", "Yu Gothic", Meiryo, serif;
+  line-break: strict;
+}
+.lp-root[lang="ko"] {
+  --lp-sans: var(--font-lp-sans), "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
+  --lp-serif: var(--font-lp-serif), "Noto Serif KR", "Nanum Myeongjo", AppleMyungjo, Batang, "Apple SD Gothic Neo", "Malgun Gothic", serif;
+  word-break: keep-all;
+}
+/* Aksara CJK butuh baris lebih lega dan tanpa jarak huruf rapat/renggang
+   ala huruf Latin. */
+.lp-root:is([lang="ja"], [lang="ko"]) :is(.lp-judul-besar, .lp-judul-raksasa, .lp-intro-judul, .lp-nilai-judul, .lp-cn-chip) {
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+.lp-root:is([lang="ja"], [lang="ko"]) :is(.lp-label, .lp-nav-tautan a, .lp-cn-label, .lp-jb-sub, .lp-intro-label, .lp-jb-kelompok-judul, .lp-mitra-angka span, .lp-syarat-kotak-status, .lp-jb-tab-tombol) {
+  letter-spacing: 0.08em;
+}
+/* Jepang tak berspasi: judul dipatahkan per frasa, bukan di tengah kata
+   ("自 / 分を…"). Browser yang belum mendukung memakai pemenggalan biasa. */
+.lp-root[lang="ja"] :is(h1, h2, h3, .lp-cn-chip, .lp-go-petunjuk) {
+  word-break: auto-phrase;
+}
+
+/* Jerman: kata majemuknya panjang — boleh dipenggal di baris sempit, dan
+   deret nilai MANTAP diperkecil sedikit supaya tetap muat. */
+.lp-root[lang="de"] :is(h1, h2, h3, p, dd, dt, li) {
+  hyphens: auto;
+}
+.lp-root[lang="de"] .lp-hero-nilai {
+  font-size: clamp(1.15rem, 5vw, 2.6rem);
+}
+@media (min-width: 640px) {
+  .lp-root[lang="de"] .lp-hero-nilai {
+    font-size: clamp(1.4rem, 2.9vw, 2.6rem);
+  }
+}
+@media (min-width: 1100px) {
+  .lp-root[lang="de"] .lp-hero-nilai {
+    font-size: clamp(1.35rem, 2.15vw, 2.6rem);
+  }
+}
+
+/* Ganti bahasa: seluruh halaman silang-pudar sebentar (View Transitions). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.5s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Teks khusus pembaca layar. */
+.lp-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ===========================================================================
+   TAMPILAN HP (≤ 767px) — batasnya sama dengan MEDIA_HP di gerak.tsx.
+
+   Di HP halaman ini sengaja ringan dan rapi:
+   - tanpa tirai pembuka (Pembuka.tsx juga tidak berjalan) dan tanpa gerak
+     besar yang mengikuti gulir (CN menempel, pita emas, kartu naik, dst.);
+   - geraknya tipis saja: isi hero memudar masuk saat halaman dibuka, teks
+     memudar sedikit naik saat masuk layar (animasi CSS berbasis gulir yang
+     dikerjakan GPU, tanpa JavaScript), dan tombol sedikit mengecil saat
+     diketuk. Hanya opacity & transform — tidak ada blur atau clip-path;
+   - foto & video yang di desktop melebar tetap melebar (landscape): teks yang
+     di desktop menimpa media pindah ke blok di bawahnya;
+   - navbar satu bilah: di puncak halaman transparan di atas video dengan
+     logo + nama sekolah; setelah digulir berlatar hijau tua dengan nama
+     sekolah saja, menyingkir saat digulir turun dan kembali saat digulir
+     naik (Navigation.tsx).
+
+   Diletakkan paling akhir supaya menang atas aturan desktop yang setara.
+   =========================================================================== */
+@media (max-width: 767px) {
+  .lp-root {
+    --lp-tepi: 1.25rem;
+    /* Tinggi navbar — video hero memanjang setinggi ini di bawahnya. */
+    --lp-bilah: 3.5rem;
+  }
+  .lp-wadah {
+    width: calc(100% - 2 * var(--lp-tepi));
+  }
+  .lp-pembuka {
+    display: none !important;
+  }
+  /* Elemen-elemen ini diam di HP: lapisan GPU cadangannya tidak perlu. */
+  .lp-hero-media,
+  .lp-hero-isi,
+  .lp-penutup-media,
+  .lp-jb-foto {
+    will-change: auto;
+  }
+
+  /* --- Navbar ------------------------------------------------------------- */
+  .lp-nav,
+  .lp-nav.is-lengket {
+    position: fixed;
+    inset: 0 0 auto 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    height: var(--lp-bilah);
+    padding: 0 calc(var(--lp-tepi) - 0.5rem) 0 var(--lp-tepi);
+    color: #fff;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    transition:
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      transform 0.3s ease;
+  }
+  /* Puncak halaman: transparan di atas video (bayangan ::before bawaan
+     menjaga logo & nama tetap terbaca). */
+  .lp-nav {
+    background: transparent;
+    border-bottom: 1px solid transparent;
+  }
+  .lp-nav::before {
+    transition: opacity 0.3s ease;
+  }
+  .lp-nav.is-lengket {
+    background: var(--lp-hijau-gelap);
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
+  .lp-nav.is-sembunyi {
+    transform: translateY(-100%);
+  }
+  .lp-nav .lp-nav-garis,
+  .lp-nav .lp-nav-tautan,
+  .lp-nav .lp-nav-bahasa,
+  .lp-nav.is-lengket .lp-nav-bahasa,
+  .lp-nav.is-lengket .lp-nav-merek img {
+    display: none;
+  }
+  .lp-nav .lp-nav-merek {
+    gap: 0.6rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.26em;
+  }
+  .lp-nav .lp-nav-merek img {
+    height: 2.1rem;
+  }
+  .lp-nav-merek span {
+    display: inline;
+  }
+  .lp-nav-kanan {
+    gap: 0;
+  }
+  .lp-nav .lp-nav-cari {
+    padding: 0.5rem;
+    margin-right: 0;
+    transition:
+      color 0.2s ease,
+      transform 0.15s ease;
+  }
+  .lp-nav.is-lengket .lp-nav-cari:hover {
+    color: var(--lp-sorot);
+  }
+
+  /* --- Panel menu: tanpa logo --------------------------------------------- */
+  .lp-cari-panel::after {
+    display: none;
+  }
+
+  /* --- Hero: video melebar, isinya di blok hijau tua di bawahnya ---------- */
+  .lp-hero-panggung .lp-hero {
+    display: block;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+  /* 16:9 di bawah navbar, ditambah setinggi navbar yang menumpang di atasnya. */
+  .lp-hero-panggung .lp-hero-bingkai {
+    position: relative;
+    inset: auto;
+    height: calc(56.25vw + var(--lp-bilah));
+  }
+  /* !important di hero & penutup: mengalahkan gaya inline efek gulir yang
+     sudah ada di HTML server sebelum hydration mencopotnya. */
+  .lp-hero-panggung .lp-hero-media {
+    transform: none !important;
+  }
+  .lp-hero-panggung .lp-hero-tirai {
+    background: linear-gradient(180deg, rgba(7, 28, 22, 0) 62%, rgba(7, 28, 22, 0.6) 100%);
+  }
+  .lp-hero-sisi {
+    display: none;
+  }
+  .lp-hero-panggung .lp-hero-isi {
+    padding: 2.25rem var(--lp-tepi) 2.75rem;
+    background: var(--lp-hijau-gelap);
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  .lp-go-wadah {
+    padding: 0;
+  }
+  .lp-hero-tengah {
+    margin-top: 2rem;
+    padding: 1.75rem 0 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+  }
+  /* Kartu mitra & tombol gelap berada di atas latar polos: blur latarnya
+     tidak terlihat, hanya memberatkan. */
+  .lp-go-mitra-kartu,
+  .lp-tombol--gelap {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .lp-go-mitra-kartu {
+    background: #ffffff;
+  }
+
+  /* Hero halaman detail jenjang: foto melebar, teks di bawahnya. */
+  .lp-hero--jenjang {
+    display: block;
+    height: auto;
+    min-height: 0;
+  }
+  .lp-hero--jenjang .lp-hero-media {
+    position: relative;
+    inset: auto;
+    height: calc(56.25vw + var(--lp-bilah));
+  }
+  .lp-hero--jenjang .lp-hero-tirai {
+    display: none;
+  }
+  .lp-hero--jenjang .lp-hero-isi {
+    padding: 2rem 0 2.5rem;
+    background: var(--lp-hijau-gelap);
+  }
+
+  /* --- "Sebuah tempat": kartu di tengah, foto diam di belakangnya --------- */
+  .lp-intro {
+    padding-block: 3rem 3.5rem;
+  }
+  /* Enam foto dalam dua kolom, sedikit lebih pendek dari kartu. Kartu
+     menutupi bagian tengahnya — yang tampak hanya tepi kiri & kanan. */
+  .lp-intro-deret {
+    grid-area: 1 / 1;
+    align-self: stretch;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    gap: 1rem 0;
+    margin-block: 2rem 3.5rem;
+  }
+  .lp-intro-foto {
+    width: auto;
+    aspect-ratio: auto;
+    border-radius: 0;
+  }
+  .lp-intro-foto:nth-child(n + 7) {
+    display: none;
+  }
+  .lp-intro-kartu {
+    grid-area: 1 / 1;
+    width: auto;
+    margin: 0 clamp(1.75rem, 11vw, 3rem);
+    padding: 2.25rem 1.25rem 2.5rem;
+    border-radius: 8px;
+  }
+  /* Satu frasa judul per baris. */
+  .lp-intro-judul {
+    font-size: clamp(1.45rem, 7.2vw, 2rem);
+    line-height: 1.12;
+  }
+  .lp-intro-frasa {
+    display: block;
+  }
+  .lp-intro-tombol {
+    transition:
+      background 0.3s ease,
+      transform 0.15s ease;
+  }
+
+  /* --- Jenjang → Alur: tanpa gerak gulir ---------------------------------- */
+  .lp-cn {
+    --cn-kiri: var(--lp-tepi);
+    --chip-fs: 1.6rem;
+    padding-top: 3.5rem;
+  }
+  .lp-cn-kata {
+    position: static;
+    margin: 0.06em 0 0 var(--cn-kiri);
+  }
+  .lp-cn-teks {
+    padding-top: 1.5rem;
+  }
+  .lp-cn-kartu {
+    flex-direction: column;
+    height: auto;
+    margin-top: 2.5rem;
+  }
+  /* Kartu = pita foto pendek; yang diketuk membuka (data-buka, JenjangStory). */
+  .lp-cn-kartu-item {
+    flex: none;
+    height: 7.5rem;
+    transition: height 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .lp-cn-kartu-item[data-buka] {
+    height: min(100vw, 30rem);
+  }
+  .lp-cn-kartu-item img {
+    object-position: 50% 28%;
+  }
+  .lp-cn-kartu-tirai {
+    background: rgba(7, 28, 22, 0.42);
+  }
+  .lp-cn-kartu-tirai::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(7, 28, 22, 0) 35%, rgba(7, 28, 22, 0.72) 100%);
+    opacity: 0;
+    transition: opacity 0.45s ease;
+  }
+  .lp-cn-kartu-item[data-buka] .lp-cn-kartu-tirai::after {
+    opacity: 1;
+  }
+  .lp-cn-kartu-atas {
+    display: none;
+  }
+  /* Garis emas di tepi kanan pita yang tertutup. */
+  .lp-cn-kartu-garis {
+    top: 0;
+    bottom: 0;
+    left: auto;
+    right: 0;
+    width: 6px;
+    height: auto;
+    margin: 0;
+    border-radius: 0;
+  }
+  .lp-cn-kartu-item[data-buka] .lp-cn-kartu-garis {
+    opacity: 0;
+  }
+  .lp-cn-kartu-baris {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4.25rem;
+    font-family: var(--lp-sans);
+    font-size: 1.45rem;
+    font-weight: 700;
+    line-height: 1.1;
+    text-align: center;
+    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.4);
+    transition: opacity 0.25s ease;
+  }
+  .lp-cn-kartu-baris svg {
+    position: absolute;
+    top: 50%;
+    right: 1.5rem;
+    translate: 0 -50%;
+    filter: drop-shadow(0 1px 6px rgba(0, 0, 0, 0.35));
+  }
+  .lp-cn-kartu-item[data-buka] .lp-cn-kartu-baris {
+    opacity: 0;
+  }
+  .lp-cn-kartu-bawah {
+    bottom: 1.75rem;
+    gap: 0.7rem;
+    padding-inline: var(--lp-tepi);
+    transition:
+      opacity 0.3s ease,
+      transform 0.45s ease;
+  }
+  .lp-cn-kartu-item[data-buka] .lp-cn-kartu-bawah {
+    opacity: 1;
+    transform: none;
+    transition-delay: 0.15s;
+  }
+  .lp-cn-kartu-judul {
+    font-size: 1.7rem;
+  }
+  .lp-cn-kartu-teks {
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
+  .lp-cn-pita,
+  .lp-cn-emas {
+    display: none;
+  }
+  .lp-cn-akhir {
+    height: auto;
+    margin-top: 4.5rem;
+    scroll-margin-top: 1.5rem;
+  }
+  .lp-cn-kata-akhir {
+    display: block;
+    font-family: var(--lp-sans);
+    font-weight: 800;
+    font-size: var(--cn-fs);
+    line-height: 0.8;
+    letter-spacing: -0.045em;
+    color: var(--cn-warna);
+    user-select: none;
+  }
+  .lp-cn-chip--akhir {
+    position: static;
+    align-self: flex-start;
+    width: auto;
+    height: auto;
+    margin: 0.9rem 0 0 var(--cn-kiri);
+    padding: 0.06em 0.32em 0.14em;
+  }
+
+  /* --- Alur: semua langkah tampil sama, tanpa sorotan mengikuti gulir ----- */
+  .lp-bab--tinggi .lp-bagian.lp-alur {
+    padding-top: 3rem !important;
+  }
+  .lp-alur-kemajuan {
+    display: none;
+  }
+  .lp-alur-item,
+  .lp-alur-item.is-lewat,
+  .lp-alur-item.is-aktif {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .lp-alur-simpul,
+  .lp-alur-item.is-lewat .lp-alur-simpul,
+  .lp-alur-item.is-aktif .lp-alur-simpul {
+    background: var(--lp-kertas);
+    border-color: var(--lp-hijau);
+    color: var(--lp-hijau);
+    transform: none;
+    transition: none;
+  }
+  .lp-alur-no,
+  .lp-alur-item.is-aktif .lp-alur-no {
+    color: var(--lp-hijau);
+  }
+
+  /* --- Jadwal & biaya: pindah tab cukup memudar, catatan diam ------------- */
+  .lp-jb-lingkar {
+    transition-duration: 0.3s;
+  }
+  .lp-jb-lingkar-isi.is-regang,
+  .lp-jb-kertas {
+    animation: none;
+  }
+  .lp-jb-panel {
+    transition: none !important;
+  }
+  .lp-jb-panel .lp-jb-teks > *,
+  .lp-jb-panel .lp-jb-tanda,
+  .lp-jb-panel .lp-jb-foto,
+  .lp-jb-panel .lp-jb-kelompok-judul,
+  .lp-jb-panel .lp-jb-catatan {
+    transition: opacity 0.35s ease !important;
+  }
+  .lp-jb:not(.is-catatan) .lp-jb-panel[data-keadaan="aktif"] .lp-jb-catatan {
+    opacity: 1;
+    transform: rotate(var(--r));
+  }
+  .lp-jb:not(.is-foto) .lp-jb-panel[data-keadaan="aktif"] .lp-jb-foto,
+  .lp-jb:not(.is-catatan) .lp-jb-panel[data-keadaan="aktif"] .lp-jb-kelompok-judul {
+    opacity: 1;
+    transform: none;
+  }
+  .lp-jb-tab-tombol {
+    transition:
+      color 0.3s ease,
+      transform 0.15s ease;
+  }
+
+  /* --- Penutup: video melebar, teks di bawahnya --------------------------- */
+  .lp-penutup {
+    display: block;
+    height: auto;
+  }
+  .lp-penutup-kartu {
+    width: 100%;
+    height: auto;
+    transform: none !important;
+    border-radius: 0 !important;
+  }
+  .lp-penutup-media {
+    position: relative;
+    inset: auto;
+    aspect-ratio: 16 / 9;
+    transform: none !important;
+  }
+  .lp-penutup-isi {
+    position: relative;
+    inset: auto;
+    padding: 2.5rem var(--lp-tepi) 3rem;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  /* Dua tombolnya muat sebaris. */
+  .lp-penutup-aksi .lp-tombol {
+    padding: 0.95rem 1.35rem;
+  }
+
+  /* --- Panel nilai MANTAP: foto melebar di atas, teks di bawahnya --------- */
+  .lp-nilai {
+    --nilai-foto: 75vw;
+  }
+  .lp-nilai-celah {
+    background: var(--lp-hijau-gelap);
+  }
+  .lp-nilai-foto {
+    bottom: auto;
+    height: var(--nilai-foto);
+  }
+  .lp-nilai-gelap,
+  .lp-nilai-kepala {
+    display: none;
+  }
+  .lp-nilai-isi {
+    top: var(--nilai-foto);
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 1.9rem var(--lp-tepi) 2rem;
+    text-align: left;
+    overflow-y: auto;
+  }
+  .lp-nilai-judul {
+    font-size: 2.4rem;
+  }
+  .lp-nilai-teks {
+    margin-top: 1rem;
+    font-size: 1.05rem;
+  }
+  .lp-nilai-panah {
+    top: calc(var(--nilai-foto) / 2);
+  }
+  .lp-nilai-tutup {
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    background: rgba(7, 28, 22, 0.6);
+  }
+
+  /* --- Gerak --------------------------------------------------------------- */
+  /* Animasi masuk desktop tidak dipakai; versi tipisnya ada di blok "gerak
+     tipis" di bawah (hanya bila pengguna tidak meminta gerak dikurangi).
+     Bagian-bagian "Go Internasional" diam: tanpa orbit, denyut, atau huruf
+     demi huruf. */
+  .lp-hero-label,
+  .lp-hero-nilai,
+  .lp-hero-judul,
+  .lp-hero-sub,
+  .lp-biaya-panel {
+    animation: none;
+  }
+  .lp-go *,
+  .lp-go *::after {
+    animation: none !important;
+  }
+  /* Penyingkap lama (berbasis IntersectionObserver) tidak dipakai di HP —
+     tanpa dukungan animasi berbasis gulir, semuanya tampil diam. */
+  .lp-muncul {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .lp-singkap > * {
+    clip-path: none;
+    transition: none;
+  }
+  .lp-singkap img {
+    transform: none;
+    transition: none;
+  }
+  .lp-baris > span {
+    transform: none;
+    transition: none;
+  }
+  /* Ketukan: tombol sedikit mengecil sesaat. */
+  .lp-tombol:active,
+  .lp-jb-tombol:active,
+  .lp-intro-tombol:active,
+  .lp-footer .lp-footer-tombol:active,
+  .lp-cari-bahasa-daftar button:active {
+    transform: scale(0.97);
+  }
+  .lp-nav .lp-nav-cari:active,
+  .lp-jb-tab-tombol:active,
+  .lp-footer .lp-footer-sosial-ikon:active {
+    transform: scale(0.92);
+  }
+  .lp-cari-daftar a:active {
+    opacity: 0.65;
+  }
+  .lp-cari-daftar a {
+    transition:
+      color var(--lp-cepat),
+      padding-left var(--lp-cepat),
+      opacity 0.15s ease;
+  }
+  .lp-cari-bahasa-daftar button {
+    transition:
+      border-color 0.2s ease,
+      color 0.2s ease,
+      transform 0.15s ease;
+  }
+}
+
+/* Gerak tipis di HP. Isi hero memudar masuk sedikit naik saat halaman
+   dibuka; isi yang berganti karena diketuk (tab persyaratan) cukup memudar. */
+@media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
+  .lp-hero-panggung .lp-go,
+  .lp-hero-label,
+  .lp-hero-nilai,
+  .lp-hero-judul,
+  .lp-hero-sub {
+    animation: lp-hp-masuk 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .lp-hero-label,
+  .lp-hero-sub {
+    animation-delay: 0.12s;
+  }
+  .lp-hero-nilai {
+    animation-delay: 0.2s;
+  }
+  .lp-biaya-panel {
+    animation: lp-hp-pudar 0.3s ease both;
+  }
+}
+
+/* Layar HP yang sangat sempit: nama sekolah sedikit dirapatkan supaya logo,
+   nama, dan tombol menu tetap sebaris. */
+@media (max-width: 359px) {
+  .lp-nav .lp-nav-merek {
+    letter-spacing: 0.18em;
+  }
+}
+
+/* Teks memudar sedikit naik saat masuk layar — mengikuti posisi gulir, jadi
+   dikerjakan GPU tanpa JavaScript dan tidak membebani HP. Browser tanpa
+   dukungan menampilkannya diam.
+
+   Rentangnya jarak tetap sejak tepi atas elemen masuk layar (8rem), bukan
+   persen tingginya: kartu jenjang yang membuka sampai melewati tepi bawah
+   layar tidak ikut tampak pudar. */
+@supports (animation-timeline: view()) {
+  @media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
+    .lp-muncul,
+    .lp-judul-besar,
+    .lp-intro-kartu > *,
+    .lp-cn-kepala,
+    .lp-cn-kata,
+    .lp-cn-teks-isi > *,
+    .lp-cn-kartu-item,
+    .lp-cn-akhir,
+    .lp-cn-chip--akhir,
+    .lp-alur-item,
+    .lp-jb-tab,
+    .lp-syarat-kotak,
+    .lp-mitra-deretan,
+    .lp-penutup-isi > * {
+      animation: lp-hp-muncul linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 8rem;
+    }
+    .lp-muncul .lp-judul-besar {
+      animation: none;
+    }
+  }
+}
+
+@keyframes lp-hp-masuk {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes lp-hp-muncul {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes lp-hp-pudar {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

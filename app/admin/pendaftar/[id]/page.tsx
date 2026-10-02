@@ -53,7 +53,7 @@ type Pendaftar = {
   namaIbu?: string; ttlIbu?: string; pendidikanIbu?: string; pekerjaanIbu?: string; penghasilanIbu?: string; noHpIbu?: string; alamatIbu?: string;
   namaWali?: string; ttlWali?: string; pendidikanWali?: string; pekerjaanWali?: string; penghasilanWali?: string; noHpWali?: string; alamatWali?: string;
 
-  fileIjazah?: string; fileAkte?: string; fileKK?: string; fileKtpOrtu?: string; fileKip?: string; fileFoto?: string;
+  fileIjazah?: string; fileAkte?: string; fileKK?: string; fileKtpOrtu?: string; fileFoto?: string;
 
   status: string;
   waVerified?: boolean;
@@ -622,9 +622,7 @@ export default function DetailPendaftarPage() {
       {/* Terang, sama seperti .adm-topbar yang dipakai halaman admin lain
           (lihat components/admin/TopHeader.tsx) — dulu latarnya dipakaikan
           var(--adm-primary) yang di sistem warna ini adalah navy pekat,
-          sehingga cuma halaman ini yang punya header gelap sendiri dan
-          tidak ikut menyesuaikan saat mode gelap diaktifkan (teksnya
-          hardcode rgba(255,255,255,...), bukan token tema). */}
+          sehingga cuma halaman ini yang punya header gelap sendiri. */}
       <header style={{ background: 'var(--adm-surface)', borderBottom: '1px solid var(--adm-border)', padding: '18px 24px' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
           <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'var(--adm-text-muted)', fontSize: 12, cursor: 'pointer', marginBottom: 10, fontFamily: 'inherit' }}>
@@ -1023,7 +1021,6 @@ export default function DetailPendaftarPage() {
                 {fileField('Akte Kelahiran', data.fileAkte)}
                 {fileField('Kartu Keluarga', data.fileKK)}
                 {fileField('KTP Orang Tua', data.fileKtpOrtu)}
-                {fileField('Kartu KIP', data.fileKip)}
                 {fileField('Pas Foto', data.fileFoto)}
               </div>
             </div>

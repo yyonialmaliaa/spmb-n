@@ -1,5 +1,10 @@
 import type { Metadata } from 'next'
+import { cookies } from 'next/headers'
 import { getDataLanding } from '@/lib/landing'
+import { getKurs } from '@/lib/kurs'
+import { KUKI_BAHASA, bacaBahasa } from '@/components/landing/i18n/bahasa'
+import { KAMUS } from '@/components/landing/i18n/kamus'
+import { PenyediaBahasa } from '@/components/landing/i18n/PenyediaBahasa'
 import { Pembuka } from '@/components/landing/Pembuka'
 import { Navigation } from '@/components/landing/Navigation'
 import { Hero } from '@/components/landing/Hero'
@@ -11,12 +16,17 @@ import { Persyaratan } from '@/components/landing/Persyaratan'
 import { MitraIndustri } from '@/components/landing/MitraIndustri'
 import { FinalCTA } from '@/components/landing/FinalCTA'
 import { Footer } from '@/components/landing/Footer'
+import { kelasFontLanding } from './fonts'
 import './landing.css'
 
-export const metadata: Metadata = {
-  title: 'SPMB Citra Negara — Penerimaan Murid Baru',
-  description:
-    'Penerimaan murid baru Citra Negara untuk jenjang SMP, SMA, dan SMK. Kenali jenjang, alur pendaftaran, jadwal, biaya, dan persyaratannya.',
+/** Bahasa pilihan pengunjung (kuki dari pemilih bahasa "Go Internasional"). */
+async function bahasaPengunjung() {
+  return bacaBahasa((await cookies()).get(KUKI_BAHASA)?.value)
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { meta } = KAMUS[await bahasaPengunjung()]
+  return { title: meta.judul, description: meta.deskripsi }
 }
 
 // Halaman ini membaca tahun ajaran yang sedang aktif, jadi tidak boleh
@@ -34,6 +44,13 @@ export const dynamic = 'force-dynamic'
  * Seluruh halaman bergulir MENURUN seperti halaman biasa, di semua ukuran
  * layar — tidak ada bagian yang bergeser ke samping.
  *
+ * Seluruh teks halaman ini bisa diterjemahkan (id, en, ja, tr, de, ko) lewat
+ * bendera di huruf "o" tulisan "Go Internasional" di hero — termasuk nama
+ * jenjang, dan biaya yang dikonversi ke mata uang negara bahasa itu (kurs dari
+ * lib/kurs.ts). Terjemahan HANYA berlaku di halaman ini — pra-pendaftaran,
+ * formulir, portal, dan admin tetap berbahasa Indonesia dan rupiah. Lihat
+ * components/landing/i18n.
+ *
  * Urutan bab tetap: hero (termasuk deret nilai MANTAP) → intro → jenjang →
  * alur → jadwal & biaya → persyaratan → mengapa → penutup → footer. Bab
  * jenjang dan alur disambung satu tulisan raksasa "CN" (lihat JenjangStory).
@@ -43,7 +60,7 @@ export const dynamic = 'force-dynamic'
  * setelah ini tidak dipakai di mana pun lagi).
  */
 export default async function LandingSPMB() {
-  const data = await getDataLanding()
+  const [data, bahasa, kurs] = await Promise.all([getDataLanding(), bahasaPengunjung(), getKurs()])
   const namaTA = data.tahunAjaran?.nama ?? null
 
   // Satu daftar untuk urutan bab dan isinya.
@@ -61,10 +78,10 @@ export default async function LandingSPMB() {
     { kunci: 'hero',        id: 'nilai', isi: <Hero tahunAjaran={namaTA} /> },
     { kunci: 'intro',       isi: <Intro /> },
     { kunci: 'jenjang',     id: 'bab-jenjang',
-      isi: <JenjangStory daftar={data.jenjang.map(j => ({ jenjang: j.jenjang, singkat: j.singkat, label: j.label }))} /> },
+      isi: <JenjangStory daftar={data.jenjang.map(j => ({ jenjang: j.jenjang }))} /> },
     { kunci: 'alur',        tinggi: true, isi: <AlurSPMB /> },
     // Jadwal & biaya satu bab (tab SMP/SMA/SMK) — id #jadwal & #biaya ada di dalamnya.
-    { kunci: 'jadwal-biaya', isi: <JadwalBiaya jenjang={data.jenjang} /> },
+    { kunci: 'jadwal-biaya', isi: <JadwalBiaya jenjang={data.jenjang} kurs={kurs} /> },
     { kunci: 'persyaratan', lembut: true, isi: <Persyaratan jenjang={data.jenjang} /> },
     { kunci: 'mengapa',     id: 'mengapa', isi: <MitraIndustri /> },
     { kunci: 'penutup', tinggi: true,
@@ -77,7 +94,8 @@ export default async function LandingSPMB() {
   ]
 
   return (
-    <div className="lp-root">
+    // PenyediaBahasa merender <div class="lp-root" lang="…">.
+    <PenyediaBahasa awal={bahasa} className={`lp-root ${kelasFontLanding}`}>
       {/* Penanda anti-kedip tirai (data-pembuka) dipasang skrip di
           app/layout.tsx, bukan di sini — lihat komentar di sana. */}
       <Pembuka tahunAjaran={namaTA} />
@@ -88,6 +106,6 @@ export default async function LandingSPMB() {
           {b.isi}
         </div>
       ))}
-    </div>
+    </PenyediaBahasa>
   )
 }

@@ -8,6 +8,12 @@ const nextConfig: NextConfig = {
 
   poweredByHeader: false,
 
+  // Logo kop PDF bukti pra-pendaftaran dibaca dari disk saat runtime.
+  outputFileTracingIncludes: {
+    '/api/pra-pendaftaran/**': ['./public/images/logo-bukti.png'],
+    '/api/admin/pra-pendaftaran/**': ['./public/images/logo-bukti.png'],
+  },
+
   images: {
     qualities: [100, 75],
   },

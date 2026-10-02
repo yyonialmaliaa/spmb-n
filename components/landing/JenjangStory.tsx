@@ -1,6 +1,11 @@
+'use client'
+
+import { useRef, useState, type CSSProperties, type MouseEvent } from 'react'
 import Image from 'next/image'
 import { Plus } from 'lucide-react'
 import { GAMBAR_JENJANG, type Jenjang } from '@/lib/labels'
+import { useHp } from './gerak'
+import { useBahasa } from './i18n/PenyediaBahasa'
 
 /**
  * Website masing-masing jenjang (dibuka di tab baru).
@@ -13,23 +18,14 @@ const WEB_JENJANG: Record<Jenjang, string> = {
   smk: 'https://smk.citranegara.sch.id', // masukkan link web SMK di sini
 }
 
-/**
- * Ringkasan naratif tiap jenjang. Sengaja disimpan di sini dan bukan di
- * database: ini teks pemasaran, bukan data operasional.
- *
- * SMP dan SMA TIDAK menyebut jurusan sama sekali — di sistem ini keduanya
- * memang tidak mengenal program keahlian.
- */
-const CERITA: Record<Jenjang, { teks: string }> = {
-  smp: { teks: 'Tiga tahun untuk membangun fondasi: kebiasaan belajar, keberanian bertanya, dan kemandirian yang terbawa seumur hidup.' },
-  sma: { teks: 'Ruang untuk memperdalam akademik sekaligus menguji minat, hingga pilihan setelah lulus diambil dengan yakin.' },
-  smk: { teks: 'Belajar dengan mengerjakan. Kompetensi diasah lewat praktik nyata, siap melangkah ke dunia kerja maupun pendidikan lanjutan.' },
-}
+// Nama ("SMP", "SMP Citra Negara") dan ringkasan naratif tiap jenjang ada di
+// kamus bahasa (jenjang.nama, jenjang.cerita), jadi ikut bahasa aktif — teks
+// pemasaran, bukan data operasional, jadi sengaja tidak di database.
+// SMP dan SMA TIDAK menyebut jurusan sama sekali: di sistem ini keduanya
+// memang tidak mengenal program keahlian.
 
 export type PanelJenjang = {
   jenjang: Jenjang
-  singkat: string
-  label: string
 }
 
 /**
@@ -52,18 +48,48 @@ export type PanelJenjang = {
  * emasnya memanjang dari kiri sambil menyingkap tulisannya.
  *
  * Kartu jenjang melebar saat disorot kursor (atau difokus keyboard): foto
- * lebih lapang, tombol "+" dan nama lengkap jenjang muncul di bawah. Di HP
- * ketiganya sama lebar dan cukup diketuk.
+ * lebih lapang, tombol "+" dan nama lengkap jenjang muncul di bawah.
  *
  * Gerak yang mengikuti gulir diatur di landing.css (blok "JENJANG → ALUR");
  * tanpa dukungan browser, tata letaknya sama dalam keadaan diam.
+ *
+ * Di HP tanpa gerak gulir: CN tidak menempel, pita emas tidak ada, dan
+ * judul bab Alur menjadi "CN" (salinan .lp-cn-kata-akhir) dengan label
+ * "Alur SPMB" di bawahnya. Kartunya bertumpuk sebagai pita foto pendek
+ * (nama jenjang + "+"): ketukan pertama membuka kartu itu (foto lebih
+ * tinggi, "+" bulat, nama, dan ceritanya) sambil menutup yang lain;
+ * ketukan berikutnya pada kartu yang terbuka baru membuka website-nya.
+ * Lihat blok "TAMPILAN HP" di landing.css.
  */
 export function JenjangStory({ daftar }: { daftar: PanelJenjang[] }) {
+  const { t } = useBahasa()
+  const k = t.jenjang
+  const hp = useHp()
+  const [buka, setBuka] = useState<Jenjang | null>(null)
+  const pewaktu = useRef(0)
+
+  // HP: kartu yang belum terbuka dibuka dulu, alih-alih langsung pindah ke
+  // website. Setelah tingginya selesai berubah, kartu itu digeser masuk layar
+  // bila sebagian tertutup tepi bawah.
+  const ketuk = (e: MouseEvent<HTMLAnchorElement>, j: Jenjang) => {
+    if (!hp || buka === j) return
+    e.preventDefault()
+    setBuka(j)
+    const kartu = e.currentTarget.parentElement
+    window.clearTimeout(pewaktu.current)
+    pewaktu.current = window.setTimeout(() => kartu?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 480)
+  }
   return (
-    <section id="jenjang" className="lp-cn" aria-labelledby="lp-cn-judul">
+    <section
+      id="jenjang"
+      className="lp-cn"
+      aria-labelledby="lp-cn-judul"
+      // Kotak emas "Alur SPMB" selebar teksnya di bahasa aktif.
+      style={{ '--chip-lebar': k.alurChipLebar } as CSSProperties}
+    >
       <div className="lp-wadah lp-cn-kepala">
-        <h2 id="lp-cn-judul" className="lp-cn-chip" aria-label="Kenali jenjangmu di Citra Negara">
-          Kenali jenjangmu di
+        <h2 id="lp-cn-judul" className="lp-cn-chip" aria-label={k.chipAria}>
+          {k.chip}
         </h2>
       </div>
 
@@ -72,37 +98,47 @@ export function JenjangStory({ daftar }: { daftar: PanelJenjang[] }) {
 
       <div className="lp-wadah lp-cn-teks">
         <div className="lp-cn-teks-isi">
-          <p className="lp-cn-label">Tiga jenjang, satu naungan</p>
-          <p className="lp-cn-paragraf">
-            Kenali setiap jenjang pendidikan dan temukan pilihan yang sesuai dengan rencana masa depanmu.
-          </p>
+          <p className="lp-cn-label">{k.label}</p>
+          <p className="lp-cn-paragraf">{k.paragraf}</p>
         </div>
       </div>
 
-      <ul className="lp-cn-kartu" aria-label="Jenjang pendidikan Citra Negara">
+      <ul className="lp-cn-kartu" aria-label={k.daftarAria}>
         {daftar.map(j => {
           const web = WEB_JENJANG[j.jenjang]
+          const { singkat, lengkap } = k.nama[j.jenjang]
           // Link kosong: <a> tanpa href — tetap bisa difokus & diklik, tapi
           // tidak berpindah halaman.
           const tautan = web
             ? { href: web, target: '_blank', rel: 'noopener noreferrer' }
             : { tabIndex: 0, 'aria-disabled': true }
           return (
-          <li key={j.jenjang} className="lp-cn-kartu-item">
-            <a {...tautan} className="lp-cn-kartu-tautan" aria-label={`Website ${j.label}`}>
+          <li key={j.jenjang} className="lp-cn-kartu-item" data-buka={buka === j.jenjang || undefined}>
+            <a
+              {...tautan}
+              className="lp-cn-kartu-tautan"
+              aria-label={k.website(lengkap)}
+              aria-expanded={hp ? buka === j.jenjang : undefined}
+              onClick={e => ketuk(e, j.jenjang)}
+            >
               <Image
                 src={GAMBAR_JENJANG[j.jenjang]}
                 alt=""
                 fill
-                sizes="(max-width: 900px) 34vw, 55vw"
+                sizes="(max-width: 767px) 100vw, (max-width: 900px) 34vw, 55vw"
                 style={{ objectFit: 'cover' }}
               />
               <span className="lp-cn-kartu-tirai" aria-hidden="true" />
-              <span className="lp-cn-kartu-atas" aria-hidden="true">{j.singkat}</span>
+              <span className="lp-cn-kartu-atas" aria-hidden="true">{singkat}</span>
+              {/* HP, kartu tertutup: nama di tengah, "+" di kanan. */}
+              <span className="lp-cn-kartu-baris" aria-hidden="true">
+                {lengkap}
+                <Plus size={30} strokeWidth={2} />
+              </span>
               <span className="lp-cn-kartu-bawah" aria-hidden="true">
                 <span className="lp-cn-kartu-plus"><Plus size={26} strokeWidth={2.4} /></span>
-                <span className="lp-cn-kartu-judul">{j.label}</span>
-                <span className="lp-cn-kartu-teks">{CERITA[j.jenjang].teks}</span>
+                <span className="lp-cn-kartu-judul">{lengkap}</span>
+                <span className="lp-cn-kartu-teks">{k.cerita[j.jenjang]}</span>
               </span>
               <span className="lp-cn-kartu-garis" aria-hidden="true" />
             </a>
@@ -115,13 +151,16 @@ export function JenjangStory({ daftar }: { daftar: PanelJenjang[] }) {
       <div className="lp-cn-pita" aria-hidden="true" />
 
       {/* Baris judul bab Alur SPMB: CN yang tadi menempel berhenti tepat di
-          sini, setinggi CN. Tujuan tautan #alur. */}
-      <div id="alur" className="lp-wadah lp-cn-akhir" />
+          sini, setinggi CN. Tujuan tautan #alur. Di HP (CN tidak menempel)
+          baris ini memuat CN-nya sendiri. */}
+      <div id="alur" className="lp-wadah lp-cn-akhir">
+        <span className="lp-cn-kata-akhir" aria-hidden="true">CN</span>
+      </div>
 
       {/* Kotak emas: mula-mula pita lebar di belakang CN, lalu menyusut
           sampai tepat menjadi kotak label "Alur SPMB" di bawah ini. */}
       <div className="lp-cn-emas" aria-hidden="true" />
-      <p className="lp-cn-chip lp-cn-chip--akhir">Alur SPMB</p>
+      <p className="lp-cn-chip lp-cn-chip--akhir">{k.alurChip}</p>
     </section>
   )
 }

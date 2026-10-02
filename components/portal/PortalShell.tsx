@@ -16,12 +16,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   Home, FileText, Wallet, FolderOpen, Lock,
-  Bell, User, LogOut, ChevronDown, Sun, Moon,
+  Bell, User, LogOut, ChevronDown,
 } from 'lucide-react';
 import HelpFloatingButton from './HelpFloatingButton';
 import LockedFeatureDialog from './LockedFeatureDialog';
 import { isAdminRole, normalizeRole } from '@/lib/permissions';
-import { useTema } from '@/components/TemaProvider';
 import { namaSekolah } from '@/lib/labels';
 import { perluLengkapiFormulir } from '@/lib/kelas';
 
@@ -42,7 +41,7 @@ export type Pendaftaran = {
   sudahDaftarUlang?: boolean; tanggalDaftarUlang?: string; catatanDaftarUlang?: string;
   createdAt: string;
   fileIjazah?: string; fileAkte?: string; fileKK?: string;
-  fileKtpOrtu?: string; fileKip?: string; fileFoto?: string;
+  fileKtpOrtu?: string; fileFoto?: string;
 };
 
 export type TagihanBreakdown = { hargaPokok: number; hargaTersedia: boolean; gelombangDiskonNominal: number; gelombangNama: string | null; diskonNominal: number; totalTagihan: number; locked: boolean };
@@ -183,8 +182,6 @@ export default function PortalShell({
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
-
-  const { tema, gantiTema } = useTema();
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -346,11 +343,6 @@ export default function PortalShell({
                   <Link href="/dashboard/profil" onClick={() => setAccountOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', color: 'var(--adm-text)', textDecoration: 'none', fontSize: 13, borderBottom: '1px solid var(--adm-border)' }}>
                     <User size={14} /> Profil
                   </Link>
-                  {/* Pendaftar juga bisa memilih tema terang/gelap, sama
-                      seperti ketiga peran admin. */}
-                  <button onClick={gantiTema} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', color: 'var(--adm-text)', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', borderBottom: '1px solid var(--adm-border)' }}>
-                    {tema === 'gelap' ? <Sun size={14} /> : <Moon size={14} />} Tema {tema === 'gelap' ? 'Terang' : 'Gelap'}
-                  </button>
                   <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', color: 'var(--adm-danger)', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
                     <LogOut size={14} /> Keluar
                   </button>
@@ -403,9 +395,6 @@ export default function PortalShell({
                 <Link href="/dashboard/profil" onClick={() => setAccountOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', color: 'var(--adm-text)', textDecoration: 'none', fontSize: 13, borderBottom: '1px solid var(--adm-border)' }}>
                   <User size={14} /> Profil
                 </Link>
-                <button onClick={gantiTema} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', color: 'var(--adm-text)', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', borderBottom: '1px solid var(--adm-border)' }}>
-                  {tema === 'gelap' ? <Sun size={14} /> : <Moon size={14} />} Tema {tema === 'gelap' ? 'Terang' : 'Gelap'}
-                </button>
                 <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', color: 'var(--adm-danger)', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
                   <LogOut size={14} /> Keluar
                 </button>
@@ -508,10 +497,7 @@ function NotifDropdown({ items, onNavigate }: { items: NotifDropdownItem[]; onNa
               {n.waktu && <div style={{ fontSize: 10.5, color: 'var(--adm-text-muted)', marginTop: 3 }}>{formatWaktuNotif(n.waktu)}</div>}
             </>
           );
-          // BUG lama: teks fixed abu-gelap di atas latar 'transparent' —
-          // saat panel ini ikut menjadi gelap (tema gelap), teks tetap
-          // gelap dan nyaris tidak terlihat. Latar & teks kini sama-sama
-          // token supaya berpindah tema bersamaan.
+          // Latar & teks sama-sama memakai token warna, bukan nilai tetap.
           const style: React.CSSProperties = { display: 'block', padding: '11px 14px', fontSize: 12.5, color: 'var(--adm-text)', textDecoration: 'none', borderBottom: i < items.length - 1 ? '1px solid var(--adm-border)' : 'none', lineHeight: 1.5, background: n.baru ? 'var(--adm-warning-weak)' : 'transparent' };
           return n.href
             ? <Link key={i} href={n.href} onClick={onNavigate} style={style}>{isi}</Link>

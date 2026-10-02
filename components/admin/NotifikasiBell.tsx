@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Bell, UserPlus, RefreshCw, Wallet, type LucideIcon } from 'lucide-react'
+import { Bell, UserPlus, RefreshCw, Wallet, Ticket, type LucideIcon } from 'lucide-react'
 import { useMuatData, ambilJson } from './useMuatData'
 
 // ---------------------------------------------------------------------------
@@ -28,6 +28,7 @@ type Notif = {
 
 const RUPA: Record<string, { ikon: LucideIcon; warna: string; latar: string }> = {
   pendaftar_baru: { ikon: UserPlus, warna: 'var(--adm-info)', latar: 'var(--adm-info-weak)' },
+  pra_pendaftaran_baru: { ikon: Ticket, warna: 'var(--adm-secondary)', latar: 'var(--adm-secondary-weak)' },
   revisi_masuk: { ikon: RefreshCw, warna: 'var(--adm-warning)', latar: 'var(--adm-warning-weak)' },
   pembayaran_perlu_verifikasi: { ikon: Wallet, warna: 'var(--adm-success)', latar: 'var(--adm-success-weak)' },
 }

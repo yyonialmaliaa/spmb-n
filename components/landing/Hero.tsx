@@ -3,9 +3,12 @@
 import Image from 'next/image'
 import { useRef, useState, useEffect } from 'react'
 import { useReducedMotion } from 'framer-motion'
-import { useGulirCss, useKeluar } from './gerak'
-import { NILAI_MANTAP } from './nilaiMantap'
+import { useGulirCss, useHp, useKeluar } from './gerak'
+import { NILAI_MANTAP, teksNilai } from './nilaiMantap'
 import { PanelNilai } from './PanelNilai'
+import { GoInternasional } from './GoInternasional'
+import { useBahasa } from './i18n/PenyediaBahasa'
+import { tandaiNama } from './i18n/namaDiri'
 
 /** Foto udara gedung sekolah. Foto ini juga yang membesar di akhir animasi
  *  pembuka (Pembuka.tsx) lalu "menjadi" latar hero — keduanya harus sama. */
@@ -18,22 +21,13 @@ export const VIDEO_HERO = '/videos/Video Project.mp4'
  *  zoom-nya di angka yang sama supaya serah terimanya tidak bergeser. */
 export const SKALA_HERO = 1.1
 
-type BahasaNilai = 'id' | 'en' | 'ja' | 'tr' | 'de' | 'ko'
-
-const DAFTAR_BAHASA: { key: BahasaNilai; label: string }[] = [
-  { key: 'id', label: 'Bahasa' },
-  { key: 'en', label: 'English' },
-  { key: 'ja', label: '日本語' },
-  { key: 'tr', label: 'Türkçe' },
-  { key: 'de', label: 'Deutsch' },
-  { key: 'ko', label: '한국어' },
-]
-
 /**
- * Hero setinggi satu layar penuh: video udara sekolah, lalu di tengah bawah
- * label SPMB (judul utama halaman) dan deret nilai sekolah (MANTAP) bersekat
- * garis tipis — komposisi khas situs sekolah internasional. Tiap nilai bisa
- * diklik untuk membuka panel foto + penjelasannya (PanelNilai).
+ * Hero setinggi satu layar penuh: video udara sekolah; di sisi kiri tulisan
+ * besar "Go Internasional" yang huruf "o"-nya cincin bendera pemilih bahasa
+ * (GoInternasional); di tengah bawah label SPMB (judul utama halaman) dan
+ * deret nilai sekolah (MANTAP) bersekat garis tipis — komposisi khas situs
+ * sekolah internasional. Tiap nilai bisa diklik untuk membuka panel foto +
+ * penjelasannya (PanelNilai).
  *
  * Transisi ke bab berikutnya ("Sebuah tempat") mengikuti posisi gulir, maju
  * maupun mundur: hero ikut tergulir naik seperti biasa, tetapi videonya
@@ -46,16 +40,25 @@ const DAFTAR_BAHASA: { key: BahasaNilai; label: string }[] = [
  * Browser yang belum mendukung animasi semacam itu memakai efek lama: video
  * sedikit mengecil dan teks naik memudar lewat useKeluar. Pengguna yang
  * meminta gerak dikurangi melihatnya diam.
+ *
+ * Di HP tidak ada efek gulir: video tampil melebar (16:9) di bawah navbar
+ * yang transparan, dan "Go Internasional", label, serta deret nilai pindah
+ * ke blok hijau tua di bawah video — memudar masuk tipis saat halaman
+ * dibuka (landing.css, blok "TAMPILAN HP").
  */
 export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
   const ref = useRef<HTMLElement | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const kurangiGerak = useReducedMotion()
   const gulirCss = useGulirCss()
-  const keluar = useKeluar(ref, !gulirCss)
+  const hp = useHp()
+  // Efek gulir lama (JS) hanya untuk browser tanpa animasi CSS berbasis gulir
+  // — dan tidak di HP.
+  const gulirJs = !gulirCss && !hp
+  const keluar = useKeluar(ref, gulirJs)
   const tombolNilai = useRef<(HTMLButtonElement | null)[]>([])
   const [nilaiAktif, setNilaiAktif] = useState<number | null>(null)
-  const [bahasaAktif, setBahasaAktif] = useState<BahasaNilai>('id')
+  const { bahasa, t } = useBahasa()
   // Panel baru dipasang begitu ada tanda minat (kursor mendekat / fokus /
   // sentuhan) — cukup awal untuk memuat fotonya sebelum diklik, tanpa
   // membebani pemuatan pertama halaman.
@@ -87,16 +90,9 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
   const skala = kurangiGerak ? 1 : SKALA_HERO - keluar * 0.1
   const naik = kurangiGerak ? 0 : keluar * 110
   const pudar = kurangiGerak ? 1 : Math.max(0, 1 - keluar * 1.6)
-  // Bila CSS yang menggerakkan, gaya inline tidak dipasang sama sekali.
-  const gayaMedia = gulirCss ? undefined : { transform: `scale(${skala})` }
-  const gayaIsi = gulirCss ? undefined : { transform: `translateY(${-naik}px)`, opacity: pudar }
-
-  const getNama = (index: number) => {
-    const nilai = NILAI_MANTAP[index]
-    if (bahasaAktif === 'id') return nilai.nama
-    const terjemahan = nilai.terjemahan?.[bahasaAktif as keyof typeof nilai.terjemahan]
-    return terjemahan?.nama || nilai.nama
-  }
+  // Bila CSS yang menggerakkan (atau di HP), gaya inline tidak dipasang sama sekali.
+  const gayaMedia = gulirJs ? { transform: `scale(${skala})` } : undefined
+  const gayaIsi = gulirJs ? { transform: `translateY(${-naik}px)`, opacity: pudar } : undefined
 
   return (
     <section ref={ref} className="lp-hero-panggung">
@@ -141,30 +137,24 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
         <div className="lp-hero-sisi lp-hero-sisi--bawah" aria-hidden="true" />
 
         <div className="lp-hero-isi" style={gayaIsi}>
-          <div className="lp-hero-tengah">
-            {/* Judul utama (h1) halaman — tampil sebagai label kecil. */}
-            <h1 className="lp-label lp-label--terang lp-hero-label">
-              SPMB SMP-SMA-SMK Citra Negara{tahunAjaran && <> · <span style={{ whiteSpace: 'nowrap' }}>TA {tahunAjaran}</span></>}
-            </h1>
+          {/* Ruang kosong di kiri antara navbar dan label: tulisan besar
+              "Go Internasional" — huruf "o"-nya pemilih bahasa. */}
+          <div className="lp-go-wadah">
+            <GoInternasional />
+          </div>
 
-            {/* Toggle bahasa */}
-            <div className="lp-hero-bahasa">
-              {DAFTAR_BAHASA.map(lang => (
-                <button
-                  key={lang.key}
-                  type="button"
-                  className={`lp-hero-bahasa-tombol ${bahasaAktif === lang.key ? 'is-aktif' : ''}`}
-                  onClick={() => setBahasaAktif(lang.key)}
-                >
-                  {lang.label}
-                </button>
-              ))}
-            </div>
+          <div className="lp-hero-tengah">
+            {/* Judul utama (h1) halaman — tampil sebagai label kecil. Kata-
+                katanya juga dipakai tirai pembuka (Pembuka.tsx), yang
+                menerbangkan tiap kata ke posisinya di sini. */}
+            <h1 className="lp-label lp-label--terang lp-hero-label">
+              {tandaiNama(t.label.judul)}{tahunAjaran && <> · <span style={{ whiteSpace: 'nowrap' }}>{t.label.tahun(tahunAjaran)}</span></>}
+            </h1>
 
             <div
               className="lp-hero-nilai"
               role="group"
-              aria-label="Nilai MANTAP Citra Negara"
+              aria-label={t.hero.nilaiAria}
               onPointerEnter={siapkan}
               onFocus={siapkan}
               onTouchStart={siapkan}
@@ -180,11 +170,8 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
                 >
                   {/* Teksnya dibungkus supaya yang terangkat saat disorot hanya
                       kata ini — sekat tegak (border tombol) tetap diam. */}
-                  <span 
-                    className="lp-hero-nilai-kata"
-                    key={`${i}-${bahasaAktif}`}
-                  >
-                    {getNama(i)}
+                  <span className="lp-hero-nilai-kata">
+                    {teksNilai(n, bahasa).nama}
                   </span>
                 </button>
               ))}
@@ -197,11 +184,10 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
           (panel akan tertimpa bab berikutnya), dan transform pada .lp-hero-isi
           membuat position:fixed milik keturunannya ikut bergeser. */}
       {panelSiap && (
-        <PanelNilai 
-          aktif={nilaiAktif} 
-          setAktif={setNilaiAktif} 
+        <PanelNilai
+          aktif={nilaiAktif}
+          setAktif={setNilaiAktif}
           asal={i => tombolNilai.current[i] ?? null}
-          bahasa={bahasaAktif}
         />
       )}
     </section>

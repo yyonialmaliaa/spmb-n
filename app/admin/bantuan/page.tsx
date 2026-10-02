@@ -26,6 +26,7 @@ const RANTAI = [
 
 const RESOURCE_LABEL: Partial<Record<Resource, string>> = {
   dashboard: 'Dashboard',
+  pra_pendaftaran: 'Pra-Pendaftaran',
   pendaftar: 'Pendaftar',
   verifikasi: 'Verifikasi',  
   status: 'Status SPMB',

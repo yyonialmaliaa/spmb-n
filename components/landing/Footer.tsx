@@ -7,15 +7,9 @@ import { usePathname } from 'next/navigation'
 import { ChevronsRight } from 'lucide-react'
 import { YAYASAN_INFO } from '@/lib/biaya'
 import { LOGO_BUSINESS_CENTRE } from './logoMitra'
+import { useBahasa } from './i18n/PenyediaBahasa'
 
-const BAGIAN = [
-  { id: 'tentang', label: 'Tentang' },
-  { id: 'jenjang', label: 'Jenjang' },
-  { id: 'alur', label: 'Alur SPMB' },
-  { id: 'jadwal', label: 'Jadwal' },
-  { id: 'biaya', label: 'Biaya' },
-  { id: 'persyaratan', label: 'Persyaratan' },
-]
+const BAGIAN = ['tentang', 'jenjang', 'alur', 'jadwal', 'biaya', 'persyaratan'] as const
 
 // Nomor WhatsApp sekolah (dari nomor telepon) — format wa.me: 62xxxxxxxxxx.
 const NOMOR_WA = '62' + YAYASAN_INFO.telp.replace(/\D/g, '').replace(/^0/, '')
@@ -82,6 +76,9 @@ export function Footer({ tahunAjaran }: { tahunAjaran: string | null }) {
   // /spmb, jadi di halaman lain (detail jenjang) tautannya harus balik ke
   // sana dulu (lihat komentar di Navigation.tsx).
   const diLandingUtama = usePathname() === '/spmb'
+  const { t } = useBahasa()
+  // Di footer, tautan bab alur memakai nama lengkapnya ("Alur SPMB").
+  const label = { ...t.nav.tautan, alur: t.footer.alur }
 
   return (
     <footer id="kontak" className="lp-footer">
@@ -103,28 +100,29 @@ export function Footer({ tahunAjaran }: { tahunAjaran: string | null }) {
               <a href={`tel:${YAYASAN_INFO.telp.replace(/\D/g, '')}`}>{YAYASAN_INFO.telp}</a>
               <a href={`mailto:${YAYASAN_INFO.email}`}>{YAYASAN_INFO.email}</a>
             </address>
-            <Link href="/register" className="lp-footer-tombol">
-              Daftar Sekarang
+            <Link href="/spmb/pra-pendaftaran" className="lp-footer-tombol">
+              {t.aksi.daftarSekarang}
               <ChevronsRight size={18} strokeWidth={2.4} aria-hidden="true" />
             </Link>
           </div>
 
-          <nav aria-label="Tautan halaman">
-            <h2 className="lp-footer-judul">Tautan</h2>
+          <nav aria-label={t.footer.tautanAria}>
+            <h2 className="lp-footer-judul">{t.footer.tautan}</h2>
             <ul className="lp-footer-tautan">
-              {BAGIAN.map(b => (
-                <li key={b.id}>
+              {BAGIAN.map(id => (
+                <li key={id}>
                   {diLandingUtama
-                    ? <a href={`#${b.id}`}>{b.label}</a>
-                    : <Link href={`/spmb#${b.id}`}>{b.label}</Link>}
+                    ? <a href={`#${id}`}>{label[id]}</a>
+                    : <Link href={`/spmb#${id}`}>{label[id]}</Link>}
                 </li>
               ))}
-              <li><Link href="/login">Masuk akun</Link></li>
+              <li><Link href="/register">{t.footer.daftarOnline}</Link></li>
+              <li><Link href="/login">{t.footer.masukAkun}</Link></li>
             </ul>
           </nav>
 
           <div>
-            <h2 className="lp-footer-judul">Terhubung</h2>
+            <h2 className="lp-footer-judul">{t.footer.terhubung}</h2>
             <ul className="lp-footer-sosial">
               {SOSIAL.map(s => (
                 <li key={s.kode}>
@@ -145,7 +143,7 @@ export function Footer({ tahunAjaran }: { tahunAjaran: string | null }) {
         </div>
 
         <p className="lp-footer-hak">
-          © {new Date().getFullYear()} Citra Negara{tahunAjaran ? ` · SPMB TA ${tahunAjaran}` : ''}
+          © {new Date().getFullYear()} Citra Negara{tahunAjaran ? ` · ${t.footer.hak(tahunAjaran)}` : ''}
           <span> · Website developed by Yoni Al&apos;fiani Amalia</span>
         </p>
       </div>
@@ -154,7 +152,7 @@ export function Footer({ tahunAjaran }: { tahunAjaran: string | null }) {
           atau diketuk (tabIndex supaya ketukan di HP memberi fokus). */}
       <div className="lp-footer-bc">
         <div className="lp-wadah">
-          <ul className="lp-footer-bc-deret" aria-label="Business centre Citra Negara">
+          <ul className="lp-footer-bc-deret" aria-label={t.footer.bcAria}>
             {LOGO_BUSINESS_CENTRE.map(l => (
               <li key={l.src} className="lp-footer-bc-logo" tabIndex={0}>
                 <Image src={l.src} alt={`Logo ${l.nama}`} width={l.w} height={l.h} sizes="140px" />

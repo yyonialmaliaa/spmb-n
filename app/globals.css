@@ -17,15 +17,15 @@ img[data-nimg] {
    TEMA SPMB — token warna bersama untuk SELURUH aplikasi.
    ===========================================================================
    Ditaruh di :root (bukan di .adm-root) supaya sisi admin DAN portal siswa
-   memakai palet yang sama, sehingga tombol "gelap/terang" satu kali diatur
-   berlaku di mana pun pengguna berada.
+   memakai palet yang sama.
 
    Arah desain: permukaan putih/kaca (glass) di atas latar netral, dengan
    hijau sebagai aksen. Navy gelap dipakai untuk teks & tombol utama supaya
    kontrasnya tinggi dan tidak melelahkan mata staf yang menatap layar lama.
 
-   Tema gelap diaktifkan lewat atribut data-tema="gelap" pada <html>, yang
-   dipasang skrip anti-kedip di app/layout.tsx sebelum halaman dilukis.
+   Situs ini hanya punya satu tema (terang). color-scheme: light menjaga
+   kontrol bawaan browser (kalender, scrollbar, autofill) tetap terang
+   walaupun perangkat pengunjung memakai mode gelap.
    =========================================================================== */
 
 :root {
@@ -105,86 +105,12 @@ img[data-nimg] {
   --adm-ungu-weak: #F5F3FF;
 }
 
-/* --------------------------------- TEMA GELAP --------------------------- */
-[data-tema='gelap'] {
-  color-scheme: dark;
-
-  --adm-bg: #0B1220;
-  --adm-bg-hias: radial-gradient(1200px 600px at 15% -5%, rgba(16,185,129,0.10), transparent 60%),
-                 radial-gradient(1000px 500px at 95% 0%, rgba(56,189,248,0.08), transparent 55%);
-  --adm-surface: #111A2B;
-  --adm-kaca: rgba(255, 255, 255, 0.05);
-  --adm-kaca-pekat: rgba(17, 26, 43, 0.86);
-  --adm-surface-alt: #162134;
-  --adm-border: rgba(255, 255, 255, 0.10);
-  --adm-border-strong: rgba(255, 255, 255, 0.20);
-
-  --adm-text: #E8EDF5;
-  --adm-text-muted: #94A3B8;
-  --adm-text-faint: #64748B;
-  --adm-text-invert: #0B1220;
-
-  /* Di tema gelap, tombol utama dibalik jadi terang supaya tetap paling
-     menonjol — persis peran "Inverted" di panduan gaya. */
-  --adm-primary: #E8EDF5;
-  --adm-primary-hover: #FFFFFF;
-  --adm-primary-weak: rgba(255, 255, 255, 0.08);
-  --adm-primary-border: rgba(255, 255, 255, 0.16);
-
-  --adm-secondary: #10B981;
-  --adm-secondary-hover: #34D399;
-  --adm-secondary-weak: rgba(16, 185, 129, 0.14);
-  --adm-secondary-border: rgba(16, 185, 129, 0.35);
-
-  --adm-tertiary: #38BDF8;
-  --adm-tertiary-weak: rgba(56, 189, 248, 0.13);
-
-  --adm-success: #10B981;
-  --adm-success-weak: rgba(16, 185, 129, 0.14);
-  --adm-success-border: rgba(16, 185, 129, 0.35);
-  --adm-warning: #FBBF24;
-  --adm-warning-weak: rgba(251, 191, 36, 0.14);
-  --adm-warning-border: rgba(251, 191, 36, 0.35);
-  --adm-danger: #F87171;
-  --adm-danger-weak: rgba(248, 113, 113, 0.14);
-  --adm-danger-border: rgba(248, 113, 113, 0.35);
-  --adm-info: #38BDF8;
-  --adm-info-weak: rgba(56, 189, 248, 0.13);
-  --adm-info-border: rgba(56, 189, 248, 0.35);
-  --adm-neutral-weak: rgba(255, 255, 255, 0.06);
-
-  --adm-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --adm-shadow-md: 0 6px 20px rgba(0, 0, 0, 0.45);
-  --adm-shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.6);
-
-  --peran-super: #A78BFA;
-  --peran-super-lembut: rgba(167, 139, 250, 0.14);
-  --peran-spmb: #34D399;
-  --peran-spmb-lembut: rgba(52, 211, 153, 0.14);
-  --peran-keuangan: #38BDF8;
-  --peran-keuangan-lembut: rgba(56, 189, 248, 0.14);
-
-  --adm-ungu: #A78BFA;
-  --adm-ungu-weak: rgba(167, 139, 250, 0.14);
-}
-
-/* Perpindahan tema tidak boleh terasa berkedip, tapi juga jangan
-   menganimasikan segalanya — cukup warna dasar. */
-@media (prefers-reduced-motion: no-preference) {
-  body, .adm-card, .adm-sidebar, .adm-topbar {
-    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
-  }
-}
-
 /* ===========================================================================
    SISI PUBLIK & PORTAL SISWA — dominan putih, aksen Citra Negara.
    ===========================================================================
    Sebelumnya halaman ini bertumpu pada hijau tua pekat + krem. Sekarang
    dasarnya putih bersih memakai token tema bersama di atas, sementara hijau
    dan emas dipertahankan sebagai AKSEN identitas — bukan lagi latar penuh.
-
-   Karena memakai token yang sama dengan area admin, mode gelap ikut berfungsi
-   di sini tanpa aturan tambahan.
    =========================================================================== */
 
 :root {
@@ -207,21 +133,6 @@ img[data-nimg] {
   --gray: #64748B;
   --gray-light: #F1F5F9;
   --navy: #0F172A;
-}
-
-[data-tema='gelap'] {
-  --cn-hijau: #2BB37C;
-  --cn-emas: #E0B255;
-  --cn-emas-terang: #EFC97A;
-  --primary-green: var(--cn-hijau);
-  --primary-green-dark: #0B1220;
-  --primary-green-light: #34D399;
-  --cream: #0B1220;
-  --cream-dark: #162134;
-  --white: #111A2B;
-  --gray: #94A3B8;
-  --gray-light: rgba(255, 255, 255, 0.06);
-  --navy: #E8EDF5;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }

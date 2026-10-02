@@ -21,12 +21,14 @@ import { JENJANG_SINGKAT, type Jenjang } from './labels'
 
 export type JenisNotifikasiAdmin =
   | 'pendaftar_baru'
+  | 'pra_pendaftaran_baru'
   | 'revisi_masuk'
   | 'pembayaran_perlu_verifikasi'
 
 /** Peran yang menjadi tujuan utama tiap jenis notifikasi. */
 export const PERAN_TUJUAN: Record<JenisNotifikasiAdmin, Exclude<Role, 'user' | 'super_admin'>> = {
   pendaftar_baru: 'admin_spmb',
+  pra_pendaftaran_baru: 'admin_spmb',
   revisi_masuk: 'admin_spmb',
   pembayaran_perlu_verifikasi: 'admin_keuangan',
 }
@@ -144,6 +146,31 @@ export function notifPendaftarOfflineSiapVerifikasi(p: {
     jenjang: p.jenjang,
     tahunAjaranId: p.tahunAjaranId,
     entitas: 'pendaftaran',
+    entitasId: p.id,
+  })
+}
+
+/** Calon peserta didik mengisi pra-pendaftaran tanpa akun dan akan datang ke sekolah. */
+export function notifPraPendaftaranBaru(p: {
+  id: string
+  noPraPendaftaran: string
+  namaLengkap: string
+  jenjang: string
+  tahunAjaranId: string
+  createdAt: Date
+}) {
+  const jj = labelJenjang(p.jenjang)
+  const tanggal = p.createdAt.toLocaleString('id-ID', {
+    timeZone: 'Asia/Jakarta', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  })
+  return kirimNotifikasiAdmin({
+    jenis: 'pra_pendaftaran_baru',
+    judul: 'Pra-Pendaftaran baru masuk',
+    pesan: `${p.namaLengkap}${jj ? ` — ${jj}` : ''} — ${p.noPraPendaftaran} · ${tanggal} WIB · Menunggu Kedatangan`,
+    tautan: `/admin/pra-pendaftaran/${p.id}?jenjang=${p.jenjang}`,
+    jenjang: p.jenjang,
+    tahunAjaranId: p.tahunAjaranId,
+    entitas: 'pra_pendaftaran',
     entitasId: p.id,
   })
 }

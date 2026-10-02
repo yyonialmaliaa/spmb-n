@@ -56,17 +56,18 @@ model AuditLog {
 }
 
 model TahunAjaran {
-  id              String               @id @default(cuid())
-  nama            String               @unique
-  aktif           Boolean              @default(false)
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
-  diskonList      Diskon[]
-  dokumenList     DokumenPersyaratan[]
-  gelombangList   Gelombang[]
-  hargaList       Harga[]
-  pendaftaranList Pendaftaran[]
-  pengaturan      PengaturanKeuangan?
+  id                 String               @id @default(cuid())
+  nama               String               @unique
+  aktif              Boolean              @default(false)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  diskonList         Diskon[]
+  dokumenList        DokumenPersyaratan[]
+  gelombangList      Gelombang[]
+  hargaList          Harga[]
+  pendaftaranList    Pendaftaran[]
+  pengaturan         PengaturanKeuangan?
+  praPendaftaranList PraPendaftaran[]
 }
 
 model Harga {
@@ -202,7 +203,6 @@ model Pendaftaran {
   fileAkte               String?
   fileKK                 String?
   fileKtpOrtu            String?
-  fileKip                String?
   fileFoto               String?
   status                 String            @default("draft")
   nilaiSeleksi           Float?
@@ -258,6 +258,7 @@ model Pendaftaran {
   notifikasiList         Notifikasi[]
   pembayaranList         Pembayaran[]
   mutasiList             MutasiPendaftar[]
+  praPendaftaran         PraPendaftaran?
   diskon                 Diskon?           @relation(fields: [diskonId], references: [id])
   gelombangRelasi        Gelombang?        @relation(fields: [gelombangId], references: [id])
   harga                  Harga?            @relation(fields: [hargaId], references: [id])
@@ -273,6 +274,52 @@ model Pendaftaran {
 // upsert, jadi aman dari duplikasi walau dua formulir disubmit bersamaan
 // persis di detik yang sama.
 model NomorUrutCounter {
+  id            String   @id @default(cuid())
+  tahunAjaranId String
+  jenjang       String
+  nilaiTerakhir Int      @default(0)
+  updatedAt     DateTime @updatedAt
+
+  @@unique([tahunAjaranId, jenjang])
+}
+
+// Antrean kedatangan tanpa akun; Pendaftaran resmi dibuat petugas lalu ditautkan lewat pendaftaranId.
+model PraPendaftaran {
+  id               String       @id @default(cuid())
+  noPraPendaftaran String       @unique
+  // Kunci publik halaman & PDF bukti — pendaftar tidak punya akun dan id tidak pernah dibuka ke publik.
+  tokenAkses       String       @unique
+  tahunAjaranId    String
+  jenjang          String
+  namaLengkap      String
+  email            String
+  noHp             String
+  asalSekolah      String
+  alamat           String
+  jurusan          String?
+  // menunggu | datang | diproses | selesai | kedaluwarsa
+  status           String       @default("menunggu")
+  batasKedatangan  DateTime
+  datangAt         DateTime?
+  dikonfirmasiOleh String?
+  diprosesAt       DateTime?
+  selesaiAt        DateTime?
+  pendaftaranId    String?      @unique
+  // Hash IP untuk pembatas kiriman berulang; IP mentah tidak disimpan.
+  ipHash           String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  tahunAjaran      TahunAjaran  @relation(fields: [tahunAjaranId], references: [id], onDelete: Cascade)
+  pendaftaran      Pendaftaran? @relation(fields: [pendaftaranId], references: [id], onDelete: SetNull)
+
+  @@index([tahunAjaranId, jenjang, status])
+  @@index([status, batasKedatangan])
+  @@index([ipHash, createdAt])
+  @@index([noHp])
+}
+
+// Terpisah dari NomorUrutCounter agar pra-pendaftaran tidak menghabiskan nomor urut pendaftaran resmi.
+model PraPendaftaranCounter {
   id            String   @id @default(cuid())
   tahunAjaranId String
   jenjang       String
@@ -351,7 +398,7 @@ model Notifikasi {
 // Dua kategori dalam satu tabel:
 //   kategori = "pendaftaran"  -> berkas yang WAJIB DIUNGGAH pendaftar.
 //              fieldKey memetakan baris ini ke kolom file di Pendaftaran
-//              (fileIjazah/fileAkte/fileKK/fileKtpOrtu/fileKip/fileFoto),
+//              (fileIjazah/fileAkte/fileKK/fileKtpOrtu/fileFoto),
 //              sehingga formulir siswa tidak perlu tabel sendiri.
 //   kategori = "daftar_ulang" -> template dokumen yang DIUNDUH pendaftar
 //              (tata tertib, surat pernyataan, surat perjanjian); di sini

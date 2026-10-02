@@ -58,8 +58,7 @@ const PERSYARATAN_PENDAFTARAN: { jenis: string; nama: string; fieldKey: string; 
   { jenis: 'akte', nama: 'Akte Kelahiran / Surat Keterangan Lahir', fieldKey: 'fileAkte', wajib: true },
   { jenis: 'kk', nama: 'Kartu Keluarga', fieldKey: 'fileKK', wajib: true },
   { jenis: 'ktp_ortu', nama: 'KTP Ayah dan Ibu', fieldKey: 'fileKtpOrtu', wajib: true },
-  { jenis: 'kip', nama: 'KIP/PKH/KKS/DTKS/SKTM (Jika Ada)', fieldKey: 'fileKip', wajib: false },
-  { jenis: 'foto', nama: 'Pas Photo Siswa Ukuran 3x4 (Kode Warna #0000FF)', fieldKey: 'fileFoto', wajib: true },
+  { jenis: 'foto', nama: 'Pas Photo Siswa Ukuran 3x4 (Kode Warna #FF0000 atau #0000FF)', fieldKey: 'fileFoto', wajib: true },
 ]
 
 async function main() {

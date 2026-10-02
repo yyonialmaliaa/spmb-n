@@ -29,6 +29,7 @@ const SECRET = new TextEncoder().encode(
 // Segmen pertama /admin/<segmen> -> resource pada matrix permission.
 // Segmen yang tidak terdaftar tidak digerbangi di sini (tetap dijaga API).
 const SECTION_RESOURCE: Record<string, Resource> = {
+  'pra-pendaftaran': 'pra_pendaftaran',
   pendaftar: 'pendaftar',
   verifikasi: 'verifikasi',
   status: 'status',

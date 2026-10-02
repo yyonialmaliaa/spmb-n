@@ -1,6 +1,9 @@
+'use client'
+
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
+import { useBahasa } from './i18n/PenyediaBahasa'
 
 /** Deret foto kegiatan di belakang kartu, kiri → kanan. Yang di tengah
  *  sebagian besar tertutup kartu, jadi foto-foto terkuat ada di kedua sisi. */
@@ -18,6 +21,15 @@ const DERET = [
 ]
 
 /**
+ * Frasa-frasa judul ("Temukan Potensi. ", "Kembangkan Diri. ", …), dipotong
+ * sesudah tanda baca beserta spasinya — jadi digabung lagi persis teks
+ * aslinya. Jepang/Korea memakai 、 dan koma, bukan titik.
+ */
+function frasa(judul: string) {
+  return judul.match(/[^.。、,]+[.。、,]?\s*/g) ?? [judul]
+}
+
+/**
  * Bab setelah hero: kartu hijau tua di tengah, di atas deretan foto kegiatan
  * yang lebih pendek dari kartunya (selebar layar, terpotong di kedua tepi).
  *
@@ -27,42 +39,43 @@ const DERET = [
  * judul, paragraf, lalu tombol yang tersingkap dari blur. Tanpa dukungan browser (atau bila
  * pengguna meminta gerak dikurangi) semuanya tampil diam dalam tata letak
  * yang sama.
+ *
+ * Di HP fotonya diam: enam foto pertama tersusun dua kolom di belakang
+ * kartu, yang tampak hanya tepi kiri & kanannya — kartu di tengah, frasa
+ * judulnya bertumpuk satu per baris (landing.css, blok "TAMPILAN HP").
  */
 export function Intro() {
+  const { t } = useBahasa()
   return (
     <section id="tentang" className="lp-intro" aria-labelledby="lp-intro-judul">
       <div className="lp-intro-deret" aria-hidden="true">
         {DERET.map(f => (
           <div key={f.src} className="lp-intro-foto">
-          <Image 
-  src={f.src} 
-  alt="" 
-  fill 
+          <Image
+  src={f.src}
+  alt=""
+  fill
   sizes="(max-width: 720px) 50vw, (max-width: 1024px) 23vw, 25vw"
   quality={100}
-  style={{ objectFit: 'cover' }} 
+  style={{ objectFit: 'cover' }}
 />
           </div>
         ))}
       </div>
 
       <div className="lp-intro-kartu">
-        <p className="lp-intro-label lp-intro-muncul">Citra Negara</p>
+        <p className="lp-intro-label lp-intro-muncul" lang="id">Citra Negara</p>
         <h2 id="lp-intro-judul" className="lp-intro-judul lp-intro-muncul">
-          Temukan Potensi. Kembangkan Diri. Raih Masa Depan.
+          {frasa(t.intro.judul).map((f, i) => (
+            <span key={i} className="lp-intro-frasa">{f}</span>
+          ))}
         </h2>
-        <p className="lp-intro-teks lp-intro-muncul">
-         Saatnya memilih lingkungan pendidikan yang mendukung langkah Anda untuk berkembang dan meraih cita-cita.
-        </p>
-        <p className="lp-intro-teks lp-intro-muncul">
-        Citra Negara menaungi SMP, SMA, dan SMK dengan lingkungan belajar yang mendorong peserta didik untuk berprestasi, berkarya, dan mempersiapkan diri menghadapi masa depan.
-        </p>
-         <p className="lp-intro-teks lp-intro-muncul">
-        Mari bergabung dan jadilah bagian dari keluarga besar Citra Negara.
-         </p>
-         
-        <Link href="/register" className="lp-intro-tombol">
-          Daftar Sekarang
+        {t.intro.paragraf.map(p => (
+          <p key={p} className="lp-intro-teks lp-intro-muncul">{p}</p>
+        ))}
+
+        <Link href="/spmb/pra-pendaftaran" className="lp-intro-tombol">
+          {t.aksi.daftarSekarang}
           <span className="lp-intro-tombol-panah" aria-hidden="true"><ArrowRight size={16} /></span>
         </Link>
       </div>

@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { CalendarDays, HelpCircle, LogOut } from 'lucide-react'
 import { NAMA_INSTITUSI, inisial } from '@/lib/labels'
 import { LABEL_ROLE, IDENTITAS_PERAN } from '@/lib/permissions'
-import { TemaToggle } from '@/components/TemaToggle'
 import { useAdmin } from './AdminProvider'
 
 // Header portal ala referensi: kotak inisial institusi, nama sistem, badge
@@ -58,8 +57,6 @@ export function PortalHeader({ badge }: { badge?: string }) {
           <span className="adm-chip">
             <CalendarDays size={13} /> {hariIni}
           </span>
-
-          <TemaToggle />
 
           <Link href="/admin/bantuan" className="adm-chip" style={{ textDecoration: 'none' }}>
             <HelpCircle size={13} /> Bantuan

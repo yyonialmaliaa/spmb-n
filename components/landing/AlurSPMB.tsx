@@ -2,19 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, UserPlus, Layers, ClipboardList, Upload, ShieldCheck, BellRing, type LucideIcon } from 'lucide-react'
+import { ArrowRight, ClipboardList, FileDown, FolderCheck, School, ShieldCheck, BadgeCheck, type LucideIcon } from 'lucide-react'
 import { Muncul, JudulBaris } from './gerak'
+import { useBahasa } from './i18n/PenyediaBahasa'
 
-// Enam langkah ini mencerminkan alur yang BENAR-BENAR dijalankan sistem —
-// urutannya sama dengan yang ditegakkan /api/pendaftaran dan /api/pendaftaran/kirim.
-const LANGKAH: { no: string; judul: string; teks: string; ikon: LucideIcon }[] = [
-  { no: '01', judul: 'Registrasi Akun', ikon: UserPlus, teks: 'Daftarkan email untuk membuat akun SPMB. Satu akun untuk satu calon peserta didik.' },
-  { no: '02', judul: 'Pilih Jenjang', ikon: Layers, teks: 'Tentukan SMP, SMA, atau SMK. Pilihan ini menentukan formulir dan persyaratan yang muncul.' },
-  { no: '03', judul: 'Lengkapi Formulir', ikon: ClipboardList, teks: 'Isi data diri, data orang tua, dan asal sekolah. Isian tersimpan otomatis, boleh dilanjutkan kapan saja.' },
-  { no: '04', judul: 'Unggah Dokumen', ikon: Upload, teks: 'Sertakan berkas persyaratan sesuai jenjang yang dipilih dalam format PDF atau gambar.' },
-  { no: '05', judul: 'Verifikasi', ikon: ShieldCheck, teks: 'Petugas memeriksa kelengkapan berkas dan keabsahan data yang dikirimkan.' },
-  { no: '06', judul: 'Lihat Status', ikon: BellRing, teks: 'Hasil pemeriksaan muncul di dashboard akun, lengkap dengan catatan bila ada yang perlu diperbaiki.' },
-]
+// Alur utama "Daftar Sekarang" (pra-pendaftaran); pendaftaran online dengan
+// akun tetap tersedia sebagai cadangan. Judul & teks tiap langkah ada di kamus
+// bahasa (alur.langkah), dengan urutan yang sama dengan ikon di bawah.
+const IKON: LucideIcon[] = [ClipboardList, FileDown, FolderCheck, School, ShieldCheck, BadgeCheck]
 
 /**
  * Alur pendaftaran sebagai cerita MENURUN.
@@ -30,6 +25,9 @@ const LANGKAH: { no: string; judul: string; teks: string; ikon: LucideIcon }[] =
 export function AlurSPMB() {
   const [aktif, setAktif] = useState(0)
   const wadah = useRef<HTMLOListElement | null>(null)
+  const { t } = useBahasa()
+  const langkah = t.alur.langkah
+  const nomor = (i: number) => String(i + 1).padStart(2, '0')
 
   useEffect(() => {
     const el = wadah.current
@@ -65,49 +63,52 @@ export function AlurSPMB() {
   return (
     // id "alur" & label "Alur SPMB" ada di judul "CN · Alur SPMB" tepat di
     // atas bab ini (JenjangStory.tsx), bukan di sini.
-    <section className="lp-bagian lp-alur" aria-label="Alur SPMB">
+    <section className="lp-bagian lp-alur" aria-label={t.jenjang.alurChip}>
       <div className="lp-wadah">
         <div className="lp-alur-grid">
           {/* Kepala menempel di tempatnya selagi langkah-langkahnya bergulir. */}
           <div className="lp-alur-kepala">
             <div>
-              <JudulBaris larik={['Memulai', 'langkahmu.']} className="lp-judul-besar" />
+              <JudulBaris larik={t.alur.judul} className="lp-judul-besar" />
             </div>
             <Muncul jeda={0.1}>
               <p className="lp-teks" style={{ marginTop: '1.2rem', maxWidth: '34ch' }}>
-                Enam langkah, seluruhnya daring. Tidak perlu datang ke sekolah
-                sampai berkasmu selesai diperiksa.
+                {t.alur.teks}
               </p>
             </Muncul>
 
             <Muncul jeda={0.16}>
               <div className="lp-alur-kemajuan" aria-hidden="true">
-                <span className="lp-alur-kemajuan-nomor">{LANGKAH[aktif].no}</span>
+                <span className="lp-alur-kemajuan-nomor">{nomor(aktif)}</span>
                 <span className="lp-alur-kemajuan-rel">
                   <span
                     className="lp-alur-kemajuan-isi"
-                    style={{ transform: `scaleX(${(aktif + 1) / LANGKAH.length})` }}
+                    style={{ transform: `scaleX(${(aktif + 1) / langkah.length})` }}
                   />
                 </span>
-                <span className="lp-alur-kemajuan-total">{String(LANGKAH.length).padStart(2, '0')}</span>
+                <span className="lp-alur-kemajuan-total">{String(langkah.length).padStart(2, '0')}</span>
               </div>
             </Muncul>
 
             <Muncul jeda={0.22}>
-              <Link href="/register" className="lp-tombol lp-tombol--utama" style={{ marginTop: '1.6rem' }}>
-                Mulai Pendaftaran <ArrowRight size={16} />
+              <Link href="/spmb/pra-pendaftaran" className="lp-tombol lp-tombol--utama" style={{ marginTop: '1.6rem' }}>
+                {t.aksi.mulaiPra} <ArrowRight size={16} />
               </Link>
+              <p className="lp-teks" style={{ marginTop: '1rem', fontSize: '0.88rem' }}>
+                {t.alur.lebihSuka}{' '}
+                <Link href="/register" className="lp-tautan" style={{ color: 'var(--lp-hijau)' }}>{t.aksi.daftarOnline}</Link>
+              </p>
             </Muncul>
           </div>
 
           {/* Garis waktu menurun. */}
           <ol className="lp-alur-daftar" ref={wadah}>
-            {LANGKAH.map((l, i) => {
-              const Ikon = l.ikon
+            {langkah.map((l, i) => {
+              const Ikon = IKON[i] ?? BadgeCheck
               const sudah = i <= aktif
               return (
                 <li
-                  key={l.no}
+                  key={i}
                   data-langkah={i}
                   className={`lp-alur-item${i === aktif ? ' is-aktif' : ''}${sudah ? ' is-lewat' : ''}`}
                 >
@@ -115,7 +116,7 @@ export function AlurSPMB() {
                     <Ikon size={16} />
                   </span>
                   <div className="lp-alur-isi">
-                    <span className="lp-alur-no">{l.no}</span>
+                    <span className="lp-alur-no">{nomor(i)}</span>
                     <h3 className="lp-alur-judul">{l.judul}</h3>
                     <p className="lp-alur-teks">{l.teks}</p>
                   </div>

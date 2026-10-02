@@ -11,6 +11,7 @@
  * sini — menambahkan jenjang ke sana hanya menghasilkan URL menyesatkan.
  */
 const JENJANG_AWARE = [
+  '/admin/pra-pendaftaran',
   '/admin/pendaftar',
   '/admin/verifikasi',
   '/admin/status',

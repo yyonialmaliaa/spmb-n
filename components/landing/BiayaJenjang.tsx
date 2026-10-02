@@ -104,7 +104,7 @@ export function BiayaJenjang({ data }: { data: DataJenjang }) {
               </span>
             </div>
 
-            <Link href="/register" className="lp-tombol lp-tombol--utama" style={{ marginTop: '2rem' }}>
+            <Link href="/spmb/pra-pendaftaran" className="lp-tombol lp-tombol--utama" style={{ marginTop: '2rem' }}>
               Daftar Sekarang <ArrowRight size={16} />
             </Link>
           </div>

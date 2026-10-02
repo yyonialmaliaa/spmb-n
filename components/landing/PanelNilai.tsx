@@ -3,7 +3,9 @@
 import Image from 'next/image'
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
-import { NILAI_MANTAP } from './nilaiMantap'
+import { NILAI_MANTAP, teksNilai } from './nilaiMantap'
+import { MEDIA_HP } from './gerak'
+import { useBahasa } from './i18n/PenyediaBahasa'
 
 const N = NILAI_MANTAP.length
 const EASE_KELUAR = 'cubic-bezier(0.22, 1, 0.36, 1)'
@@ -11,22 +13,8 @@ const EASE_SAPU = 'cubic-bezier(0.6, 0.05, 0.2, 1)'
 const EASE_BELAH = 'cubic-bezier(0.55, 0, 0.2, 1)'
 const EASE_KATUP = 'cubic-bezier(0.65, 0, 0.35, 1)'
 
-type BahasaNilai = 'id' | 'en' | 'ja' | 'tr' | 'de' | 'ko'
-
-const kurangiGerak = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
-function getTeksNilai(nilai: (typeof NILAI_MANTAP)[0], bahasa: BahasaNilai) {
-  if (bahasa === 'id') {
-    return { nama: nilai.nama, teks: nilai.teks }
-  }
-  
-  const terjemahan = nilai.terjemahan?.[bahasa as keyof typeof nilai.terjemahan]
-  if (!terjemahan) {
-    return { nama: nilai.nama, teks: nilai.teks }
-  }
-  
-  return terjemahan
-}
+/** Gerak sederhana (cukup memudar) — bila diminta pengguna, dan selalu di HP. */
+const kurangiGerak = () => window.matchMedia(`(prefers-reduced-motion: reduce), ${MEDIA_HP}`).matches
 
 /**
  * Panel penjelasan satu nilai MANTAP, dibuka dari deret nilai di hero.
@@ -43,6 +31,10 @@ function getTeksNilai(nilai: (typeof NILAI_MANTAP)[0], bahasa: BahasaNilai) {
  * supaya foto-fotonya sudah dimuat sebelum diklik; saat tertutup ia
  * tersembunyi dan `inert`.
  *
+ * Di HP panelnya lembar hijau tua selebar layar: foto melebar di atas, judul
+ * dan penjelasan di bawahnya; buka, tutup, dan pindah nilai cukup memudar /
+ * berganti langsung (landing.css, blok "TAMPILAN HP").
+ *
  * Buka/tutup SENGAJA hanya menganimasikan transform & opacity (dikerjakan
  * GPU): celah putihnya adalah elemen yang di-scaleX, bukan clip-path yang
  * harus digambar ulang di thread utama tiap bingkai, dan kunci gulirnya tidak
@@ -53,16 +45,14 @@ export function PanelNilai({
   aktif,
   setAktif,
   asal,
-  bahasa = 'id',
 }: {
   /** Indeks nilai yang tampil; null = tertutup. */
   aktif: number | null
   setAktif: (i: number | null) => void
   /** Tombol nilai di hero — fokus keyboard kembali ke sini saat ditutup. */
   asal: (i: number) => HTMLElement | null
-  /** Bahasa yang aktif */
-  bahasa?: BahasaNilai
 }) {
+  const { bahasa, t } = useBahasa()
   const akarRef = useRef<HTMLDivElement | null>(null)
   const panelRef = useRef<HTMLDivElement | null>(null)
   const isiRef = useRef<HTMLDivElement | null>(null)
@@ -79,8 +69,7 @@ export function PanelNilai({
 
   const terbuka = aktif !== null
   const i = aktif ?? 0
-  const nilai = NILAI_MANTAP[i]
-  const { nama, teks } = getTeksNilai(nilai, bahasa)
+  const { nama, teks } = teksNilai(NILAI_MANTAP[i], bahasa)
 
   const jalan = (el: Element | null | undefined, kf: Keyframe[], opsi: KeyframeAnimationOptions) => {
     if (!el) return null
@@ -311,18 +300,18 @@ export function PanelNilai({
         <span className="lp-nilai-garis" aria-hidden="true" />
         <span className="lp-nilai-merek">
           <Image src="/images/logo-yatkj.png" alt="" width={900} height={362} />
-          <span>Citra Negara</span>
+          <span lang="id">Citra Negara</span>
         </span>
         <span className="lp-nilai-garis" aria-hidden="true" />
       </div>
-      <button ref={tutupRef} type="button" className="lp-nilai-tutup lp-nilai-bingkai" onClick={() => tutup()} aria-label="Tutup penjelasan nilai">
+      <button ref={tutupRef} type="button" className="lp-nilai-tutup lp-nilai-bingkai" onClick={() => tutup()} aria-label={t.panelNilai.tutup}>
         <X size={30} strokeWidth={1.8} />
       </button>
 
-      <button type="button" className="lp-nilai-panah lp-nilai-panah--kiri lp-nilai-bingkai" onClick={() => geser(-1)} aria-label="Nilai sebelumnya">
+      <button type="button" className="lp-nilai-panah lp-nilai-panah--kiri lp-nilai-bingkai" onClick={() => geser(-1)} aria-label={t.panelNilai.sebelumnya}>
         <ChevronLeft size={22} />
       </button>
-      <button type="button" className="lp-nilai-panah lp-nilai-panah--kanan lp-nilai-bingkai" onClick={() => geser(1)} aria-label="Nilai berikutnya">
+      <button type="button" className="lp-nilai-panah lp-nilai-panah--kanan lp-nilai-bingkai" onClick={() => geser(1)} aria-label={t.panelNilai.berikutnya}>
         <ChevronRight size={22} />
       </button>
     </div>

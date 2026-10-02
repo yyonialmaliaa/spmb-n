@@ -3,7 +3,7 @@ import { requirePermission } from '@/lib/adminSession'
 import { catatAudit, bedanya } from '@/lib/audit'
 import { prisma } from '@/lib/db'
 
-const FIELD_SAH = ['fileIjazah', 'fileAkte', 'fileKK', 'fileKtpOrtu', 'fileKip', 'fileFoto']
+const FIELD_SAH = ['fileIjazah', 'fileAkte', 'fileKK', 'fileKtpOrtu', 'fileFoto']
 
 // PUT — ubah nama/deskripsi/wajib/aktif/urutan/fieldKey satu persyaratan.
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {

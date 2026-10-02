@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { FOTO_HERO } from "./Hero";
+import { MEDIA_HP } from "./gerak";
+import { useBahasa } from "./i18n/PenyediaBahasa";
 
 // Video hero sebagai latar zoom pembuka
 const VIDEO_HERO = '/videos/Video Project.mp4'
@@ -28,10 +30,23 @@ const VIDEO_HERO = '/videos/Video Project.mp4'
 // Tirai ini ikut dirender di server: judulnya harus jadi hal PERTAMA yang
 // terlihat, bukan muncul setelah hero sempat tampil. Sesi yang sudah pernah
 // melihatnya, kunjungan yang langsung menuju bagian tertentu (#jadwal, dst.),
-// dan pengguna yang meminta gerak dikurangi tidak melihatnya sama sekali —
-// lihat SKRIP_PEMBUKA di app/layout.tsx dan landing.css. Bisa dilewati kapan
-// saja dengan tombol apa pun, klik/sentuh, atau gulir.
+// pengguna yang meminta gerak dikurangi, dan tampilan HP tidak melihatnya
+// sama sekali — lihat SKRIP_PEMBUKA di app/layout.tsx dan landing.css. Bisa
+// dilewati kapan saja dengan tombol apa pun, klik/sentuh, atau gulir.
+//
+// Kunjungan yang dilewatkan ditandai data-pembuka="lewat" di <html> sejak
+// sebelum halaman tergambar: CSS menyembunyikan tirainya, lalu komponen ini
+// mencopotnya dari DOM setelah hydration. Di HP videonya (sumber ber-media)
+// bahkan tidak diunduh.
 // ---------------------------------------------------------------------------
+
+/** Video tirai hanya untuk layar yang memang memutar tirainya (bukan HP). */
+const MEDIA_VIDEO = "(min-width: 768px)";
+
+const tanpaLangganan = () => () => {};
+/** Penanda dipasang sebelum hydration (SKRIP_PEMBUKA) atau bersamaan dengan
+ *  setSelesai, jadi tidak perlu diawasi perubahannya. */
+const sudahLewat = () => document.documentElement.dataset.pembuka === "lewat";
 
 /** Deret foto/video kiri → kanan. */
 const DERET = [
@@ -104,12 +119,21 @@ export function Pembuka({ tahunAjaran }: { tahunAjaran: string | null }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [selesai, setSelesai] = useState(false);
   const [videoGagal, setVideoGagal] = useState(false);
+  const lewat = useSyncExternalStore(tanpaLangganan, sudahLewat, () => false);
+  // Kata-kata judul harus sama dengan label hero (bahasa yang sama) supaya
+  // tiap kata bisa diterbangkan ke posisinya di sana.
+  const { t } = useBahasa();
 
   useEffect(() => {
     const akar = ref.current;
     const html = document.documentElement;
     if (!akar || html.dataset.pembuka === "lewat") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // Cadangan bila skrip di <head> tidak sempat menandai tampilan HP.
+    if (window.matchMedia(MEDIA_HP).matches) {
+      html.dataset.pembuka = "lewat";
+      return;
+    }
     // React datang sangat terlambat dan jaring pengaman CSS sudah
     // menyingkirkan tirainya sendiri — jangan dimunculkan lagi.
     const gaya = getComputedStyle(akar);
@@ -525,7 +549,7 @@ export function Pembuka({ tahunAjaran }: { tahunAjaran: string | null }) {
     };
   }, []);
 
-  if (selesai) return null;
+  if (selesai || lewat) return null;
 
   return (
     // Murni dekorasi: isinya sudah ada di halaman, jadi pembaca layar tidak
@@ -533,11 +557,11 @@ export function Pembuka({ tahunAjaran }: { tahunAjaran: string | null }) {
     <div ref={ref} className="lp-pembuka" aria-hidden="true">
       <div className="lp-pembuka-judul">
         <span className="lp-pembuka-baris">
-          <Kata teks="SPMB SMP-SMA-SMK Citra Negara" />
+          <Kata teks={t.label.judul} />
         </span>
         {tahunAjaran && (
           <span className="lp-pembuka-baris lp-pembuka-baris--dua">
-            <Kata teks={`TA ${tahunAjaran}`} />
+            <Kata teks={t.label.tahun(tahunAjaran)} />
           </span>
         )}
       </div>
@@ -567,7 +591,7 @@ export function Pembuka({ tahunAjaran }: { tahunAjaran: string | null }) {
                     display: "block" 
                   }}
                 >
-                  <source src={src} type="video/mp4" />
+                  <source src={src} type="video/mp4" media={MEDIA_VIDEO} />
                 </video>
               ) : (
                 <Image
@@ -598,7 +622,7 @@ export function Pembuka({ tahunAjaran }: { tahunAjaran: string | null }) {
               onError={() => setVideoGagal(true)}
               style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
             >
-              <source src={VIDEO_HERO} type="video/mp4" />
+              <source src={VIDEO_HERO} type="video/mp4" media={MEDIA_VIDEO} />
             </video>
           ) : (
             <Image

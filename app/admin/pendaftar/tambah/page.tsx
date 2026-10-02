@@ -17,13 +17,12 @@ const PENDIDIKAN_OPTIONS = ['Belum/Tidak Sekolah', 'SD/MI', 'SMP/MTs', 'SMA/SMK'
 
 type FileItem = { file: File | null; path: string; uploading: boolean; error: string };
 const emptyFile = (path = ''): FileItem => ({ file: null, path, uploading: false, error: '' });
-type FilesState = { ijazah: FileItem; akte: FileItem; kk: FileItem; ktpOrtu: FileItem; kip: FileItem; foto: FileItem };
+type FilesState = { ijazah: FileItem; akte: FileItem; kk: FileItem; ktpOrtu: FileItem; foto: FileItem };
 const FILE_FIELDS: { key: keyof FilesState; label: string; dbField: string }[] = [
   { key: 'ijazah', label: 'Ijazah atau Surat Keterangan Lulus (SKL)', dbField: 'fileIjazah' },
   { key: 'akte', label: 'Akte Kelahiran / Surat Keterangan Lahir', dbField: 'fileAkte' },
   { key: 'kk', label: 'Kartu Keluarga', dbField: 'fileKK' },
   { key: 'ktpOrtu', label: 'KTP Ayah dan Ibu', dbField: 'fileKtpOrtu' },
-  { key: 'kip', label: 'Kartu KIP (Jika Ada)', dbField: 'fileKip' },
   { key: 'foto', label: 'Pas Photo Siswa Ukuran 3x4', dbField: 'fileFoto' },
 ];
 
@@ -50,10 +49,13 @@ export default function TambahPendaftarOfflinePage() {
   );
 }
 
+type PraAsal = { id: string; noPraPendaftaran: string; email: string };
+
 function TambahPendaftarOfflineInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const idParam = searchParams.get('id');
+  const praParam = idParam ? null : searchParams.get('pra');
   const tahunAjaranId = searchParams.get('tahunAjaranId') || '';
 
   const { jenjang: jenjangKonteks, href } = useAdmin();
@@ -67,9 +69,11 @@ function TambahPendaftarOfflineInner() {
   const [punyaWali, setPunyaWali] = useState(false);
   const [hasAccount, setHasAccount] = useState(false);
   const [accountEmail, setAccountEmail] = useState('');
-  const [loadingData, setLoadingData] = useState(!!idParam);
+  const [loadingData, setLoadingData] = useState(!!idParam || !!praParam);
+  const [praAsal, setPraAsal] = useState<PraAsal | null>(null);
+  const [galatPra, setGalatPra] = useState('');
   const [files, setFiles] = useState<FilesState>({
-    ijazah: emptyFile(), akte: emptyFile(), kk: emptyFile(), ktpOrtu: emptyFile(), kip: emptyFile(), foto: emptyFile(),
+    ijazah: emptyFile(), akte: emptyFile(), kk: emptyFile(), ktpOrtu: emptyFile(), foto: emptyFile(),
   });
   const [loading, setLoading] = useState(false);
   const [hargaOptions, setHargaOptions] = useState<HargaRow[]>([]);
@@ -107,13 +111,35 @@ function TambahPendaftarOfflineInner() {
       });
       setFiles({
         ijazah: emptyFile(rec.fileIjazah || ''), akte: emptyFile(rec.fileAkte || ''), kk: emptyFile(rec.fileKK || ''),
-        ktpOrtu: emptyFile(rec.fileKtpOrtu || ''), kip: emptyFile(rec.fileKip || ''), foto: emptyFile(rec.fileFoto || ''),
+        ktpOrtu: emptyFile(rec.fileKtpOrtu || ''), foto: emptyFile(rec.fileFoto || ''),
       });
       if (rec.namaWali) setPunyaWali(true);
       if (rec.userId) { setHasAccount(true); setAccountEmail(rec.userEmail || rec.user?.email || ''); }
       setLoadingData(false);
     });
   }, [idParam]);
+
+  // Data awal dari pra-pendaftaran: petugas tidak perlu mengetik ulang yang sudah diisi pendaftar.
+  useEffect(() => {
+    if (!praParam) return;
+    fetch(`/api/admin/pra-pendaftaran/${praParam}`).then(async r => {
+      const d = await r.json();
+      if (!r.ok || !d.data) { setGalatPra(d.error || 'Data pra-pendaftaran tidak ditemukan.'); return; }
+      const pra = d.data;
+      const jj = (['smp', 'sma', 'smk'].includes(pra.jenjang) ? pra.jenjang : 'smk') as Jenjang;
+      setJenjang(jj);
+      setPraAsal({ id: pra.id, noPraPendaftaran: pra.noPraPendaftaran, email: pra.email });
+      if (pra.pendaftaranId) setGalatPra('Pra-pendaftaran ini sudah diproses menjadi pendaftaran resmi.');
+      else if (pra.status !== 'datang' && pra.status !== 'diproses') setGalatPra('Konfirmasi kedatangan calon peserta didik terlebih dahulu di halaman Pra-Pendaftaran.');
+      setForm(f => ({
+        ...f,
+        namaLengkap: pra.namaLengkap || '',
+        alamat: pra.alamat || '',
+        noPribadi: pra.noHp || '',
+        ...(jj === 'smp' ? { asalSD: pra.asalSekolah || '' } : { asalSMP: pra.asalSekolah || '' }),
+      }));
+    }).catch(() => setGalatPra('Gagal memuat data pra-pendaftaran.')).finally(() => setLoadingData(false));
+  }, [praParam]);
 
   // Jurusan/kelas SELALU dari Panel Harga admin (/api/harga) — tidak ada
   // daftar jurusan/kelas hardcoded di formulir offline ini.
@@ -194,6 +220,7 @@ function TambahPendaftarOfflineInner() {
     }
     if (form.password && form.password.length < 8) { alert('⚠ Password minimal 8 karakter'); return; }
     if (form.nik && form.nik.length !== 16) { alert('⚠ NIK harus 16 digit kalau diisi'); return; }
+    if (praParam && (!praAsal || galatPra)) { alert(`⚠ ${galatPra || 'Data pra-pendaftaran belum termuat'}`); return; }
 
     setLoading(true);
     try {
@@ -229,7 +256,7 @@ function TambahPendaftarOfflineInner() {
         namaOrtu: form.namaAyah || form.namaIbu || (punyaWali ? form.namaWali : '') || null,
         noOrtu: form.noHpAyah || form.noHpIbu || (punyaWali ? form.noHpWali : '') || null,
         fileIjazah: files.ijazah.path || null, fileAkte: files.akte.path || null, fileKK: files.kk.path || null,
-        fileKtpOrtu: files.ktpOrtu.path || null, fileKip: files.kip.path || null, fileFoto: files.foto.path || null,
+        fileKtpOrtu: files.ktpOrtu.path || null, fileFoto: files.foto.path || null,
       };
 
       let currentId = pendaftaranId;
@@ -245,7 +272,7 @@ function TambahPendaftarOfflineInner() {
         const res = await fetch('/api/admin/pendaftar-offline', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...payload, jenjang, tahunAjaranId: tahunAjaranId || undefined }),
+          body: JSON.stringify({ ...payload, jenjang, tahunAjaranId: tahunAjaranId || undefined, praPendaftaranId: praAsal?.id }),
         });
         const d = await res.json();
         if (!res.ok) { alert(`❌ ${d.error || 'Gagal menyimpan data'}`); setLoading(false); return; }
@@ -256,7 +283,9 @@ function TambahPendaftarOfflineInner() {
 
       // Akun login dibuat terpisah (section C) — hanya kalau admin mengisi
       // email & password DAN pendaftar ini belum punya akun.
-      let pesanSukses = '✅ Data formulir tersimpan.';
+      let pesanSukses = praAsal
+        ? `✅ Pendaftaran resmi dibuat dari ${praAsal.noPraPendaftaran}. Status pra-pendaftaran kini Selesai.`
+        : '✅ Data formulir tersimpan.';
       if (form.email && form.password && !hasAccount && currentId) {
         const resAkun = await fetch(`/api/admin/pendaftar-offline/${currentId}/buat-akun`, {
           method: 'POST',
@@ -328,15 +357,20 @@ function TambahPendaftarOfflineInner() {
           (navy pekat) tidak dipakai lagi sebagai latar header. */}
       <header style={{ background: 'var(--adm-surface)', borderBottom: '1px solid var(--adm-border)', padding: '18px 24px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
-          <Link href={href('/admin/pendaftar/offline', { jenjang })} style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--adm-text-muted)', fontSize: 12, textDecoration: 'none', marginBottom: 10, width: 'fit-content' }}>
+          <Link href={praParam ? href(`/admin/pra-pendaftaran/${praParam}`, { jenjang }) : href('/admin/pendaftar/offline', { jenjang })} style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--adm-text-muted)', fontSize: 12, textDecoration: 'none', marginBottom: 10, width: 'fit-content' }}>
             <ChevronLeft size={14} /> Kembali
           </Link>
-          <h1 style={{ color: 'var(--adm-text)', fontSize: 18, fontWeight: 700 }}>{pendaftaranId ? 'Lanjutkan Formulir Offline' : 'Tambah Pendaftar Offline'} — {jenjang.toUpperCase()}</h1>
+          <h1 style={{ color: 'var(--adm-text)', fontSize: 18, fontWeight: 700 }}>{pendaftaranId ? 'Lanjutkan Formulir Offline' : praParam ? 'Proses Pra-Pendaftaran' : 'Tambah Pendaftar Offline'} — {jenjang.toUpperCase()}</h1>
           <p style={{ color: 'var(--adm-text-muted)', fontSize: 12 }}>Untuk siswa yang mendaftar langsung di sekolah. Boleh disimpan sekalipun belum lengkap — bisa dilanjutkan kapan saja.</p>
         </div>
       </header>
 
       <div style={{ maxWidth: 800, margin: '0 auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {praParam && (
+          <div className={`adm-banner adm-banner--${galatPra ? 'warning' : 'info'}`}>
+            {galatPra || `Data awal diambil dari Pra-Pendaftaran ${praAsal?.noPraPendaftaran ?? ''}. Lengkapi sisanya lalu klik Simpan: nomor pendaftaran resmi diterbitkan dan status pra-pendaftaran menjadi Selesai.`}
+          </div>
+        )}
         <div style={{ background: 'var(--adm-surface)', borderRadius: 14, padding: 20, border: '1px solid var(--adm-border)' }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--adm-text)', marginBottom: 4 }}>Akun Login Siswa</h3>
           {hasAccount ? (
@@ -347,7 +381,17 @@ function TambahPendaftarOfflineInner() {
             <>
               <p style={{ fontSize: 12, color: 'var(--adm-text-faint)', marginBottom: 14 }}>Opsional — isi kalau ingin langsung membuatkan akun supaya pendaftar bisa lanjut isi dari rumah. Boleh dikosongkan dan dibuat belakangan.</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
-                <div><label style={lbl}>Email</label><input style={inp} type="email" value={form.email} onChange={set('email')} placeholder="email@contoh.com" /></div>
+                <div>
+                  <label style={lbl}>Email</label><input style={inp} type="email" value={form.email} onChange={set('email')} placeholder="email@contoh.com" />
+                  {praAsal?.email && form.email !== praAsal.email && (
+                    <p style={{ fontSize: 11.5, color: 'var(--adm-text-muted)', marginTop: 5 }}>
+                      Email pra-pendaftaran: <strong>{praAsal.email}</strong>{' '}
+                      <button type="button" onClick={() => setForm(f => ({ ...f, email: praAsal.email }))} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--adm-secondary)', fontWeight: 650, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5 }}>
+                        Pakai
+                      </button>
+                    </p>
+                  )}
+                </div>
                 <div><label style={lbl}>Password</label><input style={inp} value={form.password} onChange={set('password')} placeholder="Minimal 8 karakter" /></div>
               </div>
             </>

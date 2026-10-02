@@ -1,14 +1,17 @@
 'use client'
 
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type TouchEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type TouchEvent } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { Muncul } from './gerak'
-import { formatRupiah } from '@/lib/pembayaran-utils'
-import { rentangTanggal } from '@/lib/tanggal'
 import type { BarisHarga, BarisJadwal, DataJenjang } from '@/lib/landing'
 import type { Jenjang } from '@/lib/labels'
+import { useBahasa } from './i18n/PenyediaBahasa'
+import { bisaKonversi, formatTanggal, formatUang, type Bahasa, type Kurs } from './i18n/bahasa'
+import { namaGelombang, namaJurusan, tipeKelasLokal } from './i18n/data'
+import type { Kamus } from './i18n/kamus'
+import { tandaiNama } from './i18n/namaDiri'
 
 /**
  * Jadwal & Biaya — satu bab untuk dua pertanyaan yang selalu datang
@@ -23,15 +26,20 @@ import type { Jenjang } from '@/lib/labels'
  * Berpindah tab hanya mengganti atribut data-keadaan (kiri/aktif/kanan), jadi
  * seluruh transisinya CSS (transform & opacity) dan ketiga fotonya sudah
  * termuat sebelum diklik. Semua angka tetap dari data admin (lib/landing.ts).
+ *
+ * Nama jenjang (tab, tulisan raksasa, label) mengikuti bahasa aktif lewat
+ * kamus (jenjang.nama). Di bahasa selain Indonesia biayanya dikonversi ke
+ * mata uang negara bahasa itu dengan `kurs` (lib/kurs.ts), disertai catatan
+ * tanggal kurs dan bahwa pembayarannya tetap rupiah.
  */
 
-/** Foto tanpa latar per jenjang. */
-const POTRET: Record<Jenjang, { src: string; alt: string; skala: number }> = {
-  smp: { src: '/images/talent-34.png', alt: 'Peserta didik SMP Citra Negara berseragam sekolah', skala: 1 },
-  sma: { src: '/images/sma-7.png', alt: 'Peserta didik SMA Citra Negara berseragam sekolah', skala: 1 },
+/** Foto tanpa latar per jenjang (teks alternatifnya dari kamus: jb.potretAlt). */
+const POTRET: Record<Jenjang, { src: string; skala: number }> = {
+  smp: { src: '/images/talent-34.png', skala: 1 },
+  sma: { src: '/images/sma-7.png', skala: 1 },
   // Foto SMK diambil lebih dekat (kepalanya lebih besar dan lebih tinggi di
   // bingkai) — diperkecil sedikit supaya sejajar dengan dua foto lainnya.
-  smk: { src: '/images/talent-567.png', alt: 'Peserta didik SMK Citra Negara berseragam sekolah', skala: 0.9 },
+  smk: { src: '/images/talent-567.png', skala: 0.9 },
 }
 
 /** Kemiringan & geseran tiap catatan dalam satu tumpukan — sengaja tidak seragam. */
@@ -135,11 +143,60 @@ function useMasuk<T extends HTMLElement>(ambang: number, kunci: unknown) {
   return { ref, masuk }
 }
 
-function rentangRupiah(dari: number, sampai: number) {
-  return dari === sampai ? formatRupiah(dari) : `${formatRupiah(dari)} – ${sampai.toLocaleString('id-ID')}`
+function rentangUang(dari: number, sampai: number, b: Bahasa, kurs: Kurs | null) {
+  const awal = formatUang(dari, b, kurs)
+  if (dari === sampai) return awal
+  if (b === 'id') return `${awal} – ${sampai.toLocaleString('id-ID')}`
+  // Setelah dibulatkan, dua nominal yang berdekatan bisa jadi sama.
+  const akhir = formatUang(sampai, b, kurs)
+  return awal === akhir ? awal : `${awal} – ${akhir}`
+}
+
+/**
+ * Nama jenjang raksasa di belakang foto. Di bahasa lain namanya bisa jauh
+ * lebih panjang dari "SMP" ("Berufsoberschule"), jadi hurufnya diperkecil
+ * seperlunya (--muat, landing.css) supaya tetap muat selebar adegannya.
+ */
+function TandaJenjang({ teks }: { teks: string }) {
+  const ref = useRef<HTMLSpanElement | null>(null)
+  useLayoutEffect(() => {
+    const el = ref.current
+    const wadah = el?.parentElement
+    if (!el || !wadah) return
+    let aktif = true
+    const ukur = () => {
+      if (!aktif) return
+      el.style.removeProperty('--muat')
+      const lebar = el.offsetWidth
+      const ruang = wadah.clientWidth * 0.96
+      if (lebar > ruang) el.style.setProperty('--muat', (ruang / lebar).toFixed(3))
+    }
+    ukur()
+    // Lebar adegan berubah (putar layar, ubah ukuran jendela) atau font
+    // selesai dimuat → ukur ulang.
+    const ro = new ResizeObserver(ukur)
+    ro.observe(wadah)
+    document.fonts.ready.then(ukur)
+    return () => {
+      aktif = false
+      ro.disconnect()
+    }
+  }, [teks])
+  return <span ref={ref} className="lp-jb-tanda" aria-hidden="true">{teks}</span>
+}
+
+/** "12 Jan 2026 — 31 Mar 2026" dalam bahasa aktif, atau kalimat penggantinya. */
+function rentangTanggal(mulai: string | null, selesai: string | null, b: Bahasa, t: Kamus) {
+  const awal = formatTanggal(mulai, b)
+  const akhir = formatTanggal(selesai, b)
+  if (awal && akhir) return `${awal} — ${akhir}`
+  if (awal) return t.tanggal.mulai(awal)
+  if (akhir) return t.tanggal.sampai(akhir)
+  return t.jb.jadwalMenyusul
 }
 
 function Catatan({ g, k, i, kanan }: { g: BarisJadwal; k: number; i: number; kanan?: boolean }) {
+  const { bahasa, t } = useBahasa()
   // Tumpukan kanan dicerminkan: miring dan geserannya berlawanan arah.
   const geser = GESER[i % GESER.length]
   const gaya = {
@@ -153,18 +210,18 @@ function Catatan({ g, k, i, kanan }: { g: BarisJadwal; k: number; i: number; kan
         {g.aktif && (
           <p className="lp-jb-status">
             <span className="lp-jb-titik" aria-hidden="true" />
-            Sedang berjalan
+            {t.jb.sedangBerjalan}
           </p>
         )}
-        <h3 className="lp-jb-nama">{g.nama}</h3>
-        <p className="lp-jb-tanggal">{rentangTanggal(g.tanggalMulai, g.tanggalSelesai)}</p>
-        {g.diskonPersen > 0 && <p className="lp-jb-diskon">Potongan {g.diskonPersen}%</p>}
+        <h3 className="lp-jb-nama">{namaGelombang(g.nama, bahasa)}</h3>
+        <p className="lp-jb-tanggal">{rentangTanggal(g.tanggalMulai, g.tanggalSelesai, bahasa, t)}</p>
+        {g.diskonPersen > 0 && <p className="lp-jb-diskon">{t.jb.potongan(g.diskonPersen)}</p>}
       </div>
     </li>
   )
 }
 
-export function JadwalBiaya({ jenjang }: { jenjang: DataJenjang[] }) {
+export function JadwalBiaya({ jenjang, kurs }: { jenjang: DataJenjang[]; kurs: Kurs | null }) {
   const daftar = jenjang.filter(j => j.jadwal.length > 0 || j.harga.length > 0)
   const [aktif, setAktif] = useState(0)
   // Bertambah setiap kali pindah tab — dipakai me-mount ulang lingkaran agar
@@ -176,8 +233,15 @@ export function JadwalBiaya({ jenjang }: { jenjang: DataJenjang[] }) {
   // berbeda-beda menurut jumlah catatan).
   const catatanIO = useMasuk<HTMLDivElement>(0.5, aktif)
   const fotoIO = useMasuk<HTMLDivElement>(0.3, aktif)
+  const { bahasa, t } = useBahasa()
+  const nama = t.jenjang.nama
+  const konversi = bisaKonversi(bahasa, kurs)
 
   if (daftar.length === 0) return null
+
+  // Nama jenjang yang panjang ("Junior High", "Mittelschule") memakai gaya tab
+  // ringkas yang boleh dua baris — untuk ketiga tab sekaligus supaya seragam.
+  const tabPanjang = daftar.some(j => nama[j.jenjang].singkat.replace(/\u00AD/g, '').length > 4)
 
   const pilih = (i: number, fokus = false) => {
     if (fokus) tombol.current[i]?.focus()
@@ -201,16 +265,16 @@ export function JadwalBiaya({ jenjang }: { jenjang: DataJenjang[] }) {
 
   // Geser ke kiri/kanan di layar sentuh juga berpindah jenjang.
   const mulaiSentuh = (e: TouchEvent) => {
-    const t = e.touches[0]
-    sentuh.current = { x: t.clientX, y: t.clientY }
+    const jari = e.touches[0]
+    sentuh.current = { x: jari.clientX, y: jari.clientY }
   }
   const akhirSentuh = (e: TouchEvent) => {
     const awal = sentuh.current
     sentuh.current = null
     if (!awal) return
-    const t = e.changedTouches[0]
-    const dx = t.clientX - awal.x
-    const dy = t.clientY - awal.y
+    const jari = e.changedTouches[0]
+    const dx = jari.clientX - awal.x
+    const dy = jari.clientY - awal.y
     if (Math.abs(dx) < 56 || Math.abs(dx) < Math.abs(dy) * 1.4) return
     pilih(dx < 0 ? Math.min(aktif + 1, daftar.length - 1) : Math.max(aktif - 1, 0))
   }
@@ -226,13 +290,14 @@ export function JadwalBiaya({ jenjang }: { jenjang: DataJenjang[] }) {
 
       <div className="lp-wadah lp-jb-wadah" onTouchStart={mulaiSentuh} onTouchEnd={akhirSentuh}>
         <Muncul className="lp-jb-label">
-          <h2 id="lp-jb-judul" className="lp-label">Jadwal &amp; Biaya</h2>
+          <h2 id="lp-jb-judul" className="lp-label">{t.jb.judul}</h2>
         </Muncul>
 
         <div
           className="lp-jb-tab"
           role="tablist"
-          aria-label="Jadwal dan biaya per jenjang"
+          aria-label={t.jb.tabAria}
+          data-panjang={tabPanjang || undefined}
           style={{ '--i': aktif, '--n': daftar.length } as CSSProperties}
         >
           <span className="lp-jb-lingkar" aria-hidden="true">
@@ -252,7 +317,7 @@ export function JadwalBiaya({ jenjang }: { jenjang: DataJenjang[] }) {
               onClick={() => pilih(i)}
               onKeyDown={e => tekanTombol(e, i)}
             >
-              {j.singkat}
+              {nama[j.jenjang].singkat}
             </button>
           ))}
         </div>
@@ -263,6 +328,7 @@ export function JadwalBiaya({ jenjang }: { jenjang: DataJenjang[] }) {
           const alumni = j.jadwal.filter(g => g.untukAlumni)
           const foto = POTRET[j.jenjang]
           const keadaan = i === aktif ? 'aktif' : i < aktif ? 'kiri' : 'kanan'
+          const { singkat, lengkap } = nama[j.jenjang]
 
           return (
             <div
@@ -275,17 +341,17 @@ export function JadwalBiaya({ jenjang }: { jenjang: DataJenjang[] }) {
               inert={i !== aktif}
             >
               <div className="lp-jb-teks">
-                <p className="lp-jb-sub">Biaya pendidikan · {j.label}</p>
-                <p className="lp-jb-keterangan">Berlaku pada tahun ajaran yang sedang dibuka.</p>
+                <p className="lp-jb-sub">{tandaiNama(t.jb.biayaPendidikan(lengkap))}</p>
+                <p className="lp-jb-keterangan">{t.jb.keterangan}</p>
                 {!biaya ? (
-                  <p className="lp-jb-harga-kosong">Biaya segera diumumkan.</p>
+                  <p className="lp-jb-harga-kosong">{t.jb.biayaSegera}</p>
                 ) : biaya.jenis === 'tabel' ? (
                   <table className="lp-jb-tabel">
-                    <caption className="lp-jb-sr">Biaya pendidikan {j.label} per program keahlian</caption>
+                    <caption className="lp-jb-sr">{t.jb.caption(lengkap)}</caption>
                     <thead>
                       <tr>
-                        <th scope="col">Program keahlian</th>
-                        {biaya.tipe.map(t => <th key={t} scope="col">{t}</th>)}
+                        <th scope="col">{t.jb.programKeahlian}</th>
+                        {biaya.tipe.map(tipe => <th key={tipe} scope="col">{tipeKelasLokal(tipe, bahasa)}</th>)}
                       </tr>
                     </thead>
                     <tbody>
@@ -294,17 +360,17 @@ export function JadwalBiaya({ jenjang }: { jenjang: DataJenjang[] }) {
                           <th scope="row">
                             <span className="lp-jb-program">
                               {b.kode && <span className="lp-jb-kode">{b.kode}</span>}
-                              <span className="lp-jb-program-nama">{b.nama}</span>
+                              <span className="lp-jb-program-nama">{namaJurusan(b.nama, b.kode, bahasa)}</span>
                             </span>
                           </th>
-                          {biaya.tipe.map(t => {
-                            const n = b.harga[t]
+                          {biaya.tipe.map(tipe => {
+                            const n = b.harga[tipe]
                             return (
-                              <td key={t}>
-                                {n != null ? formatRupiah(n) : (
+                              <td key={tipe}>
+                                {n != null ? formatUang(n, bahasa, kurs) : (
                                   <>
                                     <span className="lp-jb-strip" aria-hidden="true">—</span>
-                                    <span className="lp-jb-sr">Tidak tersedia</span>
+                                    <span className="lp-jb-sr">{t.jb.tidakTersedia}</span>
                                   </>
                                 )}
                               </td>
@@ -318,27 +384,33 @@ export function JadwalBiaya({ jenjang }: { jenjang: DataJenjang[] }) {
                   <dl className="lp-jb-pasangan">
                     {biaya.harga.map(h => (
                       <div key={h.tipe}>
-                        <dt>{h.tipe}</dt>
-                        <dd>{rentangRupiah(h.dari, h.sampai)}</dd>
+                        <dt>{tipeKelasLokal(h.tipe, bahasa)}</dt>
+                        <dd>{rentangUang(h.dari, h.sampai, bahasa, kurs)}</dd>
                       </div>
                     ))}
                   </dl>
                 )}
+                {biaya && konversi && kurs && (
+                  <p className="lp-jb-kurs">
+                    {/* Tengah hari UTC: tanggal kurs tidak bergeser di zona waktu mana pun. */}
+                    {t.jb.kurs(formatTanggal(`${kurs.tanggal}T12:00:00Z`, bahasa) ?? kurs.tanggal)}
+                  </p>
+                )}
                 <div className="lp-jb-aksi">
-                  <Link href="/register" className="lp-jb-tombol">
-                    Daftar sekarang
+                  <Link href="/spmb/pra-pendaftaran" className="lp-jb-tombol">
+                    {t.aksi.daftarSekarang}
                     <ArrowRight size={16} aria-hidden="true" />
                   </Link>
                 </div>
               </div>
 
               <div className="lp-jb-adegan">
-                <span className="lp-jb-tanda" aria-hidden="true">{j.singkat}</span>
+                <TandaJenjang teks={singkat} />
                 <div ref={i === aktif ? fotoIO.ref : undefined} className="lp-jb-foto" style={{ '--skala': foto.skala } as CSSProperties}>
                   <div className="lp-jb-foto-isi">
                     <Image
                       src={foto.src}
-                      alt={foto.alt}
+                      alt={t.jb.potretAlt(lengkap)}
                       fill
                       sizes="(max-width: 900px) 80vw, 40vw"
                       style={{ objectFit: 'contain', objectPosition: '50% 100%' }}
@@ -347,7 +419,7 @@ export function JadwalBiaya({ jenjang }: { jenjang: DataJenjang[] }) {
                 </div>
 
                 <div ref={i === aktif ? catatanIO.ref : undefined} className="lp-jb-kelompok lp-jb-kelompok--umum">
-                  <p className="lp-jb-kelompok-judul">{alumni.length > 0 ? 'Jalur umum' : 'Gelombang pendaftaran'}</p>
+                  <p className="lp-jb-kelompok-judul">{alumni.length > 0 ? t.jb.jalurUmum : t.jb.gelombangPendaftaran}</p>
                   {umum.length > 0 ? (
                     <ul className="lp-jb-tumpukan">
                       {umum.map((g, n) => <Catatan key={g.id} g={g} k={n} i={n} />)}
@@ -356,8 +428,8 @@ export function JadwalBiaya({ jenjang }: { jenjang: DataJenjang[] }) {
                     <ul className="lp-jb-tumpukan">
                       <li className="lp-jb-catatan" style={{ '--k': 0, '--r': '-2deg', '--gx': '0rem' } as CSSProperties}>
                         <div className="lp-jb-kertas">
-                          <h3 className="lp-jb-nama">Jadwal menyusul</h3>
-                          <p className="lp-jb-tanggal">Jadwal {j.label} akan diumumkan.</p>
+                          <h3 className="lp-jb-nama">{t.jb.jadwalMenyusul}</h3>
+                          <p className="lp-jb-tanggal">{t.jb.jadwalDiumumkan(lengkap)}</p>
                         </div>
                       </li>
                     </ul>
@@ -366,7 +438,7 @@ export function JadwalBiaya({ jenjang }: { jenjang: DataJenjang[] }) {
                 {alumni.length > 0 && (
                   <div className="lp-jb-kelompok lp-jb-kelompok--alumni">
                     <p className="lp-jb-kelompok-judul">
-                      Jalur alumni<span className="lp-jb-judul-ekor"> SMP CN</span>
+                      {t.jb.jalurAlumni}<span className="lp-jb-judul-ekor">{t.jb.jalurAlumniEkor}</span>
                     </p>
                     <ul className="lp-jb-tumpukan">
                       {alumni.map((g, n) => <Catatan key={g.id} g={g} k={umum.length + n} i={n} kanan />)}

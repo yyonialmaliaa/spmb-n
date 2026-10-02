@@ -10,6 +10,7 @@ import { BiayaJenjang } from '@/components/landing/BiayaJenjang'
 import { Muncul, Singkap, JudulBaris } from '@/components/landing/gerak'
 import { rentangTanggal } from '@/lib/tanggal'
 import { GAMBAR_JENJANG, type Jenjang } from '@/lib/labels'
+import { kelasFontLanding } from '../../fonts'
 import '../../landing.css'
 
 export const dynamic = 'force-dynamic'
@@ -102,12 +103,12 @@ export default async function HalamanJenjang({ params }: Props) {
   const namaTA = tahunAjaran?.nama ?? null
 
   return (
-    <div className="lp-root">
+    <div className={`lp-root ${kelasFontLanding}`}>
       <Navigation />
 
       <main>
         {/* Hero jenjang */}
-        <section className="lp-hero" style={{ height: '82svh', minHeight: '30rem' }}>
+        <section className="lp-hero lp-hero--jenjang">
           <div className="lp-hero-media">
             <Image
               src={GAMBAR_JENJANG[jenjang]}
@@ -306,7 +307,7 @@ export default async function HalamanJenjang({ params }: Props) {
             </Muncul>
             <Muncul jeda={0.12}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.9rem', justifyContent: 'center', marginTop: '2.4rem' }}>
-                <Link href="/register" className="lp-tombol lp-tombol--utama">
+                <Link href="/spmb/pra-pendaftaran" className="lp-tombol lp-tombol--utama">
                   Daftar Sekarang <ArrowRight size={17} />
                 </Link>
                 <Link href="/spmb" className="lp-tombol lp-tombol--garis">

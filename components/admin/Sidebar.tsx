@@ -9,7 +9,7 @@ import {
   Receipt, Wallet, ArrowLeftRight,
   BarChart3, PiggyBank,
   UserCog, Settings, HelpCircle, LogOut,
-  Landmark, CalendarDays, ChevronsUpDown, Check, X,
+  Landmark, CalendarDays, ChevronsUpDown, Check, X, Ticket,
 } from 'lucide-react'
 import type { Resource } from '@/lib/permissions'
 import { LABEL_ROLE, IDENTITAS_PERAN } from '@/lib/permissions'
@@ -42,6 +42,7 @@ const GRUP: { label: string; items: ItemMenu[] }[] = [
   {
     label: 'Pendaftaran',
     items: [
+      { href: '/admin/pra-pendaftaran', label: 'Pra-Pendaftaran', ikon: Ticket, resource: 'pra_pendaftaran' },
       { href: '/admin/pendaftar', label: 'Pendaftar', ikon: Users, resource: 'pendaftar' },
       { href: '/admin/verifikasi', label: 'Verifikasi', ikon: FileCheck2, resource: 'verifikasi' },
       { href: '/admin/status', label: 'Status', ikon: ListChecks, resource: 'status' },

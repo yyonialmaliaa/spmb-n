@@ -35,7 +35,7 @@ export const HEADER_BIODATA = [
   'Gelombang', 'Total Tagihan',
   'Sudah Daftar Ulang', 'Tanggal Daftar Ulang', 'Catatan Daftar Ulang',
   'Catatan Admin', 'Alasan Penolakan', 'Pesan Pengumuman',
-  'File Ijazah', 'File Akte', 'File KK', 'File KTP Ortu', 'File KIP', 'File Foto',
+  'File Ijazah', 'File Akte', 'File KK', 'File KTP Ortu', 'File Foto',
   'Tanggal Daftar',
 ] as const
 
@@ -55,7 +55,7 @@ export interface PendaftaranBiodata {
   gelombang?: string; totalTagihan?: number;
   sudahDaftarUlang?: boolean; tanggalDaftarUlang?: string; catatanDaftarUlang?: string;
   catatan?: string; alasanPenolakan?: string; pesanPengumuman?: string;
-  fileIjazah?: string | null; fileAkte?: string | null; fileKK?: string | null; fileKtpOrtu?: string | null; fileKip?: string | null; fileFoto?: string | null;
+  fileIjazah?: string | null; fileAkte?: string | null; fileKK?: string | null; fileKtpOrtu?: string | null; fileFoto?: string | null;
   createdAt: string;
 }
 
@@ -77,7 +77,7 @@ export function barisBiodata(p: PendaftaranBiodata, index: number): (string | nu
     p.gelombang || '-', p.totalTagihan ?? 0,
     p.sudahDaftarUlang ? 'Ya' : 'Belum', p.tanggalDaftarUlang ? new Date(p.tanggalDaftarUlang).toLocaleDateString('id-ID') : '-', p.catatanDaftarUlang || '-',
     p.catatan || '-', p.alasanPenolakan || '-', p.pesanPengumuman || '-',
-    p.fileIjazah || '-', p.fileAkte || '-', p.fileKK || '-', p.fileKtpOrtu || '-', p.fileKip || '-', p.fileFoto || '-',
+    p.fileIjazah || '-', p.fileAkte || '-', p.fileKK || '-', p.fileKtpOrtu || '-', p.fileFoto || '-',
     new Date(p.createdAt).toLocaleDateString('id-ID'),
   ]
 }

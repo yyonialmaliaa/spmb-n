@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import { isAdminRole, normalizeRole } from '@/lib/permissions';
-import { TemaToggle } from '@/components/TemaToggle';
 import { NAMA_INSTITUSI } from '@/lib/labels';
 import '../admin/admin.css';
 
@@ -81,15 +80,9 @@ function LoginInner() {
       className="adm-root auth-shell"
       style={{
         minHeight: '100vh', display: 'flex', alignItems: 'center',
-        justifyContent: 'center', padding: 24, position: 'relative',
+        justifyContent: 'center', padding: 24,
       }}
     >
-      {/* Ganti tema tersedia sejak layar login, jadi pengguna yang memakai
-          tema gelap tidak dipaksa melewati satu layar terang dulu. */}
-      <div style={{ position: 'absolute', top: 20, right: 20 }}>
-        <TemaToggle gaya="ikon" />
-      </div>
-
       <div style={{ width: '100%', maxWidth: 420 }}>
         <div style={{ textAlign: 'center', marginBottom: 26 }}>
           <Link href="/" style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 10, textDecoration: 'none' }}>

@@ -9,12 +9,12 @@ import FormAlertModal, { AlertModalState } from '@/components/spmb/FormAlertModa
 type Pendaftaran = {
   namaLengkap: string; jurusan: string; alasanPenolakan?: string; catatan?: string;
   fileIjazah?: string; fileAkte?: string; fileKK?: string;
-  fileKtpOrtu?: string; fileKip?: string; fileFoto?: string;
+  fileKtpOrtu?: string; fileFoto?: string;
   revisiCount?: number;
 };
 
 type FileItem = { file: File | null; path: string; uploading: boolean; error: string };
-type FilesState = { ijazah: FileItem; akte: FileItem; kk: FileItem; ktpOrtu: FileItem; kip: FileItem; foto: FileItem };
+type FilesState = { ijazah: FileItem; akte: FileItem; kk: FileItem; ktpOrtu: FileItem; foto: FileItem };
 const emptyFile = (path = ''): FileItem => ({ file: null, path, uploading: false, error: '' });
 
 const FILE_FIELDS = [
@@ -22,13 +22,12 @@ const FILE_FIELDS = [
   { key: 'akte' as keyof FilesState, label: 'Fotocopy Akte Kelahiran', required: true },
   { key: 'kk' as keyof FilesState, label: 'Fotocopy Kartu Keluarga', required: true },
   { key: 'ktpOrtu' as keyof FilesState, label: 'Fotocopy KTP Ayah dan Ibu', required: true },
-  { key: 'kip' as keyof FilesState, label: 'Fotocopy Kartu KIP (Jika Ada)', required: false },
   { key: 'foto' as keyof FilesState, label: 'Pas Photo Siswa Ukuran 3x4', required: true },
 ];
 
 const KEY_TO_FIELD: Record<keyof FilesState, keyof Pendaftaran> = {
   ijazah: 'fileIjazah', akte: 'fileAkte', kk: 'fileKK',
-  ktpOrtu: 'fileKtpOrtu', kip: 'fileKip', foto: 'fileFoto',
+  ktpOrtu: 'fileKtpOrtu', foto: 'fileFoto',
 };
 
 export default function RevisiPage() {
@@ -36,7 +35,7 @@ export default function RevisiPage() {
   const [pendaftaran, setPendaftaran] = useState<Pendaftaran | null>(null);
   const [files, setFiles] = useState<FilesState>({
     ijazah: emptyFile(), akte: emptyFile(), kk: emptyFile(),
-    ktpOrtu: emptyFile(), kip: emptyFile(), foto: emptyFile(),
+    ktpOrtu: emptyFile(), foto: emptyFile(),
   });
   const [loading, setLoading] = useState(false);
   const [alertModal, setAlertModal] = useState<AlertModalState>(null);
@@ -56,7 +55,6 @@ export default function RevisiPage() {
         akte: emptyFile(d.data.fileAkte || ''),
         kk: emptyFile(d.data.fileKK || ''),
         ktpOrtu: emptyFile(d.data.fileKtpOrtu || ''),
-        kip: emptyFile(d.data.fileKip || ''),
         foto: emptyFile(d.data.fileFoto || ''),
       });
     });
@@ -106,7 +104,6 @@ export default function RevisiPage() {
           fileAkte: files.akte.path || null,
           fileKK: files.kk.path || null,
           fileKtpOrtu: files.ktpOrtu.path || null,
-          fileKip: files.kip.path || null,
           fileFoto: files.foto.path || null,
         }),
       });
@@ -155,9 +152,8 @@ export default function RevisiPage() {
             <div style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Image src="/images/logo.png" alt="Logo SMK Citra Negara" width={35} height={35} style={{ objectFit: 'cover' }} />
             </div>
-            {/* Header ini SENGAJA selalu hijau tua (identitas Citra Negara,
-                tidak ikut tema gelap/terang) — jadi teksnya harus putih tetap,
-                bukan token, supaya tidak pernah jadi gelap-di-atas-gelap. */}
+            {/* Header ini SENGAJA selalu hijau tua (identitas Citra Negara)
+                — jadi teksnya putih tetap, bukan token. */}
             <span className="form-header-title" style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 14 }}>Revisi Berkas SPMB</span>
           </div>
         </div>

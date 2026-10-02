@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { TemaProvider, SKRIP_TEMA } from '@/components/TemaProvider';
 import './globals.css';
 
 // Inter dimuat lewat next/font (bukan @import Google Fonts seperti Playfair &
@@ -26,19 +25,20 @@ const inter = Inter({
 // memperlakukan <script> sebagai bagian dari pohon render biasa (yang kalau
 // suatu saat "di-render ulang" lewat commit DOM, bukan diurai browser dari
 // HTML mentah, script itu TIDAK akan pernah tereksekusi — persis yang
-// diperingatkan React). SKRIP_TEMA di bawah sudah lebih dulu memakai pola
-// ini; skrip pembuka ini sekadar mengikutinya.
+// diperingatkan React).
 //
 // Dibatasi hanya berjalan di /spmb (bukan seluruh situs) supaya penanda
 // "sudah pernah lihat tirai pembuka" tidak ikut tersentuh saat pengunjung
 // membuka halaman login/admin/dashboard lebih dulu. Kunjungan yang langsung
 // menuju satu bagian (/spmb#jadwal, dari hasil pencarian atau tautan yang
 // dibagikan) juga dilewatkan: halamannya sudah tergulir ke bagian itu, jadi
-// tidak ada hero yang bisa "dituju" animasinya.
+// tidak ada hero yang bisa "dituju" animasinya. Begitu pula tampilan HP
+// (batasnya sama dengan MEDIA_HP di components/landing/gerak.tsx) — dicek
+// lebih dulu, dan penandanya bertahan meski HP lalu diputar mendatar.
 const SKRIP_PEMBUKA = `(function(){try{
 if (location.pathname !== '/spmb') return;
 var k='spmb-pembuka-tayang';
-if(location.hash||sessionStorage.getItem(k)==='1'){document.documentElement.setAttribute('data-pembuka','lewat')}
+if(matchMedia('(max-width: 767px)').matches||location.hash||sessionStorage.getItem(k)==='1'){document.documentElement.setAttribute('data-pembuka','lewat')}
 else{sessionStorage.setItem(k,'1')}
 }catch(x){}})();`
 
@@ -58,25 +58,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="id"
       data-scroll-behavior="smooth"
       className={inter.variable}
-      // Skrip anti-kedip di bawah mengubah atribut data-tema pada elemen ini
-      // SEBELUM React sempat hydrate (server tidak tahu preferensi tema
-      // pengguna). Tanpa suppressHydrationWarning, React membandingkan HTML
-      // dari server (tanpa data-tema) dengan DOM yang sudah diubah skrip
-      // dan salah menganggapnya sebagai bug — padahal ini memang perilaku
-      // yang disengaja. Ini pola resmi yang sama dipakai library next-themes.
+      // Skrip pembuka di bawah bisa memasang atribut data-pembuka pada elemen
+      // ini SEBELUM React sempat hydrate (server tidak tahu isi
+      // sessionStorage pengunjung). Tanpa suppressHydrationWarning, React
+      // membandingkan HTML dari server (tanpa data-pembuka) dengan DOM yang
+      // sudah diubah skrip dan salah menganggapnya sebagai bug — padahal ini
+      // memang perilaku yang disengaja.
       suppressHydrationWarning
     >
       <head>
-        {/* Anti-kedip: memasang data-tema sebelum halaman dilukis, sehingga
-            pengguna bertema gelap tidak pernah melihat kilatan putih. */}
-        <script dangerouslySetInnerHTML={{ __html: SKRIP_TEMA }} />
         {/* Anti-kedip tirai pembuka SPMB — lihat penjelasan SKRIP_PEMBUKA
             di atas untuk kenapa ia harus tinggal di sini. */}
         <script dangerouslySetInnerHTML={{ __html: SKRIP_PEMBUKA }} />
       </head>
-      <body>
-        <TemaProvider>{children}</TemaProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

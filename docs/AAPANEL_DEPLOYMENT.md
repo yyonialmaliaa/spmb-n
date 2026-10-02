@@ -62,8 +62,11 @@ domain before starting PM2.
 
 The upload endpoint limits a file to 2 MB. Nginx's default request-body limit
 can be lower, so set `client_max_body_size 5m;` in this site's Nginx vhost.
-Use aaPanel WAF/rate limiting for `/api/auth/login`, `/api/auth/register`, and
-`/api/upload`; leave PostgreSQL and port 3000 reachable only from localhost.
+Use aaPanel WAF/rate limiting for `/api/auth/login`, `/api/auth/register`,
+`/api/upload`, and the public `/api/pra-pendaftaran` form; leave PostgreSQL and
+port 3000 reachable only from localhost. Nginx must pass the client address as
+`X-Real-IP` (`proxy_set_header X-Real-IP $remote_addr;`) because the
+pra-pendaftaran limiter keys on it.
 
 After HTTPS works, add this Nginx header to the HTTPS virtual host (not the
 HTTP redirect host):

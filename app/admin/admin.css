@@ -13,9 +13,9 @@
    =========================================================================== */
 
 .adm-root {
-  /* Palet kini didefinisikan di app/globals.css pada :root dan
-     [data-tema='gelap'], supaya sisi admin & portal siswa berbagi tema yang
-     sama. Di sini tinggal tipografi dan latar dasarnya. */
+  /* Palet kini didefinisikan di app/globals.css pada :root, supaya sisi
+     admin & portal siswa berbagi warna yang sama. Di sini tinggal tipografi
+     dan latar dasarnya. */
   font-family: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
   color: var(--adm-text);
   background: var(--adm-bg);

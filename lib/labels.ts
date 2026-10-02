@@ -165,7 +165,6 @@ export const FIELD_BERKAS: Record<string, string> = {
   fileAkte: 'Akte Kelahiran',
   fileKK: 'Kartu Keluarga',
   fileKtpOrtu: 'KTP Orang Tua',
-  fileKip: 'KIP / PKH / KKS',
   fileFoto: 'Pas Foto',
 }
 

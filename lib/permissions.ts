@@ -14,6 +14,7 @@ export type Action = 'read' | 'create' | 'update' | 'delete' | 'export'
 
 export type Resource =
   | 'dashboard'
+  | 'pra_pendaftaran'
   | 'pendaftar'
   | 'verifikasi'
   | 'status'
@@ -67,6 +68,7 @@ type Matrix = Record<Role, Partial<Record<Resource, Action[]>>>
 export const MATRIX: Matrix = {
   super_admin: {
     dashboard: R,
+    pra_pendaftaran: RU,
     pendaftar: ALL,
     verifikasi: RU,
     status: RU,
@@ -108,6 +110,7 @@ export const MATRIX: Matrix = {
   // memang hanya diskonId/hitungUlang yang ada di baliknya.
   admin_spmb: {
     dashboard: R,
+    pra_pendaftaran: RU,
     pendaftar: ['read', 'create', 'update', 'export'],
     verifikasi: RU,
     status: RU,

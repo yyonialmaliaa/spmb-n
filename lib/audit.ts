@@ -17,6 +17,7 @@ export type EntitasAudit =
   | 'persyaratan'
   | 'pembayaran'
   | 'pendaftaran'
+  | 'pra_pendaftaran'
   | 'user'
   | 'pengaturan'
 
